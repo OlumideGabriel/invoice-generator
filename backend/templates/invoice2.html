@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice</title>
+  <style>
+    body {
+      font-family: 'Arial', sans-serif;
+      margin: 40px;
+      color: #000;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .logo {
+      max-width: 150px;
+    }
+
+    .invoice-title {
+      text-align: right;
+    }
+
+    .invoice-title h1 {
+      font-size: 2.2rem;
+      margin: 0;
+    }
+
+    .details, .totals {
+      margin-top: 40px;
+    }
+
+    .bill-to {
+      margin-top: 20px;
+      font-size: 0.95rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    table th, table td {
+      border: 1px solid #000;
+      padding: 10px;
+      text-align: left;
+      font-size: 0.95rem;
+    }
+
+    table th {
+      background-color: #f2f2f2;
+    }
+
+    .totals-table {
+      width: 300px;
+      float: right;
+      margin-top: 20px;
+    }
+
+    .totals-table td {
+      border: none;
+      padding: 6px 10px;
+      font-size: 0.95rem;
+    }
+
+    .totals-table td.label {
+      text-align: left;
+    }
+
+    .totals-table td.amount {
+      text-align: right;
+    }
+
+    .payment-method {
+      clear: both;
+      margin-top: 80px;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div>
+      <img src="{{ logo_url }}" alt="Company Logo" class="logo" />
+      <p>{{ company_name }}<br/>{{ company_tagline }}</p>
+    </div>
+    <div class="invoice-title">
+      <h1>Invoice</h1>
+      <p><strong>Invoice#:</strong> {{ invoice_number }}<br/>
+         <strong>Date:</strong> {{ date }}<br/>
+         <strong>Total Due:</strong> USD ${{ total_due }}</p>
+    </div>
+  </div>
+
+  <div class="bill-to">
+    <p><strong>Bill To:</strong><br/>
+    {{ client_name }}<br/>
+    {{ client_address }}<br/>
+    {{ client_phone }}</p>
+  </div>
+
+  <div class="details">
+    <table>
+      <thead>
+        <tr>
+          <th>ITEM DESCRIPTION</th>
+          <th>PRICE</th>
+          <th>QTY</th>
+          <th>TOTAL</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>
+            <strong>{{ item.name }}</strong><br/>
+            <small>{{ item.description }}</small>
+          </td>
+          <td>${{ '%.2f' | format(item.unit_cost) }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ '%.2f' | format(item.unit_cost * item.quantity) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="totals">
+    <table class="totals-table">
+      <tr>
+        <td class="label">SUB TOTAL</td>
+        <td class="amount">${{ '%.2f' | format(subtotal) }}</td>
+      </tr>
+      <tr>
+        <td class="label">Tax VAT {{ tax_percent }}%</td>
+        <td class="amount">${{ '%.2f' | format(tax_amount) }}</td>
+      </tr>
+      <tr>
+        <td class="label">Discount {{ discount_percent }}%</td>
+        <td class="amount">- ${{ '%.2f' | format(discount_amount) }}</td>
+      </tr>
+      <tr>
+        <td class="label"><strong>Grand Total</strong></td>
+        <td class="amount"><strong>${{ '%.2f' | format(total) }}</strong></td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="payment-method">
+    <p><strong>Payment Method</strong><br/>
+    {{ payment_method|replace('\n', '<br/>')|safe }}</p>
+  </div>
+
+</body>
+</html>

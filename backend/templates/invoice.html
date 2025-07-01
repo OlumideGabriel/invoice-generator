@@ -6,32 +6,86 @@
   <style>
     body { font-family: Arial, sans-serif; padding: 2rem; }
     table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
-    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; vertical-align: top; }
     th { background: #eee; }
+    .logo { max-width: 150px; margin-bottom: 1rem; }
+    .description { font-size: 0.9rem; color: #555; margin-top: 0.2rem; }
+    .totals { margin-top: 1rem; width: 300px; }
+    .totals td { border: none; padding: 0.3rem 0.5rem; }
+    .totals .label { text-align: left; }
+    .totals .value { text-align: right; }
+    .payment { margin-top: 2rem; }
   </style>
 </head>
 <body>
   <h1>Invoice</h1>
+
+  {% if logo_url %}
+  <img src="/frontend/src/assets/react.svg" alt="Logo" class="logo" />
+  {% endif %}
+
+  <p><strong>Date:</strong> {{ date }}</p>
+  <p><strong>From:</strong><br/> {{ from|replace('\n', '<br/>')|safe }}</p>
+  <p><strong>To:</strong><br/> {{ to|replace('\n', '<br/>')|safe }}</p>
+  <p><strong>Invoice Number:</strong> {{ invoice_number }}</p>
+
   <table>
     <thead>
       <tr>
-        <th>Description</th>
-        <th>Qty</th>
-        <th>Price</th>
-        <th>Total</th>
+        <th>Item Name</th>
+        <th>Quantity</th>
+        <th>Unit Cost</th>
+        <th>Subtotal</th>
       </tr>
     </thead>
     <tbody>
-    {{}}
-<!--      {% for item in data.lines %}-->
-<!--      <tr>-->
-<!--        <td>{{ item.description }}</td>-->
-<!--        <td>{{ item.quantity }}</td>-->
-<!--        <td>{{ item.price }}</td>-->
-<!--        <td>{{ item.quantity | float * item.price | float }}</td>-->
-<!--      </tr>-->
-<!--      {% endfor %}-->
+      {% for item in items %}
+      <tr>
+        <td>
+          {{ item.name }}
+          {% if item.description %}
+          <div class="description">{{ item.description|replace('\n', '<br/>')|safe }}</div>
+          {% endif %}
+        </td>
+        <td>{{ item.quantity }}</td>
+        <td>${{ '%.2f' | format(item.unit_cost) }}</td>
+        <td>${{ '%.2f' | format(item.quantity * item.unit_cost) }}</td>
+      </tr>
+      {% endfor %}
     </tbody>
   </table>
+
+  <table class="totals">
+    <tr>
+      <td class="label">Subtotal:</td>
+      <td class="value">${{ '%.2f' | format(subtotal) }}</td>
+    </tr>
+    <tr>
+      <td class="label">Tax ({{ tax_percent }}%):</td>
+      <td class="value">${{ '%.2f' | format(tax_amount) }}</td>
+    </tr>
+    <tr>
+      <td class="label">Discount ({{ discount_percent }}%):</td>
+      <td class="value">- ${{ '%.2f' | format(discount_amount) }}</td>
+    </tr>
+    <tr>
+      <td class="label"><strong>Total:</strong></td>
+      <td class="value"><strong>${{ '%.2f' | format(total) }}</strong></td>
+    </tr>
+  </table>
+
+  {% if payment_details %}
+  <div class="payment">
+    <h3>Payment Details</h3>
+    <p>{{ payment_details|replace('\n', '<br/>')|safe }}</p>
+  </div>
+  {% endif %}
+
+  {% if payment_instructions %}
+  <div class="payment">
+    <h3>Payment Instructions</h3>
+    <p>{{ payment_instructions|replace('\n', '<br/>')|safe }}</p>
+  </div>
+  {% endif %}
 </body>
 </html>

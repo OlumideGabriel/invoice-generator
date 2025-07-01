@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice</title>
+  <style>
+    @page {
+  size: A4;
+  margin: 10mm; /* You can reduce this further if needed (e.g. 5mm) */
+}
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; 
+      padding: 3rem;
+      margin: 0;
+      background: #f8f9fa;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .invoice-container2 {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 3rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 3rem;
+    }
+
+    .company-info h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      margin: 0;
+      color: #2c3e50;
+    }
+
+    .invoice-title {
+      font-size: 3rem;
+      font-weight: 300;
+      margin: 0;
+      color: #2c3e50;
+      letter-spacing: 2px;
+    }
+
+    .invoice-number {
+      font-size: 1.2rem;
+      color: #666;
+      margin-top: 0.5rem;
+    }
+
+    .billing-section {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      gap: 2rem;
+    }
+
+    .billing-info {
+      flex: 1;
+    }
+
+    .billing-info h3 {
+      font-size: 0.9rem;
+      color: #666;
+      margin: 0 0 0.5rem 0;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .billing-info p {
+      margin: 0.2rem 0;
+      color: #333;
+    }
+
+    .description-section {
+      margin-bottom: 2rem;
+    }
+
+    .description-title {
+      font-size: 2rem;
+      font-weight: 300;
+      margin: 0 0 1rem 0;
+      color: #2c3e50;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 0.5rem;
+    }
+
+    .items-list {
+      margin-bottom: 2rem;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1rem 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+
+    .item-row:last-child {
+      border-bottom: 2px solid #e9ecef;
+    }
+
+    .item-name {
+      font-size: 1.1rem;
+      color: #333;
+      flex: 1;
+    }
+
+    .item-description {
+      font-size: 0.9rem;
+      color: #666;
+      margin-top: 0.2rem;
+    }
+
+    .item-price {
+      font-size: 1.1rem;
+      font-weight: 500;
+      color: #333;
+      min-width: 120px;
+      text-align: right;
+    }
+
+    .totals-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 3rem;
+    }
+
+    .totals {
+      min-width: 300px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1rem;
+      font-size: 1.1rem;
+    }
+
+    .total-row.final-total {
+      font-weight: 600;
+      font-size: 1.2rem;
+      border-top: 2px solid #e9ecef;
+      margin-top: 0.5rem;
+    }
+
+    .due-date {
+      text-align: right;
+      margin-top: 1rem;
+      padding: 1rem;
+      background: #f8f9fa;
+      border-radius: 4px;
+    }
+
+    .due-date-label {
+      font-weight: 600;
+      color: #333;
+      margin-right: 1rem;
+    }
+
+    .bottom-section {
+      display: flex;
+      justify-content: space-between;
+      gap: 3rem;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 2px solid #e9ecef;
+    }
+
+    .bank-details, .terms {
+      flex: 1;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 300;
+      margin: 0 0 1rem 0;
+      color: #2c3e50;
+    }
+
+    .bank-info p, .terms p {
+      margin: 0.3rem 0;
+      color: #555;
+      font-size: 0.95rem;
+    }
+
+    .bank-label {
+      font-weight: 500;
+      color: #666;
+      display: inline-block;
+      min-width: 80px;
+    }
+
+    @media print {
+      body { background: white; padding: 1rem; }
+      .invoice-container { box-shadow: none; padding: 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <div class="header">
+      <div class="company-info">
+        <h1>{{ from.split('\n')[0] if from else 'Your Company' }}</h1>
+      </div>
+      <div class="invoice-info">
+        <div class="invoice-title">INVOICE</div>
+        <div class="invoice-number">#{{ invoice_number }}</div>
+      </div>
+    </div>
+
+    <div class="billing-section">
+      <div class="billing-info">
+        <h3>From</h3>
+        {% if from %}
+          {% for line in from.split('\n') %}
+            <p>{{ line }}</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+      <div class="billing-info">
+        <h3>To</h3>
+        {% if to %}
+          {% for line in to.split('\n') %}
+            <p>{{ line }}</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="description-section">
+      <h2 class="description-title">Description</h2>
+      
+      <div class="items-list">
+        {% for item in items %}
+        <div class="item-row">
+          <div class="item-info">
+            <div class="item-name">{{ item.name }}</div>
+            {% if item.description %}
+            <div class="item-description">{{ item.description }}</div>
+            {% endif %}
+          </div>
+          <div class="item-price">${{ '%.2f' | format(item.quantity * item.unit_cost) }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="totals-section">
+      <div class="totals">
+        <div class="total-row">
+          <span>Subtotal</span>
+          <span>${{ '%.2f' | format(subtotal) }}</span>
+        </div>
+        {% if tax_amount > 0 %}
+        <div class="total-row">
+          <span>Tax</span>
+          <span>${{ '%.2f' | format(tax_amount) }}</span>
+        </div>
+        {% endif %}
+        {% if discount_amount > 0 %}
+        <div class="total-row">
+          <span>Discount</span>
+          <span>-${{ '%.2f' | format(discount_amount) }}</span>
+        </div>
+        {% endif %}
+        <div class="total-row final-total">
+          <span>Total</span>
+          <span>${{ '%.2f' | format(total) }}</span>
+        </div>
+        {% if date %}
+        <div class="due-date">
+          <span class="due-date-label">Due Date</span>
+          <span>{{ date }}</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="bottom-section">
+      {% if payment_details %}
+      <div class="bank-details">
+        <h3 class="section-title">Bank Details</h3>
+        <div class="bank-info">
+          {{ payment_details|replace('\n', '<br/>')|safe }}
+        </div>
+      </div>
+      {% endif %}
+      
+      {% if payment_instructions %}
+      <div class="terms">
+        <h3 class="section-title">Terms</h3>
+        <div class="terms-content">
+          {{ payment_instructions|replace('\n', '<br/>')|safe }}
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

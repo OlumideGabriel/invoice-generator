@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice</title>
+  <style>
+    @page {
+  size: A4;
+  margin: 10mm; /* You can reduce this further if needed (e.g. 5mm) */
+}
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      padding: 4rem;
+      margin: 0;
+      background: white;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .invoice-container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      position: relative;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 4rem;
+    }
+
+    .company-name {
+      font-size: 1rem;
+      color: #666;
+      margin: 0;
+      font-weight: 400;
+      text-decoration: underline;
+    }
+
+    .client-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4rem;
+    }
+
+    .client-details {
+      font-size: 0.9rem;
+      color: #666;
+      line-height: 1.4;
+    }
+
+    .client-details p {
+      margin: 0.2rem 0;
+    }
+
+    .brand-name {
+      font-size: 4rem;
+      font-weight: 300;
+      color: #2c3e50;
+      margin: 2rem 0 1rem 0;
+      letter-spacing: -2px;
+    }
+
+    .invoice-title {
+      font-size: 2.5rem;
+      font-weight: 300;
+      color: #2c3e50;
+      margin: 0 0 3rem 0;
+      font-style: italic;
+    }
+
+    .invoice-details {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 3rem;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    .detail-group p {
+      margin: 0.2rem 0;
+    }
+
+    .items-section {
+      margin-bottom: 3rem;
+    }
+
+    .item-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 1rem 0;
+      border-bottom: 1px solid #ddd;
+      font-size: 0.95rem;
+    }
+
+    .item-description {
+      flex: 1;
+      color: #333;
+    }
+
+    .item-amount {
+      color: #333;
+      font-weight: 500;
+      min-width: 100px;
+      text-align: right;
+    }
+
+    .totals-section {
+      border-top: 2px solid #ddd;
+      padding-top: 1rem;
+      margin-bottom: 4rem;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 0;
+      font-size: 0.95rem;
+    }
+
+    .total-row.final {
+      font-weight: 600;
+      font-size: 1.1rem;
+      border-top: 1px solid #ddd;
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.8rem;
+      color: #666;
+      line-height: 1.4;
+      margin-top: 4rem;
+    }
+
+    .footer-left, .footer-right {
+      flex: 1;
+    }
+
+    .footer-right {
+      text-align: right;
+    }
+
+    .footer p {
+      margin: 0.1rem 0;
+    }
+
+    .signature-section {
+      text-align: center;
+      margin: 3rem 0 2rem 0;
+      font-size: 0.9rem;
+      color: #666;
+    }
+
+    @media print {
+      body {
+        padding: 2rem;
+      }
+      .invoice-container {
+        max-width: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <div class="header">
+      {% if logo_url %}
+      <img src="{{ logo_url }}" alt="Logo" style="max-width: 150px; margin-bottom: 1rem;" />
+      {% endif %}
+      <p class="company-name">{{ from.split('\n')[0] if from else 'Matthias Pascottini' }}</p>
+    </div>
+
+    <div class="client-info">
+      <div class="client-details">
+        {% if to %}
+          {% for line in to.split('\n') %}
+            <p>{{ line }}</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+      <div class="client-details">
+        <p>Moderator</p>
+        <p>Kommunikationstrainer</p>
+      </div>
+    </div>
+
+    <h1 class="brand-name">pascottini</h1>
+    <h2 class="invoice-title">Rechnung</h2>
+
+    <div class="invoice-details">
+      <div class="detail-group">
+        <p>Leistungserbringung</p>
+        <p>Auftraggeber</p>
+        <p>{{ to.split('\n')[0] if to else 'Client Name' }}</p>
+      </div>
+      <div class="detail-group">
+        <p>Rechnungsnummer</p>
+        <p>{{ invoice_number }}</p>
+        <p></p>
+        <p>Rechnungsdatum</p>
+        <p>{{ date }}</p>
+      </div>
+    </div>
+
+    <div class="items-section">
+      {% for item in items %}
+      <div class="item-row">
+        <div class="item-description">
+          {{ item.name }}
+          {% if item.description %}
+          <br><small style="color: #666;">{{ item.description }}</small>
+          {% endif %}
+          {% if item.quantity > 1 %}
+          <br><small style="color: #666;">Qty: {{ item.quantity }} × €{{ '%.2f' | format(item.unit_cost) }}</small>
+          {% endif %}
+        </div>
+        <div class="item-amount">€ {{ '%.2f' | format(item.subtotal) }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="totals-section">
+      <div class="total-row">
+        <span>Honorar</span>
+        <span>€ {{ '%.2f' | format(subtotal) }}</span>
+      </div>
+      {% if tax_amount > 0 %}
+      <div class="total-row">
+        <span>zzgl. USt ({{ tax_percent }}%)</span>
+        <span>€ {{ '%.2f' | format(tax_amount) }}</span>
+      </div>
+      {% endif %}
+      {% if discount_amount > 0 %}
+      <div class="total-row">
+        <span>Rabatt ({{ discount_percent }}%)</span>
+        <span>-€ {{ '%.2f' | format(discount_amount) }}</span>
+      </div>
+      {% endif %}
+      <div class="total-row final">
+        <span>Gesamtsumme</span>
+        <span>€ {{ '%.2f' | format(total) }}</span>
+      </div>
+    </div>
+
+    <div class="signature-section">
+      <p>Mit freundlichen Grüßen</p>
+      <p>Matthias Pascottini</p>
+    </div>
+
+    <div class="footer">
+      <div class="footer-left">
+        {% if payment_details %}
+          {{ payment_details|replace('\n', '<br/>')|safe }}
+        {% else %}
+          <p>+43 664 63 68 453</p>
+          <p>matthias@pascottini.io</p>
+          <p>www.pascottini.io</p>
+        {% endif %}
+      </div>
+      <div class="footer-right">
+        {% if payment_instructions %}
+          {{ payment_instructions|replace('\n', '<br/>')|safe }}
+        {% else %}
+          <p>Am Kirchberg 1b</p>
+          <p>8111 Gratwein-Straßengel</p>
+          <p>UID-Nr. ATU78856634</p>
+          <br>
+          <p>Steuermarkendepot Sparkasse</p>
+          <p>IBAN: AT100000000000000000</p>
+          <p>BIC: STSPAT2GXXX</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</body>
+</html>

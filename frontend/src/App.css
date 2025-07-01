@@ -1,95 +1,16 @@
-import React, { useState } from 'react';
-
-function App() {
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [items, setItems] = useState([{ name: '', quantity: 1, unit_cost: 0 }]);
-
-  const handleChange = (index, field, value) => {
-    const updatedItems = [...items];
-    updatedItems[index][field] = field === 'quantity' || field === 'unit_cost' ? parseFloat(value) : value;
-    setItems(updatedItems);
-  };
-
-  const addItem = () => {
-    setItems([...items, { name: '', quantity: 1, unit_cost: 0 }]);
-  };
-
-  const removeItem = (index) => {
-    const updatedItems = items.filter((_, i) => i !== index);
-    setItems(updatedItems);
-  };
-
-  const getTotal = () => {
-    return items.reduce((sum, item) => sum + item.quantity * item.unit_cost, 0).toFixed(2);
-  };
-
-  const handleSubmit = async () => {
-    const data = {
-      from,
-      to,
-      items,
-      total: parseFloat(getTotal())
-    };
-
-    const res = await fetch('http://localhost:5000/generate-invoice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'invoice.pdf';
-    a.click();
-  };
-
-  return (
-    <div style={{ padding: '20px' }}>
-      <h1>Invoice Generator</h1>
-      <div>
-        <label>From:</label><br />
-        <textarea value={from} onChange={(e) => setFrom(e.target.value)} rows="3" cols="50" />
-      </div>
-      <div>
-        <label>To:</label><br />
-        <textarea value={to} onChange={(e) => setTo(e.target.value)} rows="3" cols="50" />
-      </div>
-
-      <h2>Items</h2>
-      {items.map((item, index) => (
-        <div key={index} style={{ display: 'flex', gap: '10px', marginBottom: '10px' }}>
-          <input
-            type="text"
-            placeholder="Item name"
-            value={item.name}
-            onChange={(e) => handleChange(index, 'name', e.target.value)}
-          />
-          <input
-            type="number"
-            placeholder="Qty"
-            value={item.quantity}
-            onChange={(e) => handleChange(index, 'quantity', e.target.value)}
-          />
-          <input
-            type="number"
-            placeholder="Unit Cost"
-            value={item.unit_cost}
-            onChange={(e) => handleChange(index, 'unit_cost', e.target.value)}
-          />
-          <span>Total: {(item.quantity * item.unit_cost).toFixed(2)}</span>
-          <button onClick={() => removeItem(index)}>-</button>
-        </div>
-      ))}
-      <button onClick={addItem}>Add Item</button>
-
-      <h3>Total: ${getTotal()}</h3>
-
-      <button onClick={handleSubmit}>Generate PDF</button>
-    </div>
-  );
+/* App.css */
+html, body, #root {
+  height: 100vh;
+  max-height: 100vh;
+  max-width: 1500px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, sans-serif;
 }
 
-export default App;
+#root {
+  display: flex;
+  flex-direction: column;
+  max-height: 100vh;
+}
