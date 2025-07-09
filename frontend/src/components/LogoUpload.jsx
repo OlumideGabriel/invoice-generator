@@ -1,21 +1,56 @@
 // components/LogoUpload.jsx
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 
-const LogoUpload = ({ logoFile, logoStatus, handleLogoChange }) => {
+const LogoUpload = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
   const fileInputRef = useRef(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const handleClick = () => {
     fileInputRef.current.click();
   };
 
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setIsUploading(true);
+
+      try {
+        // Upload to backend
+        const formData = new FormData();
+        formData.append('logo', file);
+
+        const response = await fetch('http://localhost:5000/upload-logo', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Pass both file and URL to parent component
+          handleLogoChange(file, result.logo_url);
+        } else {
+          const error = await response.json();
+          console.error('Upload failed:', error);
+          // Still show preview locally but no backend URL
+          handleLogoChange(file, null);
+        }
+      } catch (error) {
+        console.error('Upload error:', error);
+        // Still show preview locally but no backend URL
+        handleLogoChange(file, null);
+      } finally {
+        setIsUploading(false);
+      }
+    }
+  };
+
   const handleRemoveLogo = (e) => {
-    e.stopPropagation(); // Prevent triggering upload on click
-    handleLogoChange({ target: { files: [] } });
+    e.stopPropagation();
+    handleLogoChange(null, null);
   };
 
   return (
     <div className="mb-6">
-
       <div
         onClick={handleClick}
         className="h-40 max-w-xs border border-gray-200 bg-gray-50 rounded-lg flex items-center justify-center cursor-pointer hover:border-indigo-400 transition relative group overflow-hidden"
@@ -44,7 +79,7 @@ const LogoUpload = ({ logoFile, logoStatus, handleLogoChange }) => {
           </>
         ) : (
           <span className="text-gray-400 text-lg font-medium">
-            + Add Your Logo
+            {isUploading ? 'Uploading...' : '+ Add Your Logo'}
           </span>
         )}
       </div>
@@ -52,7 +87,7 @@ const LogoUpload = ({ logoFile, logoStatus, handleLogoChange }) => {
       <input
         type="file"
         accept="image/*"
-        onChange={handleLogoChange}
+        onChange={handleFileChange}
         ref={fileInputRef}
         className="hidden"
       />

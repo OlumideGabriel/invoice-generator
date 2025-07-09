@@ -18,6 +18,7 @@ function App() {
   const [paymentDetails, setPaymentDetails] = useState('');
   const [paymentInstructions, setPaymentInstructions] = useState('');
   const [logoFile, setLogoFile] = useState(null);
+  const [logoUrl, setLogoUrl] = useState(null); // Add this to store the backend URL
   const [logoStatus, setLogoStatus] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -53,37 +54,22 @@ function App() {
   const getDiscountAmount = () => getSubtotal() * (discountPercent / 100);
   const getTotal = () => (getSubtotal() + getTaxAmount() - getDiscountAmount()).toFixed(2);
 
-  // Logo upload handlers
-  const handleLogoChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      setLogoFile(e.target.files[0]);
-      setLogoStatus('');
-    }
-  };
+  // Updated logo upload handler - automatically uploads when file is selected
+  const handleLogoChange = async (file, url) => {
+    if (file) {
+      setLogoFile(file);
+      setLogoUrl(url);
 
-  const uploadLogo = async () => {
-    if (!logoFile) {
-      setLogoStatus('Please select a logo file first.');
-      return;
-    }
-    setLogoStatus('Uploading...');
-    const formData = new FormData();
-    formData.append('logo', logoFile);
-
-    try {
-      const res = await fetch('http://localhost:5000/upload-logo', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await res.json();
-      if (res.ok) {
+      if (url) {
         setLogoStatus('Logo uploaded successfully!');
       } else {
-        setLogoStatus(`Upload failed: ${result.error || 'Unknown error'}`);
+        setLogoStatus('Logo preview only (upload failed)');
       }
-    } catch (error) {
-      setLogoStatus(`Upload error: ${error.message}`);
+    } else {
+      // File removed
+      setLogoFile(null);
+      setLogoUrl(null);
+      setLogoStatus('');
     }
   };
 
@@ -106,6 +92,7 @@ function App() {
         discount_percent: discountPercent,
         payment_details: paymentDetails,
         payment_instructions: paymentInstructions,
+        logo_url: logoUrl, // Include the logo URL from backend
         total: parseFloat(getTotal()),
       };
 
@@ -141,9 +128,9 @@ function App() {
 
         <LogoUpload
           logoFile={logoFile}
+          logoUrl={logoUrl}
           logoStatus={logoStatus}
           handleLogoChange={handleLogoChange}
-          uploadLogo={uploadLogo}
         />
 
         {error && <div className="text-red-400 mb-4">{error}</div>}

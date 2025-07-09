@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, make_response
+from flask import Flask, render_template, request, jsonify, make_response, send_from_directory
 from flask_cors import CORS
 from weasyprint import HTML
 import os
@@ -16,11 +16,19 @@ UPLOAD_FOLDER = os.path.abspath('uploads')
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
+
 @app.after_request
 def add_permissions_policy_header(response):
     # Allow Payment API in Permissions-Policy header
     response.headers['Permissions-Policy'] = 'payment=*'
     return response
+
+
+# NEW: Route to serve uploaded files
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    return send_from_directory(UPLOAD_FOLDER, filename)
+
 
 @app.route('/upload-logo', methods=['POST'])
 def upload_logo():
@@ -34,10 +42,14 @@ def upload_logo():
     if logo.filename == '':
         return jsonify({'error': 'No selected file'}), 400
 
+    # Save the file
     logo_path = os.path.join(UPLOAD_FOLDER, logo.filename)
     logo.save(logo_path)
 
-    return jsonify({'message': 'Logo uploaded successfully', 'path': logo_path}), 200
+    # FIXED: Return a web-accessible URL instead of just the file path
+    logo_url = f"http://localhost:5000/uploads/{logo.filename}"
+
+    return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
 
 @app.route('/generate-invoice', methods=['POST', 'OPTIONS'])
@@ -51,6 +63,10 @@ def generate_invoice():
             return response
 
         data = request.get_json()
+
+        # Debug: Log the received data
+        app.logger.debug(f"Received data: {data}")
+        app.logger.debug(f"Logo URL: {data.get('logo_url')}")
 
         # Basic validation
         required_fields = ['from', 'to', 'items']
@@ -103,8 +119,14 @@ def generate_invoice():
             'logo_url': data.get('logo_url', None)
         }
 
-        # Render HTML invoice
+        # Debug: Log template data
+        app.logger.debug(f"Template data logo_url: {template_data['logo_url']}")
+
+        # Render HTML invoice (make sure your template uses logo_url correctly)
         html = render_template('invoice_template2.html', **template_data)
+
+        # Debug: Log a snippet of the HTML to see if logo is included
+        app.logger.debug(f"HTML snippet: {html[:500]}...")
 
         # Generate PDF
         pdf = HTML(string=html).write_pdf()
