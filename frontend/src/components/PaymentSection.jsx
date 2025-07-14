@@ -10,7 +10,7 @@ const PaymentSection = ({ paymentDetails, setPaymentDetails, paymentInstructions
           value={paymentDetails}
           onChange={(e) => setPaymentDetails(e.target.value)}
           rows="3"
-          className="w-full p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-2/3 p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
 
@@ -20,7 +20,7 @@ const PaymentSection = ({ paymentDetails, setPaymentDetails, paymentInstructions
           value={paymentInstructions}
           onChange={(e) => setPaymentInstructions(e.target.value)}
           rows="3"
-          className="w-full p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-2/3 p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
     </>

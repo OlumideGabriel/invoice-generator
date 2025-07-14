@@ -9,7 +9,7 @@ const PartyField = ({ label, value, onChange }) => {
         value={value}
         onChange={onChange}
         rows="3"
-        className="w-full p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+        className="w-64 min-h-[100px] p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
     </div>
   );

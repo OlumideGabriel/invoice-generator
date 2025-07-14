@@ -50,17 +50,18 @@ const LogoUpload = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 w-64">
       <div
         onClick={handleClick}
-        className="h-40 max-w-xs border border-gray-200 bg-gray-50 rounded-lg flex items-center justify-center cursor-pointer hover:border-indigo-400 transition relative group overflow-hidden"
+        className="h-40 max-w-xs border-2 border-dashed border-indigo-500 bg-indigo-900 rounded-lg flex
+        items-center justify-center cursor-pointer hover:border-indigo-400 transition relative group overflow-hidden"
       >
         {logoFile ? (
           <>
             <img
               src={URL.createObjectURL(logoFile)}
               alt="Logo Preview"
-              className="max-h-full max-w-full object-contain"
+              className="max-h-full max-w-full object-contain bg-white-900 p-4"
             />
 
             {/* Replace overlay */}
@@ -78,7 +79,7 @@ const LogoUpload = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
             </button>
           </>
         ) : (
-          <span className="text-gray-400 text-lg font-medium">
+          <span className="text-indigo-400 text-lg font-medium">
             {isUploading ? 'Uploading...' : '+ Add Your Logo'}
           </span>
         )}

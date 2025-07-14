@@ -34,11 +34,7 @@ body {
 
 /* From and To input groups side-by-side on desktop */
 .from-to-group {
-  @apply flex flex-col gap-4 md:flex-row md:justify-between;
-}
-
-.from-to-group > div {
-  @apply flex-1;
+  @apply flex flex-row gap-4 md:flex-row;
 }
 
 /* Invoice line inputs with fixed widths */
@@ -60,7 +56,7 @@ body {
 
 /* Fix logo size */
 .logo-upload img {
-  max-width: 160px;
+  max-width: 1600px;
   height: auto;
   object-fit: contain;
   @apply rounded;
@@ -112,4 +108,9 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+.small-icon {
+    border: 1px solid #ccc;
+    padding: 0.2rem;
 }

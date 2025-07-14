@@ -1,16 +1,25 @@
 // components/InvoiceButton.jsx
 import React from 'react';
+import Tooltip from './Tooltip';
+import { ArrowDownToLine } from 'lucide-react';
 
 const InvoiceButton = ({ loading, onClick }) => {
   return (
     <button
       onClick={onClick}
       disabled={loading}
-      className={`w-full py-3 font-semibold rounded-md ${
+      className={`w-full px-4 py-4 text-lg whitespace-nowrap text-white font-semibold rounded-lg flex items-center justify-center gap-2 ${
         loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500'
       }`}
     >
-      {loading ? 'Generating Invoice...' : 'Generate Invoice'}
+      {loading ? (
+        'Generating Invoice...'
+      ) : (
+        <>
+          <ArrowDownToLine size={20} />
+          Download
+        </>
+      )}
     </button>
   );
 };
