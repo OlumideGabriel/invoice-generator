@@ -8,8 +8,9 @@ const InvoiceButton = ({ loading, onClick }) => {
     <button
       onClick={onClick}
       disabled={loading}
-      className={`w-full px-4 py-4 text-lg whitespace-nowrap text-white font-semibold rounded-lg flex items-center justify-center gap-2 ${
-        loading ? 'bg-gray-500 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-500'
+      className={`w-full px-4 py-4 text-lg whitespace-nowrap
+          font-medium rounded-xl flex items-center justify-center gap-2 ${
+        loading ? 'bg-gray-500 cursor-not-allowed' : 'download-button'
       }`}
     >
       {loading ? (

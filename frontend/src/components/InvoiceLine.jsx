@@ -3,88 +3,143 @@ import React from 'react';
 import { ChevronDown, ChevronUp, X } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 
-
 const InvoiceLine = ({ item, index, onChange, onRemove, onToggleDescription, itemsLength }) => {
   const { currency } = useCurrency();
+
   return (
-    <div className="flex flex-col gap-2 mb-4 bg-neutral-700 p-4 rounded-lg shadow-md">
-      <div className="flex flex-wrap md:flex-nowrap gap-4 items-start justify-left">
+    <div className="flex group  rounded-xl
+     transition-all duration-300 mb-4 items-start">
+      {/* Main content area */}
+      <div className="p-4 flex w-full bg-gray-50 hover:bg-gray-200  group flex-row  gap-2 relative rounded-xl">
+        <div className="flex w-full flex-wrap md:flex-nowrap gap-4 self-start">
 
-        <div className="relative group w-3/5">
-          <input
-            type="text"
-            placeholder="Item name"
-            value={item.name}
-            onChange={(e) => onChange(index, 'name', e.target.value)}
-            className="flex-3 w-full p-2 pr-10 rounded-md bg-neutral-600 border border-neutral-500
-            text-neutral-200 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+          {/* Item name and description section */}
+          <div className="relative flex-1 max-w-lg">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Enter item name"
+                value={item.name}
+                onChange={(e) => onChange(index, 'name', e.target.value)}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                         text-gray-900 placeholder-gray-500
+                         focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
+                         transition-all duration-200 text-md font-medium"
+              />
 
-          />
-          {item.showDesc && (
-        <textarea
-          placeholder="Add a description..."
-          value={item.description || ''}
-          onChange={(e) => onChange(index, 'description', e.target.value)}
-          className="mt-2 w-full p-2 rounded-md bg-neutral-600 border border-neutral-500 text-sm
-          text-neutral-200 focus:outline-none focus:ring-1 focus:ring-indigo-400"
-          rows={3}
-        />
-      )}
+              {/* Toggle description button */}
+              <a
+                type="button"
+                onClick={() => onToggleDescription(index)}
+                className="absolute right-3 top-1/2 -translate-y-1/2
+                         opacity-0 group-hover:opacity-80 transition-all duration-200 bg-green-50
+                         hover:text-green-800 hover:bg-green-100 hover:border-neutral-300 text-green-600
+                         rounded-full p-0.5"
+                aria-label={item.showDesc ? 'Hide description' : 'Show description'}
+              >
+                {item.showDesc ? (
+                  <ChevronUp size={25} />
+                ) : (
+                  <ChevronDown size={25} />
+                )}
+              </a>
+            </div>
 
-          <a
-            type="button"
-            onClick={() => onToggleDescription(index)}
-            className="absolute right-2 top-5 -translate-y-1/2 opacity-0 group-hover:opacity-100
-            transition-opacity duration-200 text-indigo-400 hover:text-indigo-300"
-          >
-            {item.showDesc ? (
-              <ChevronUp size={30} />
-            ) : (
-              <ChevronDown size={30} />
+            {/* Description textarea */}
+            {item.showDesc && (
+              <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
+                <textarea
+                  placeholder="Add item description or notes..."
+                  value={item.description || ''}
+                  onChange={(e) => onChange(index, 'description', e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                           text-gray-700 placeholder-gray-500 text-md
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
+                           transition-all duration-200 resize-none"
+                  rows={3}
+                />
+              </div>
             )}
-          </a>
-        </div>
+          </div>
 
-
-        <input
-          type="number"
-          placeholder="Qty"
-          value={item.quantity}
-          min="1"
-          onChange={(e) => onChange(index, 'quantity', e.target.value)}
-          className="w-20 flex-3 p-2 rounded-md bg-neutral-600 border border-neutral-500 focus:outline-none"
-        />
-
-        <div className="flex items-center gap-5 w-full md:w-auto">
+          {/* Quantity input */}
+          <div className="flex flex-col">
             <input
               type="number"
-              placeholder={`Unit Cost (${currency.symbol})`}
-              value={item.unit_cost}
-              min="0"
-              step="0.01"
-              onChange={(e) => onChange(index, 'unit_cost', e.target.value)}
-              className="w-28 flex-3 p-2 rounded-md bg-neutral-600 border border-neutral-500 focus:outline-none"
+              placeholder="1"
+              value={item.quantity}
+              min="1"
+              onChange={(e) => onChange(index, 'quantity', e.target.value)}
+              className="w-20 px-3 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                       text-gray-900 text-center text-md font-medium
+                       focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
+                       transition-all duration-200"
             />
-            <span className="w-28 text-sm text-neutral-300">
-              {currency.symbol}{(item.quantity * item.unit_cost).toFixed(2)} <span className="text-xs text-neutral-400">{currency.code}</span>
-            </span>
+          </div>
 
-            <button
-              onClick={() => onRemove(index)}
-              className={`inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-              text-indigo-400 ring-1 ring-red-600/10 ring-inset ${itemsLength > 1 ? '' : 'invisible'}`}
-            >
-              <X size={18} />
-            </button>
+          {/* Unit cost and amount section */}
+          <div className="flex flex-col sm:flex-row items-start  gap-4">
+
+            {/* Unit cost input */}
+            <div className="flex flex-col">
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">
+                  {currency.symbol}
+                </span>
+                <input
+                  type="number"
+                  placeholder="0.00"
+                  value={item.unit_cost}
+                  min="0"
+                  step="0.01"
+                  onChange={(e) => onChange(index, 'unit_cost', e.target.value)}
+                  className="w-32 pl-8 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                           text-gray-900 text-md font-medium
+                           focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent
+                           transition-all duration-200"
+                />
+              </div>
+            </div>
+
+            {/* Amount display */}
+            <div className="flex flex-col">
+              <div className="flex items-center justify-between min-w-32 px-4 py-3 rounded-lg">
+                <span className="text-md font-bold text-emerald-900">
+                    <span className="text-sm mr-2 text-gray-600 font-medium">
+                  {currency.code}
+                </span>
+                  {(item.quantity * item.unit_cost).toFixed(2)}
+                </span>
+
+              </div>
+            </div>
+
+          </div>
 
         </div>
 
-
       </div>
+      {/* Remove button */}
+      <div className="flex flex-col justify-end self-start py-6">
+              <button
+                onClick={() => onRemove(index)}
+                className={` p-1 rounded-lg transition-all duration-200 ease-in-out ml-4
+                         focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1
+                         ${itemsLength > 1
+                           ? 'small-icon transition-colors'
+                           : 'hidden'
+                         }`}
+                aria-label="Remove item"
+              >
+                <X size={18} />
+              </button>
+            </div>
 
     </div>
 
+
   );
+
 };
 
 export default InvoiceLine;

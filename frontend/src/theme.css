@@ -1,0 +1,185 @@
+:root {
+  /* Light theme (modern, minimal) */
+  --primary: #6CDD82;
+  --secondary: #CFF4D6;
+  --primary-hover: #39C454;
+  --dark-hover: #DBDCDD;
+  --dark-light: #808080;
+  --gray: #aaaaaa;
+  --background: #fff0e5;
+  --foreground: #10162f;
+  --card-bg: #fff;
+  --sidebar-bg: #fff0e5;
+  --headline: #181818;
+  --muted: #555;
+  --border: #10162f;
+  --shadow: 0 2px 8px 0 rgba(0,0,0,0.04);
+  --radius: 0.5rem;
+  --radius-1: 12px;
+}
+
+body, #root {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+.card, .rounded-2xl, .border, .bg-white, .bg-neutral-50, .bg-neutral-100 {
+  background: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border) !important;
+}
+
+.text-neutral-900, .text-gray-900 {
+  color: var(--headline) !important;
+}
+
+.text-muted, .text-gray-400, .text-gray-500 {
+  color: var(--muted) !important;
+}
+
+textarea{
+  background: #fff !important;
+  color: var(--foreground) !important;
+  border: 2px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: none !important;
+}
+
+input {
+  background: #fff !important;
+  border-radius: var(--radius) !important;
+}
+
+button, .btn {
+  border-radius: var(--radius);
+  box-shadow: none !important;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+
+button.secondary, .btn-secondary {
+  background: var(--primary-hover) !important;
+  color: var(--foreground) !important;
+  border: none !important;
+}
+button.secondary:hover, .btn-secondary:hover {
+  background: var(--dark-hover) !important;
+}
+
+button.primary, .btn-primary {
+  background: var(--primary) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+button.primary:hover, .btn-primary:hover {
+  background: var(--primary-hover) !important;
+}
+
+.sidebar, .bg-neutral-800 {
+  background: var(--sidebar-bg) !important;
+  color: var(--gray);
+}
+
+.bg-neutral-800, .bg-neutral-900 {
+  background: var(--card-bg) !important;
+}
+
+.border {
+  border-color: var(--gray) !important;
+}
+.border-2 {
+  border-color: #10162f;
+  }
+.border-3 {
+  border-color: var(--primary-hover) !important;
+}
+
+
+input, textarea {
+  background: #fff !important;
+  color: var(--foreground) !important;
+  border-color: var(--gray) !important;
+}
+
+select {
+  background: #fff !important;
+  color: var(--foreground) !important;
+}
+
+.labels {
+  font-weight: 500;
+  color: var(--dark-light);
+}
+
+.dark {
+  /* Modern, elegant dark theme */
+  --background: #0D1116;
+  --foreground: #eaeaea;
+  --card-bg: #18191b;
+  --primary: #6CDD82;
+  --secondary: #CFF4D6;
+  --primary-hover: #39C454;
+  --dark-hover: #222326;
+  --dark-light: #44464a;
+  --gray: #6e6e6e;
+  --headline: #fff;
+  --muted: #b3b3b3;
+  --border: #232325;
+  --shadow: 0 2px 8px 0 rgba(0,0,0,0.15);
+}
+
+.dark body, .dark #root {
+  background: var(--background) !important;
+  color: var(--foreground) !important;
+}
+
+.dark h1, .dark h2, .dark h3, .dark h4 {
+  color: var(--headline) !important;
+  font-weight: 800;
+  letter-spacing: -1px;
+}
+
+.dark .card, .dark .rounded-2xl, .dark .border, .dark .bg-white, .dark .bg-neutral-50, .dark .bg-neutral-100 {
+  background: var(--card-bg) !important;
+  color: var(--foreground) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border) !important;
+}
+
+.dark .text-neutral-900, .dark .text-neutral-800, .dark .text-gray-900 {
+  color: var(--foreground) !important;
+}
+
+.dark .text-neutral-50, .dark .text-white, .dark .text-gray-100 {
+  color: var(--headline) !important;
+}
+
+.dark .muted, .dark .text-gray-400, .dark .text-gray-500 {
+  color: var(--muted) !important;
+}
+
+.dark input, .dark textarea, .dark select {
+  background: #232325 !important;
+  color: var(--foreground) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.5rem !important;
+}
+
+.dark button, .dark .btn {
+  background: var(--card-bg) !important;
+  color: var(--headline) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: 0 2px 8px 0 rgba(0,0,0,0.18);
+  border: 1px solid var(--border) !important;
+  font-weight: 600;
+  transition: background 0.2s, color 0.2s;
+}
+
+.dark button:hover, .dark .btn:hover {
+  background: var(--dark-hover) !important;
+  color: var(--primary) !important;
+}

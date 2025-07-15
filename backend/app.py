@@ -148,7 +148,7 @@ def generate_invoice():
         data = request.get_json()
         app.logger.debug(f"[GENERATE] Received data: {data}")
         template_data = parse_invoice_data(data)
-        html = render_template('invoice_template.html', **template_data)
+        html = render_template('invoice3.html', **template_data)
         pdf = HTML(string=html).write_pdf()
 
         response = make_response(pdf)

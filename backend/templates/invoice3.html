@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Architecture Invoice</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+      background: #f5f5f5;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      padding: 2rem;
+      margin: 0;
+      background: #f5f5f5;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .invoice-container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 3rem;
+      border-radius: 0;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    .header-section {
+      text-align: center;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+    }
+
+    .service-type {
+      font-size: 1.1rem;
+      color: #666;
+      margin: 0;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+    }
+
+    .document-title {
+      font-size: 4rem;
+      font-weight: 300;
+      margin: 0.5rem 0;
+      color: #000;
+      letter-spacing: 3px;
+    }
+
+    .invoice-details {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding: 1rem 0;
+      border-bottom: 2px solid #333;
+    }
+
+    .detail-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .detail-label {
+      font-weight: 600;
+      color: #333;
+      font-size: 0.9rem;
+    }
+
+    .detail-value {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .client-info {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid #333;
+    }
+
+    .client-details h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .client-details p {
+      margin: 0.1rem 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 2rem;
+    }
+
+    .items-table th {
+      background: #f8f8f8;
+      padding: 1rem;
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 2px solid #333;
+      font-size: 0.9rem;
+    }
+
+    .items-table th:last-child,
+    .items-table td:last-child {
+      text-align: right;
+    }
+
+    .items-table td {
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .items-table tr:hover {
+      background: #fafafa;
+    }
+
+    .totals-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 3rem;
+    }
+
+    .totals-table {
+      min-width: 300px;
+      border-collapse: collapse;
+    }
+
+    .totals-table td {
+      padding: 0.75rem 1rem;
+      text-align: right;
+      font-size: 0.95rem;
+    }
+
+    .totals-table .label {
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .totals-table .total-row {
+      border-top: 2px solid #333;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: #000;
+    }
+
+    .footer-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 2px solid #333;
+    }
+
+    .company-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .company-logo-img {
+      max-width: 80px;
+      max-height: 80px;
+      object-fit: contain;
+    }
+
+    .company-logo {
+      width: 60px;
+      height: 60px;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
+    }
+
+    .company-logo::before {
+      content: '';
+      width: 30px;
+      height: 30px;
+      background: white;
+      clip-path: polygon(0 0, 100% 0, 100% 70%, 70% 100%, 0 100%);
+    }
+
+    .company-details h2 {
+      margin: 0;
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #000;
+    }
+
+    .company-details p {
+      margin: 0.1rem 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .contact-info {
+      text-align: right;
+    }
+
+    .contact-info p {
+      margin: 0.1rem 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+      .invoice-container {
+        box-shadow: none;
+        padding: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <div class="header-section">
+      {% if service_type %}
+      <p class="service-type">{{ service_type }}</p>
+      {% endif %}
+      {% if document_type %}
+      <h1 class="document-title">{{ document_type }}</h1>
+      {% endif %}
+    </div>
+
+    <div class="invoice-details">
+      {% if issued_date %}
+      <div class="detail-group">
+        <span class="detail-label">Date:</span>
+        <span class="detail-value">{{ issued_date }}</span>
+      </div>
+      {% endif %}
+      {% if valid_until %}
+      <div class="detail-group">
+        <span class="detail-label">Valid Until Date:</span>
+        <span class="detail-value">{{ valid_until }}</span>
+      </div>
+      {% endif %}
+      {% if invoice_number %}
+      <div class="detail-group">
+        <span class="detail-label">Invoice Number:</span>
+        <span class="detail-value">#{{ invoice_number }}</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="client-info">
+      {% if to %}
+      <div class="client-details">
+        <h3>To:</h3>
+        {% for line in to.split('\n') %}
+          <p>{{ line }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% if client_address %}
+      <div class="client-details">
+        {% for line in client_address.split('\n') %}
+          <p>{{ line }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th>Item Description</th>
+          <th>Price</th>
+          <th>QTY</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>${{ '%.0f' | format(item.unit_cost) }}</td>
+          <td>{{ item.quantity }}</td>
+          <td>${{ '%.0f' | format(item.quantity * item.unit_cost) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="totals-section">
+      <table class="totals-table">
+        {% if subtotal %}
+        <tr>
+          <td class="label">Subtotal:</td>
+          <td>${{ '%.0f' | format(subtotal) }}</td>
+        </tr>
+        {% endif %}
+        {% if tax_amount %}
+        <tr>
+          <td class="label">Tax{% if tax_rate %} ({{ tax_rate }}%){% endif %}:</td>
+          <td>${{ '%.0f' | format(tax_amount) }}</td>
+        </tr>
+        {% endif %}
+        {% if total %}
+        <tr class="total-row">
+          <td class="label">Total Due:</td>
+          <td>${{ '%.0f' | format(total) }}</td>
+        </tr>
+        {% endif %}
+      </table>
+    </div>
+
+    <div class="footer-section">
+      <div class="company-info">
+        {% if logo_url %}
+        <img src="{{ logo_url }}" alt="Company Logo" class="company-logo-img" />
+        {% endif %}
+        {% if company_name %}
+        <div class="company-details">
+          <h2>{{ company_name }}</h2>
+        </div>
+        {% endif %}
+      </div>
+      {% if company_address %}
+      <div class="contact-info">
+        {% for line in company_address.split('\n') %}
+          <p>{{ line }}</p>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</body>
+</html>

@@ -1,39 +1,4 @@
-import React, { useEffect, useState } from 'react';
-import { Moon, Sun } from 'lucide-react';
-
-const DarkModeToggle = () => {
-  const [isDark, setIsDark] = useState(() =>
-    typeof window !== 'undefined'
-      ? localStorage.theme === 'dark'
-      : false
-  );
-
-  useEffect(() => {
-    const root = window.document.documentElement;
-
-    if (isDark) {
-      root.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      root.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
-    }
-  }, [isDark]);
-
-  return (
-    <a
-      onClick={() => setIsDark(!isDark)}
-      className="p-2 rounded-full bg-transparent hover:bg-gray-200 dark:hover:bg-gray-700 transition flex items-center justify-center cursor-pointer"
-      aria-label="Toggle Dark Mode"
-      tabIndex={0}
-    >
-      {isDark ? (
-          <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path fill-rule="evenodd" clip-rule="evenodd" d="M14.609 24.5C19.3035 24.5 23.109 20.6944 23.109 16C23.109 11.3056 19.3035 7.5 14.609 7.5C14.4949 7.5 14.3813 7.50225 14.2682 7.50671C13.8466 7.52334 13.6862 8.04224 13.9664 8.35776C15.2994 9.85863 16.109 11.8348 16.109 14C16.109 17.8536 13.5446 21.1083 10.0291 22.1505C9.6245 22.2705 9.4855 22.7959 9.83444 23.0333C11.1954 23.959 12.839 24.5 14.609 24.5Z" fill="#D9D9D9"/>
-        </svg>
-
-      ) : (
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
 <path d="M24.3281 25.7423L21.412 22.8262C21.0457 22.4599 21.0653 21.8464 21.4558 21.4559C21.8464 21.0653 22.4599 21.0457 22.8262 21.412L25.7423 24.3281L25.8069 24.3996C26.1052 24.7702 26.0646 25.3323 25.6985 25.6985C25.3323 26.0647 24.7702 26.1052 24.3996 25.8069L24.3281 25.7423Z" fill="#232323" fill-opacity="0.84"/>
 <path d="M8.77175 10.186L5.85567 7.26991C5.48935 6.90359 5.50897 6.29005 5.8995 5.89952C6.29002 5.509 6.90356 5.48937 7.26988 5.85569L10.186 8.77178L10.2505 8.84324C10.5489 9.21391 10.5083 9.77601 10.1421 10.1422C9.77598 10.5083 9.21389 10.5489 8.84322 10.2506L8.77175 10.186Z" fill="#232323" fill-opacity="0.84"/>
 <path d="M25.7423 7.26988L22.8262 10.186C22.4599 10.5523 21.8464 10.5327 21.4558 10.1421C21.0653 9.75161 21.0457 9.13807 21.412 8.77175L24.3281 5.85567L24.3996 5.79111C24.7702 5.49275 25.3323 5.53334 25.6985 5.8995C26.0646 6.26565 26.1052 6.82774 25.8069 7.19841L25.7423 7.26988Z" fill="#232323" fill-opacity="0.84"/>
@@ -44,10 +9,3 @@ const DarkModeToggle = () => {
 <path d="M29.062 17L24.938 17C24.42 17 24 16.5523 24 16C24 15.4477 24.42 15 24.938 15L29.062 15L29.1582 15.0049C29.6312 15.056 30 15.4821 30 16C30 16.5178 29.6312 16.944 29.1582 16.9951L29.062 17Z" fill="#323232"/>
 <path d="M7.06199 17L2.93802 17C2.41996 17 2 16.5523 2 16C2 15.4477 2.41996 15 2.93802 15L7.06198 15L7.15817 15.0049C7.63124 15.056 8 15.4821 8 16C8 16.5178 7.63124 16.944 7.15817 16.9951L7.06199 17Z" fill="#323232"/>
 </svg>
-
-      )}
-    </a>
-  );
-};
-
-export default DarkModeToggle;

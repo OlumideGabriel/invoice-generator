@@ -1,6 +1,6 @@
 import React from 'react';
-import { ArrowRightLeft, X, Plus } from 'lucide-react';
-
+import { ArrowRightLeft, X, Plus, Minus, SquareMinus } from 'lucide-react';
+import { useCurrency } from '../context/CurrencyContext';
 
 const TaxDiscountSection = ({
   taxPercent,
@@ -24,6 +24,7 @@ const TaxDiscountSection = ({
   const [prevTaxPercent, setPrevTaxPercent] = React.useState(taxPercent);
   const [prevDiscountPercent, setPrevDiscountPercent] = React.useState(discountPercent);
   const [prevShippingAmount, setPrevShippingAmount] = React.useState(shippingAmount);
+  const { currency } = useCurrency();
 
   const handleToggleTax = () => {
     if (showTax) {
@@ -87,41 +88,48 @@ const TaxDiscountSection = ({
     <div className="mb-6 ">
       {/* Toggle Buttons */}
       <div className="flex justify-end gap-3 mb-4">
-        <button
+        <a
           type="button"
           onClick={handleToggleTax}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
             showTax
-              ? 'bg-green-500 text-white'
-              : 'bg-green-100 text-green-700 hover:bg-green-200'
+              ? 'label-2'
+              : 'label-1'
           }`}
         >
-          <span className="text-lg"><Plus size={18} /></span> Tax
-        </button>
+          <div className={` text-lg transition-transform duration-200 ease-in-out ${showTax ? 'rotate-45' : 'rotate-0'}`}>
+               <Plus size={18} />
+            </div> Tax
+        </a>
 
-        <button
+        <a
           type="button"
           onClick={handleToggleDiscount}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
             showDiscount
-              ? 'bg-green-500 text-white'
-              : 'bg-green-100 text-green-700 hover:bg-green-200'
+              ? 'label-2'
+              : 'label-1'
           }`}
         >
-          <span className="text-lg"><Plus size={18} /></span> Discount
-        </button>
 
-        <button
+          <div className={` text-lg transition-transform duration-200 ease-in-out ${showDiscount ? 'rotate-45' : 'rotate-0'}`}>
+               <Plus size={18} />
+            </div> Discount
+        </a>
+
+        <a
           type="button"
           onClick={handleToggleShipping}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
             showShipping
-              ? 'bg-green-500 text-white'
-              : 'bg-green-100 text-green-700 hover:bg-green-200'
+              ? 'label-2'
+              : 'label-1'
           }`}
         >
-          <span className="text-lg"><Plus size={18} /></span> Shipping
-        </button>
+          <div className={` text-lg transition-transform duration-200 ease-in-out ${showShipping ? 'rotate-45' : 'rotate-0'}`}>
+               <Plus size={18} />
+            </div> Shipping
+        </a>
       </div>
 
       {/* Input Fields */}
@@ -129,10 +137,10 @@ const TaxDiscountSection = ({
         {/* Tax Input */}
         {showTax && (
           <div className="flex justify-end  items-center gap-4 ">
-            <label className="text-sm font-medium text-white-600">Tax</label>
-            <div className="flex items-center border-neutral-500 rounded-lg bg-neutral-600 w-full max-w-xs">
+            <label className="text-md font-medium text-gray-600">Tax</label>
+            <div className="flex items-stretch border border-gray-300 rounded-lg bg-white w-full max-w-xs">
                 {taxType === 'fixed' && (
-                <span className="px-4 py-3 text-gray-400 font-medium text-lg">$</span>
+                <span className="px-4 py-3 text-gray-400 font-medium text-lg">{currency.symbol}</span>
               )}
               <input
                 type="number"
@@ -141,7 +149,7 @@ const TaxDiscountSection = ({
                 max={taxType === 'percent' ? '100' : undefined}
                 step={taxType === 'percent' ? '1' : '0.01'}
                 onChange={handleTaxChange}
-                className="px-4 py-3 flex-1 text-center border-none outline-none bg-transparent"
+                className="px-4 py-3 flex-1 text-center text-lg border-none outline-none bg-transparent"
                 placeholder="Value"
               />
               {taxType === 'percent' && (
@@ -150,31 +158,32 @@ const TaxDiscountSection = ({
               <span
                 type="button"
                 onClick={toggleTaxType}
-                className="bg-green-100 rounded-r-lg hover:bg-green-200 px-4 py-4 text-gray-700 border-l border-gray-300 transition-colors duration-200 cursor-pointer flex items-center justify-center"
+                className="small-icon rounded-r-[5px] p-3 border-l border-gray-300 transition-colors
+                duration-200 cursor-pointer flex items-center justify-center"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </span>
             </div>
-            <button
+            <a
               type="button"
               onClick={handleToggleTax}
-              className={`inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-              text-indigo-400 hover:text-indigo-300 transition-colors duration-200`}
+              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1.5 py-1.5 text-xs font-medium
+               transition-colors duration-200`}
             >
               <X size={18} />
-            </button>
+            </a>
           </div>
         )}
 
         {/* Discount Input */}
         {showDiscount && (
           <div className="flex justify-end items-center gap-4">
-            <label className="text-sm font-medium text-white-600">Discount</label>
-            <div className="flex items-center border-neutral-500 rounded-lg overflow-hidden bg-neutral-600 w-full max-w-xs">
+            <label className="text-md font-medium text-gray-600">Discount</label>
+            <div className="flex items-stretch border border-gray-300 rounded-lg bg-white w-full max-w-xs">
               {discountType === 'fixed' && (
-                <span className="px-4 py-3 text-gray-400 font-medium text-lg">$</span>
+                <span className="px-4 py-3 text-gray-400 font-medium text-lg">{currency.symbol}</span>
               )}
               <input
                 type="number"
@@ -183,7 +192,7 @@ const TaxDiscountSection = ({
                 max={discountType === 'percent' ? '100' : undefined}
                 step={discountType === 'percent' ? '1' : '0.01'}
                 onChange={handleDiscountChange}
-                className="px-4 py-3 flex-1 text-center border-none outline-none bg-transparent"
+                className="px-4 py-3 flex-1 text-center text-lg border-none outline-none bg-transparent focus:ring-2 focus:ring-indigo-500"
                 placeholder="Value"
               />
               {discountType === 'percent' && (
@@ -192,37 +201,38 @@ const TaxDiscountSection = ({
               <span
                 type="button"
                 onClick={toggleDiscountType}
-                className="bg-green-100 rounded-r-lg hover:bg-green-200 px-4 py-4 text-gray-700 border-l border-gray-300 transition-colors duration-200 cursor-pointer flex items-center justify-center"
+                className="small-icon rounded-r-[5px] p-3 border-l border-gray-300 transition-colors
+                duration-200 cursor-pointer flex items-center justify-center"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </span>
             </div>
-            <button
+            <a
               type="button"
               onClick={handleToggleDiscount}
-              className={`inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-              text-indigo-400 hover:text-indigo-300 transition-colors duration-200`}
+              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1.5 py-1.5 text-xs font-medium
+               transition-colors duration-200`}
             >
               <X size={18} />
-            </button>
+            </a>
           </div>
         )}
 
         {/* Shipping Input */}
         {showShipping && (
           <div className="flex justify-end items-center gap-4">
-            <label className="text-sm font-medium text-white-600">Shipping</label>
-            <div className="flex items-center border  border-neutral-500 rounded-lg overflow-hidden bg-neutral-600 w-full max-w-xs">
-              <span className="px-4 py-3 text-gray-400 font-medium text-lg">$</span>
+            <label className="text-md font-medium labels">Shipping</label>
+            <div className="flex items-stretch border border-gray-300 rounded-lg bg-white w-full max-w-xs">
+              <span className="px-4 py-3 text-gray-400 font-medium text-lg">{currency.symbol}</span>
               <input
                 type="number"
                 value={shippingAmount}
                 min="0"
                 step="0.01"
                 onChange={handleShippingChange}
-                className="px-4 py-3 flex-1 text-center border-none outline-none bg-transparent"
+                className="px-4 py-3 flex-1 text-lg text-center border-none outline-none bg-transparent focus:ring-2 focus:ring-indigo-500"
                 placeholder="Value"
               />
               <span
@@ -236,14 +246,14 @@ const TaxDiscountSection = ({
 
             </div>
 
-            <button
+            <a
               type="button"
               onClick={handleToggleShipping}
-              className={`inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-              text-indigo-400 hover:text-indigo-300 transition-colors duration-200`}
+              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1.5 py-1.5 text-xs font-medium
+               transition-colors duration-200`}
             >
               <X size={18} />
-            </button>
+            </a>
           </div>
         )}
       </div>

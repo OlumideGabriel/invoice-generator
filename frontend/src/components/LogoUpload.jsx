@@ -1,5 +1,6 @@
 // components/LogoUpload.jsx
 import React, { useRef, useState } from 'react';
+import { ImagePlus, X } from 'lucide-react';
 
 const LogoUpload = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
   const fileInputRef = useRef(null);
@@ -53,8 +54,9 @@ const LogoUpload = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
     <div className="mb-6 w-64">
       <div
         onClick={handleClick}
-        className="h-40 max-w-xs border-2 border-dashed border-indigo-500 bg-indigo-900 rounded-lg flex
-        items-center justify-center cursor-pointer hover:border-indigo-400 transition relative group overflow-hidden"
+        className="h-40 max-w-xs border-2 border-dashed border-3 bg-green-100 rounded-xl flex
+        items-center justify-center cursor-pointer hover:border-green-400 hover:bg-green-200
+        transition relative group overflow-hidden"
       >
         {logoFile ? (
           <>
@@ -72,14 +74,15 @@ const LogoUpload = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
             {/* Remove X button */}
             <button
               onClick={handleRemoveLogo}
-              className="absolute top-1 left-1 bg-white text-black rounded-1/5 w-6 h-6 flex items-center justify-center text-xs font-bold shadow hover:bg-indigo-500 hover:text-white transition-opacity opacity-0 group-hover:opacity-100"
-              aria-label="Remove logo"
-            >
-              ×
+              className="absolute top-1 left-1 small-icon rounded-1/2 p-1 opacity-0 group-hover:opacity-100
+              transition-opacity duration-200 hover:bg-red-900 focus:outline-none focus:ring-2 focus:ring-red-500"
+              aria-label="Remove logo">
+
+              <X size={12}/>
             </button>
           </>
         ) : (
-          <span className="text-indigo-400 text-lg font-medium">
+          <span className="text-green-500 text-lg font-medium">
             {isUploading ? 'Uploading...' : '+ Add Your Logo'}
           </span>
         )}

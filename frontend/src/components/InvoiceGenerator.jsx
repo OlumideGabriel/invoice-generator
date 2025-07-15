@@ -7,8 +7,10 @@ import TaxDiscountSection from './TaxDiscountSection';
 import PaymentSection from './PaymentSection';
 import TotalsDisplay from './TotalsDisplay';
 import InvoiceButton from './InvoiceButton';
-import { Plus, X } from 'lucide-react';
+import { Plus, X, ChevronDown} from 'lucide-react';
 import useInvoice from '../hooks/useInvoice';
+import CurrencySelector from './CurrencySelector';
+import InvoiceSidebar from './InvoiceSidebar';
 
 const InvoiceGenerator = ({
   from,
@@ -63,6 +65,7 @@ const InvoiceGenerator = ({
   discountType: propDiscountType = 'percent',
   setDiscountType: propSetDiscountType,
 }) => {
+    const {setCurrency, currencyOptions } = useCurrency();
   const [previewImageUrl, setPreviewImageUrl] = useState(null);
   // Local state fallbacks if props aren't provided
   const [localTaxType, setLocalTaxType] = useState(propTaxType);
@@ -135,9 +138,9 @@ const InvoiceGenerator = ({
   const { currency } = useCurrency();
 
   return (
-    <div className="flex flex-row w-full m-auto items-start gap-8 min-h-screen">
+    <div className="flex flex-row w-full m-auto items-start gap-8 min-h-screen main-container">
       {/* Left Panel (Main Invoice Form) */}
-      <div className="basis-128 max-w-5xl w-full bg-neutral-800 shadow-xl rounded-2xl p-8 overflow-auto">
+      <div className="basis-128 max-w-5xl w-full border-2 bg-neutral-900 rounded-3xl p-8 overflow-auto">
         <div className="flex items-start justify-between mb-6">
           <LogoUpload
             logoFile={logoFile}
@@ -146,7 +149,7 @@ const InvoiceGenerator = ({
             handleLogoChange={handleLogoChange}
           />
           <div className="mb-6 flex flex-col sm:items-end gap-4">
-            <h1 className="text-7xl text-indigo-400">Invoice</h1>
+            <h1 className="text-7xl">Invoice</h1>
             <div className="flex items-center gap-2">
               <input
                 id="invoice-number"
@@ -193,7 +196,7 @@ const InvoiceGenerator = ({
           </div>
         </header>
 
-        <h2 className="text-xl font-semibold mb-4 text-indigo-300">Items</h2>
+        <h2 className="text-xl font-semibold mb-4 text-gray-900">Items</h2>
         {items?.map((item, index) => (
           <InvoiceLine
             key={index}
@@ -208,7 +211,7 @@ const InvoiceGenerator = ({
 
         <button
           onClick={addItem}
-          className="mb-6 px-4 py-2 bg-indigo-500 whitespace-nowrap hover:bg-indigo-400
+          className="mb-6 px-4 py-2 bg-green-600 whitespace-nowrap
             text-white font-semibold rounded-md flex items-center gap-2"
         >
           <Plus /> Add Item
@@ -223,7 +226,10 @@ const InvoiceGenerator = ({
               setPaymentInstructions={setPaymentInstructions}
             />
           </div>
+
+
           <div className="flex-1">
+
             <TaxDiscountSection
               taxPercent={taxPercent}
               setTaxPercent={setTaxPercent}
@@ -256,54 +262,17 @@ const InvoiceGenerator = ({
       </div>
 
       {/* Right Sidebar */}
-      <div className="w-64 hidden md:flex flex-col sticky top-0 right-4 z-50 self-start space-y-4">
-        <InvoiceButton loading={loading} onClick={handleSubmit} />
-
-        <button
-          onClick={async () => {
-            const url = await previewInvoiceImage();
-            if (url) setPreviewImageUrl(url);
-          }}
-          disabled={loading}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md"
-        >
-          Preview Invoice
-        </button>
-
-        {previewPdfUrl && (
-          <div className="mt-10 border border-neutral-700 rounded-md overflow-hidden bg-white">
-            <div className="flex justify-between items-center p-4 bg-neutral-900">
-              <h3 className="text-lg font-semibold text-indigo-300">Preview</h3>
-              <button
-                onClick={() => {
-                  URL.revokeObjectURL(previewPdfUrl);
-                  setPreviewPdfUrl(null);
-                }}
-                className="text-sm text-red-400 hover:underline"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <object
-              data={previewPdfUrl}
-              type="application/pdf"
-              className="w-full h-[90vh]"
-            >
-              <p className="text-sm text-neutral-800 p-4">
-                Your browser doesn't support PDF preview.{' '}
-                <a
-                  href={previewPdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-indigo-500 underline"
-                >
-                  Download instead
-                </a>
-              </p>
-            </object>
-          </div>
-        )}
-      </div>
+      <InvoiceSidebar
+        loading={loading}
+        onSubmit={handleSubmit}
+        onPreview={async () => {
+          const url = await previewInvoiceImage();
+          if (url) setPreviewImageUrl(url);
+        }}
+        previewPdfUrl={previewPdfUrl}
+        setPreviewPdfUrl={setPreviewPdfUrl}
+        previewInvoiceImage={previewInvoiceImage}
+      />
     </div>
   );
 };

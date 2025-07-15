@@ -2,14 +2,27 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@tailwind screens;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #1a1a1a;
+:root {
+  --primary: #6CDD82;
+  --primary-1: #CFF4D6;
+  --primary-2: #39C454;
+  --primary-3: #179930;
+  --dark-hover: #DBDCDD;
+  --dark-light: #808080;
+  --gray: #989898;
+  --gray-1: #323232;
+
+}
+
+:root {
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1;
+  font-weight: 400;
+  color-scheme: light;
+  color: #213547;
+  background-color: #000000;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -23,7 +36,9 @@ body {
   justify-content: center;
   padding: 2rem;
   min-height: 100vh;
-  background-color: #1a1a1a;
+  background-color: rgba(130, 120, 120, 0.5);
+
+
 }
 
 /* Wider container */
@@ -47,7 +62,7 @@ body {
 
 /* Ensure spacing and consistency */
 .invoice-line {
-  @apply flex flex-col gap-2 mb-4 bg-neutral-700 p-4 rounded-lg;
+  @apply flex flex-col gap-2 mb-4 bg-gray-100 p-4 rounded-lg;
 }
 
 .invoice-line .top-row {
@@ -64,16 +79,17 @@ body {
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--primary);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--primary-hover);
 }
 
 h1 {
   font-size: 3.2em;
   line-height: 1.1;
+  color: #000000;
 }
 
 button {
@@ -83,22 +99,118 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: #6CDD82;
   cursor: pointer;
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--primary-2);
+  background-color: #39C454;
 }
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 4px auto var(--primary-3);
 }
 
-@media (prefers-color-scheme: light) {
+.label-1 {
+  font-weight: 500;
+  background-color: var(--primary-1);
+  padding: 2px 8px;
+  color: var(--primary-3);
+  border-radius: 0.5rem;
+  border: 2px solid var(--primary-2);
+  cursor: pointer;
+
+}
+.label-1:hover {
+  border-color: var(--primary);
+  color: var(--primary-3);
+}
+
+.label-2 {
+  font-weight: 500;
+  background-color: var(--primary-2);
+  color: #fff;
+  border-radius: 0.5rem;
+  padding: 2px 8px;
+  border: 2px solid var(--primary-1);
+  cursor: pointer;
+}
+
+.label-2:hover {
+  font-weight: 500;
+  background-color: var(--primary-3);
+  color: #fff;
+  border-radius: 0.5rem;
+  border: 2px solid var(--primary-2);
+}
+
+.label-3 {
+  font-weight: 500;
+  background-color: #fff;
+  color: #000;
+  border-radius: 0.5rem;
+  padding: 2px 8px;
+  border: 2px solid #000;
+  cursor: pointer;
+}
+.label-3:hover {
+  background-color: var(--dark-hover);
+}
+
+.menu-item {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+}
+.menu-item:hover {
+  background-color: #f6e9df;
+  color: #000;
+}
+.menu-item.active {
+  background-color: #f6e9df;
+  color: #000;
+}
+
+
+@media only screen and (min-width: 1200px) {
+    .main-container {
+        padding-right: 6rem;
+
+    }
+}
+
+
+@media only screen and (min-width: 1200px) {
+    .main-content {
+        padding-left: 6rem;
+
+    }
+}
+
+@media only screen and (min-width: 1200px) {
+    .main-menu {
+        padding-left: 7rem;
+        padding-right: 7rem;
+    }
+}
+
+
+
+
+@media (prefers-color-scheme: dark) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #1a1a1a;
+  }
+
+  body {
+    background-color: #1a1a1a;
+  }
+
+  .invoice-line {
+    @apply bg-neutral-700;
   }
 
   a:hover {
@@ -106,11 +218,17 @@ button:focus-visible {
   }
 
   button {
-    background-color: #f9f9f9;
+    background-color: #6CDD82;
   }
 }
 
 .small-icon {
-    border: 1px solid #ccc;
-    padding: 0.2rem;
+    background-color: var(--primary-1);
+    color: var(--gray-1);
+    cursor: pointer;
+}
+.small-icon:hover {
+    background-color: var(--primary);
+    color: var(--gray-1);
+
 }
