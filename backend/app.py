@@ -1,16 +1,32 @@
-from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, send_file, Response
+from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, send_file
+from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
 import os
 from datetime import datetime
 import logging
 from io import BytesIO
-import io
-from pdf2image import convert_from_bytes
+
+from flask_sqlalchemy import SQLAlchemy
 
 logging.basicConfig(level=logging.DEBUG)
 
+db = SQLAlchemy()
+
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
+    'DATABASE_URL',
+    'postgresql://postgres:123Logocart%3F@localhost/invoicegen'
+)
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+db.init_app(app)
+
+# Import models before initializing Migrate
+from models import User, Client, Invoice
+
+migrate = Migrate(app, db)
+
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = os.path.abspath('uploads')
@@ -91,29 +107,6 @@ def parse_invoice_data(data):
 
     return template_data
 
-# @app.route('/preview-invoice', methods=['POST'])
-# def preview_invoice():
-#     try:
-#         data = request.get_json()
-#         app.logger.debug(f"[PREVIEW] Received data: {data}")
-#
-#         template_data = parse_invoice_data(data)
-#         html = render_template('invoice_template.html', **template_data)
-#
-#         # Render HTML to PNG
-#         png_bytes = HTML(string=html).write_png()
-#
-#         return send_file(
-#             io.BytesIO(png_bytes),
-#             mimetype='image/png',
-#             as_attachment=False,
-#             download_name='invoice_preview.png'
-#         )
-#
-#     except Exception as e:
-#         app.logger.exception("Error in preview_invoice")
-#         return jsonify({'error': str(e)}), 500
-
 @app.route('/preview-invoice', methods=['POST'])
 def preview_invoice():
     try:
@@ -139,8 +132,6 @@ def preview_invoice():
     except Exception as e:
         logging.exception("Error in preview_invoice")
         return jsonify({'error': str(e)}), 500
-
-
 
 @app.route('/generate-invoice', methods=['POST'])
 def generate_invoice():
