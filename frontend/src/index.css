@@ -173,25 +173,29 @@ button:focus-visible {
   color: #000;
 }
 
+.main-container {
+    justify-content: center;
+}
 
 @media only screen and (min-width: 1200px) {
-    .main-container {
-        padding-right: 6rem;
+    .main-container-3q {
+        padding-right: 7rem;
+
 
     }
 }
 
 
 @media only screen and (min-width: 1200px) {
-    .main-content {
-        padding-left: 6rem;
-
-    }
-}
-
-@media only screen and (min-width: 1200px) {
-    .main-menu {
+    .main-content-3 {
         padding-left: 7rem;
+
+    }
+}
+
+@media only screen and (min-width: 1200px) {
+    .main-menu-3 {
+        padding-left: 8rem;
         padding-right: 7rem;
     }
 }

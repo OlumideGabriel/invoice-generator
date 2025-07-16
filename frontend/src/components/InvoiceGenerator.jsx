@@ -138,7 +138,7 @@ const InvoiceGenerator = ({
   const { currency } = useCurrency();
 
   return (
-    <div className="flex flex-row w-full m-auto items-start gap-8 min-h-screen main-container">
+    <div className="flex flex-row w-full m-auto content-center gap-8 main-container">
       {/* Left Panel (Main Invoice Form) */}
       <div className="basis-128 max-w-5xl w-full border-2 bg-neutral-900 rounded-3xl p-8 overflow-auto">
         <div className="flex items-start justify-between mb-6">

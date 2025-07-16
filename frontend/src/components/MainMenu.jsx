@@ -6,8 +6,8 @@ const MainMenu = () => {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="top-0 z-50 w-full bg-neutral-800 main-menu shadow-md">
-      <div className="flex items-center justify-between  px-4 py-3">
+    <header className="top-0 z-50 w-full bg-neutral-800 shadow-md">
+      <div className="flex items-center justify-between main-menu px-4 py-3">
         {/* Logo and dark mode toggle */}
         <div className="flex items-center space-x-6">
           <div className="flex items-center gap-2">
