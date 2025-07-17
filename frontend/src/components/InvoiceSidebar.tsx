@@ -4,7 +4,16 @@ import { X, Eye, Send } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import CurrencySelector from './CurrencySelector';
 
-const InvoiceSidebar = ({
+interface InvoiceSidebarProps {
+  loading: boolean;
+  onSubmit: () => void;
+  onPreview: () => void;
+  previewPdfUrl?: string | null;
+  setPreviewPdfUrl: (url: string | null) => void;
+  previewInvoiceImage?: string | null;
+}
+
+const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   loading,
   onSubmit,
   onPreview,
@@ -20,17 +29,15 @@ const InvoiceSidebar = ({
         <button
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl flex items-center justify-center gap-2
-           text-black transition"
+          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl flex items-center justify-center gap-2 text-black transition"
         >
-        <Send size={20} />
+          <Send size={20} />
           Send Invoice
         </button>
         <button
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl flex items-center justify-center gap-2
-           text-black transition"
+          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl flex items-center justify-center gap-2 text-black transition"
         >
           Preview
           <Eye size={20} />
@@ -45,8 +52,7 @@ const InvoiceSidebar = ({
           return <CurrencySelector currency={currency} setCurrency={setCurrency} currencyOptions={currencyOptions} />;
         })()}
       </div>
-
-        {/* Preview PDF */}
+      {/* Preview PDF */}
       {previewPdfUrl && (
         <div className="mt-10 border border-neutral-700 rounded-md overflow-hidden bg-white">
           <div className="flex justify-between items-center p-4 bg-neutral-900">
@@ -58,26 +64,12 @@ const InvoiceSidebar = ({
               }}
               className="text-sm text-red-400 hover:underline"
             >
-              <X size={18} />
+              <X size={16} /> Close
             </button>
           </div>
-          <object
-            data={previewPdfUrl}
-            type="application/pdf"
-            className="w-full h-[90vh]"
-          >
-            <p className="text-sm text-neutral-800 p-4">
-              Your browser doesn't support PDF preview.{' '}
-              <a
-                href={previewPdfUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-indigo-500 underline"
-              >
-                Download instead
-              </a>
-            </p>
-          </object>
+          <div className="p-4">
+            <iframe src={previewPdfUrl} title="Invoice Preview" className="w-full h-72 border-none rounded-md" />
+          </div>
         </div>
       )}
     </div>

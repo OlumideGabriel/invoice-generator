@@ -1,10 +1,18 @@
 import { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 
-export default function CurrencySelector({ currency, setCurrency, currencyOptions }) {
+import { CurrencyOption } from '../context/CurrencyContext';
+
+interface CurrencySelectorProps {
+  currency: CurrencyOption;
+  setCurrency: (option: CurrencyOption) => void;
+  currencyOptions: CurrencyOption[];
+}
+
+export default function CurrencySelector({ currency, setCurrency, currencyOptions }: CurrencySelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSelect = (option) => {
+  const handleSelect = (option: CurrencyOption) => {
     setCurrency(option);
     setIsOpen(false);
   };
@@ -15,7 +23,8 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
       <div className="relative label-3">
         {/* Trigger Button */}
         <div
-          type="button"
+          role="button"
+          tabIndex={0}
           onClick={() => setIsOpen(!isOpen)}
           className="w-full py-3 px-6 pr-16"
           aria-haspopup="listbox"

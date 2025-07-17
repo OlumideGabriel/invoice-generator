@@ -1,9 +1,18 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 
-const CurrencyContext = createContext();
+export interface CurrencyOption {
+  code: string;
+  symbol: string;
+  label: string;
+}
 
+interface CurrencyContextType {
+  currency: CurrencyOption;
+  setCurrency: (currency: CurrencyOption) => void;
+  currencyOptions: CurrencyOption[];
+}
 
-const currencyOptions = [
+const currencyOptions: CurrencyOption[] = [
   { code: 'USD', symbol: '$', label: 'US Dollar ($)' },
   { code: 'EUR', symbol: '€', label: 'Euro (€)' },
   { code: 'GBP', symbol: '£', label: 'British Pound (£)' },
@@ -26,8 +35,10 @@ const currencyOptions = [
   { code: 'HKD', symbol: '$', label: 'Hong Kong Dollar ($)' },
 ];
 
-export const CurrencyProvider = ({ children }) => {
-  const [currency, setCurrency] = useState(currencyOptions[0]);
+const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
+
+export const CurrencyProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [currency, setCurrency] = useState<CurrencyOption>(currencyOptions[0]);
   return (
     <CurrencyContext.Provider value={{ currency, setCurrency, currencyOptions }}>
       {children}
@@ -35,4 +46,10 @@ export const CurrencyProvider = ({ children }) => {
   );
 };
 
-export const useCurrency = () => useContext(CurrencyContext);
+export const useCurrency = () => {
+  const context = useContext(CurrencyContext);
+  if (!context) {
+    throw new Error('useCurrency must be used within a CurrencyProvider');
+  }
+  return context;
+};

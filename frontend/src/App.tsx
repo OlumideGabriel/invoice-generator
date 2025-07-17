@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SideMenu from './components/SideMenu';
 import { CurrencyProvider } from './context/CurrencyContext';
@@ -19,11 +19,9 @@ function Settings() {
   return <div className="p-6">Settings Page</div>;
 }
 
-function App() {
+const App: React.FC = () => {
   const invoice = useInvoice();
-
-
-return (
+  return (
     <CurrencyProvider>
       <Router>
         <div className="min-h-screen w-full flex flex-col">
@@ -33,7 +31,7 @@ return (
             <main className="flex-1 overflow-y-auto p-8">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
-                <Route path="/invoices" element={<InvoiceGenerator {...invoice} />} />
+                <Route path="/invoices" element={<InvoiceGenerator />} />
                 <Route path="/clients" element={<Clients />} />
                 <Route path="/settings" element={<Settings />} />
               </Routes>
@@ -44,6 +42,6 @@ return (
       </Router>
     </CurrencyProvider>
   );
-}
+};
 
 export default App;

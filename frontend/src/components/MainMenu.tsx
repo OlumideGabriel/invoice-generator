@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Menu, Settings, LogOut, User } from 'lucide-react';
 import DarkModeToggle from './DarkModeToggle';
 
-const MainMenu = () => {
+const MainMenu: React.FC = () => {
   const [open, setOpen] = useState(false);
 
   return (
@@ -16,7 +16,6 @@ const MainMenu = () => {
           </div>
           <DarkModeToggle />
         </div>
-
         {/* User avatar with dropdown */}
         <div className="relative z-100">
           <button
@@ -25,11 +24,8 @@ const MainMenu = () => {
           >
             <User className="w-5 h-5" />
           </button>
-
           {open && (
-            <div
-              className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg overflow-hidden z-50"
-            >
+            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg overflow-hidden z-50">
               <a
                 href="#profile"
                 className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

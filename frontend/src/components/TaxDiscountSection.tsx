@@ -2,7 +2,26 @@ import React from 'react';
 import { ArrowRightLeft, X, Plus, Minus, SquareMinus } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 
-const TaxDiscountSection = ({
+interface TaxDiscountSectionProps {
+  taxPercent: number;
+  setTaxPercent: (val: number) => void;
+  discountPercent: number;
+  setDiscountPercent: (val: number) => void;
+  shippingAmount: number;
+  setShippingAmount: (val: number) => void;
+  showTax: boolean;
+  setShowTax: (val: boolean) => void;
+  showDiscount: boolean;
+  setShowDiscount: (val: boolean) => void;
+  showShipping: boolean;
+  setShowShipping: (val: boolean) => void;
+  taxType: 'percent' | 'fixed';
+  setTaxType: (val: 'percent' | 'fixed') => void;
+  discountType: 'percent' | 'fixed';
+  setDiscountType: (val: 'percent' | 'fixed') => void;
+}
+
+const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
   taxPercent,
   setTaxPercent,
   discountPercent,
@@ -18,9 +37,8 @@ const TaxDiscountSection = ({
   taxType,
   setTaxType,
   discountType,
-  setDiscountType
+  setDiscountType,
 }) => {
-  // Store previous values when closing a section
   const [prevTaxPercent, setPrevTaxPercent] = React.useState(taxPercent);
   const [prevDiscountPercent, setPrevDiscountPercent] = React.useState(discountPercent);
   const [prevShippingAmount, setPrevShippingAmount] = React.useState(shippingAmount);
@@ -59,42 +77,42 @@ const TaxDiscountSection = ({
   const toggleTaxType = () => {
     const newType = taxType === 'percent' ? 'fixed' : 'percent';
     setTaxType(newType);
-    // Reset to 0 when switching types to avoid confusion
     setTaxPercent(0);
   };
 
   const toggleDiscountType = () => {
     const newType = discountType === 'percent' ? 'fixed' : 'percent';
     setDiscountType(newType);
-    // Reset to 0 when switching types to avoid confusion
     setDiscountPercent(0);
   };
 
-  const handleTaxChange = (e) => {
+  const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;
     setTaxPercent(taxType === 'percent' ? Math.min(value, 100) : value);
   };
 
-  const handleDiscountChange = (e) => {
+  const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value) || 0;
     setDiscountPercent(discountType === 'percent' ? Math.min(value, 100) : value);
   };
 
-  const handleShippingChange = (e) => {
+  const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setShippingAmount(parseFloat(e.target.value) || 0);
   };
 
+
+  // Store previous values when closing a section
+  // (preserve advanced logic from user's working version)
   return (
     <div className="mb-6 ">
       {/* Toggle Buttons */}
       <div className="flex justify-end gap-3 mb-4">
         <a
-          type="button"
+          role="button"
+          tabIndex={0}
           onClick={handleToggleTax}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-            showTax
-              ? 'label-2'
-              : 'label-1'
+            showTax ? 'label-2' : 'label-1'
           }`}
         >
           <div className={` text-lg transition-transform duration-200 ease-in-out ${showTax ? 'rotate-45' : 'rotate-0'}`}>
@@ -103,12 +121,11 @@ const TaxDiscountSection = ({
         </a>
 
         <a
-          type="button"
+          role="button"
+          tabIndex={0}
           onClick={handleToggleDiscount}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-            showDiscount
-              ? 'label-2'
-              : 'label-1'
+            showDiscount ? 'label-2' : 'label-1'
           }`}
         >
 
@@ -118,12 +135,11 @@ const TaxDiscountSection = ({
         </a>
 
         <a
-          type="button"
+          role="button"
+          tabIndex={0}
           onClick={handleToggleShipping}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-            showShipping
-              ? 'label-2'
-              : 'label-1'
+            showShipping ? 'label-2' : 'label-1'
           }`}
         >
           <div className={` text-lg transition-transform duration-200 ease-in-out ${showShipping ? 'rotate-45' : 'rotate-0'}`}>
@@ -156,7 +172,8 @@ const TaxDiscountSection = ({
                 <span className="px-4 py-3 text-gray-400 font-medium text-lg">%</span>
               )}
               <span
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={toggleTaxType}
                 className="small-icon rounded-r-[5px] p-3 border-l border-gray-300 transition-colors
                 duration-200 cursor-pointer flex items-center justify-center"
@@ -166,14 +183,15 @@ const TaxDiscountSection = ({
                 </svg>
               </span>
             </div>
-            <a
-              type="button"
+            <button
+              role="button"
+              tabIndex={0}
               onClick={handleToggleTax}
-              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1.5 py-1.5 text-xs font-medium
+              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
                transition-colors duration-200`}
             >
               <X size={18} />
-            </a>
+            </button>
           </div>
         )}
 
@@ -192,14 +210,15 @@ const TaxDiscountSection = ({
                 max={discountType === 'percent' ? '100' : undefined}
                 step={discountType === 'percent' ? '1' : '0.01'}
                 onChange={handleDiscountChange}
-                className="px-4 py-3 flex-1 text-center text-lg border-none outline-none bg-transparent focus:ring-2 focus:ring-indigo-500"
+                className="px-4 py-3 flex-1 text-center text-lg border-none outline-none bg-transparent"
                 placeholder="Value"
               />
               {discountType === 'percent' && (
                 <span className="px-4 py-3 text-gray-400 font-medium text-lg">%</span>
               )}
               <span
-                type="button"
+                role="button"
+                tabIndex={0}
                 onClick={toggleDiscountType}
                 className="small-icon rounded-r-[5px] p-3 border-l border-gray-300 transition-colors
                 duration-200 cursor-pointer flex items-center justify-center"
@@ -210,9 +229,10 @@ const TaxDiscountSection = ({
               </span>
             </div>
             <a
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={handleToggleDiscount}
-              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1.5 py-1.5 text-xs font-medium
+              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
                transition-colors duration-200`}
             >
               <X size={18} />
@@ -232,7 +252,7 @@ const TaxDiscountSection = ({
                 min="0"
                 step="0.01"
                 onChange={handleShippingChange}
-                className="px-4 py-3 flex-1 text-lg text-center border-none outline-none bg-transparent focus:ring-2 focus:ring-indigo-500"
+                className="px-4 py-3 flex-1 text-center text-lg border-none outline-none bg-transparent"
                 placeholder="Value"
               />
               <span
@@ -247,9 +267,10 @@ const TaxDiscountSection = ({
             </div>
 
             <a
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={handleToggleShipping}
-              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1.5 py-1.5 text-xs font-medium
+              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
                transition-colors duration-200`}
             >
               <X size={18} />

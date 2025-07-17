@@ -1,8 +1,8 @@
 import React from 'react';
 
-export default function Footer() {
+const Footer: React.FC = () => {
   return (
-    <footer className="w-full bg-neutral-900 text-gray-300 py-6 px-4 mt-auto flex flex-col md:flex-row items-center justify-between border-t border-neutral-800">
+    <footer className="w-full bg-neutral-900 text-gray-300 py-6 px-4 flex flex-col md:flex-row items-center justify-between border-t border-neutral-800">
       <div className="flex items-center gap-2">
         <span className="font-semibold text-green-400">InvoiceGen</span>
         <span className="text-xs">&copy; {new Date().getFullYear()} All rights reserved.</span>
@@ -13,4 +13,6 @@ export default function Footer() {
       </div>
     </footer>
   );
-}
+};
+
+export default Footer;
