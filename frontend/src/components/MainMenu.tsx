@@ -25,7 +25,7 @@ const getInitials = (u: any) => {
   if (!u) return '';
   const first = u.first_name ? u.first_name[0].toUpperCase() : '';
   const last = u.last_name ? u.last_name[0].toUpperCase() : '';
-  if (first || last) return `${first}${last}`;
+  if (first || last) return `${first}`;
   if (u.email) return u.email[0].toUpperCase();
   return '';
 };
@@ -46,27 +46,47 @@ const getInitials = (u: any) => {
           <div className="relative z-100" ref={menuRef}>
             <a
               onClick={() => setOpen(!open)}
-              className="flex items-center justify-center w-5 h-5 px-5 py-5 rounded-full bg-black/80 hover:bg-black/75
-              text-white hover:text-white cursor-pointer transition-colors duration-150
+              className="flex items-center justify-center w-5 h-5 px-5 py-5 rounded-full bg-blue-300 hover:bg-blue-200
+              text-gray-900 cursor-pointer transition-colors duration-150
               focus:outline-none text-xl font-bold"
             >
               {getInitials(user) || <User className="w-5 h-5 rounded-full" />}
 
             </a>
             {open && (
-              <div className="absolute right-0 mt-2 w-52 bg-white rounded-md shadow-xl overflow-hidden z-50">
-                <span className="block px-5 py-4 text-md text-gray-900 font-medium border-b ">{user.first_name ? `${user.first_name} ${user.last_name}` : user.email}</span>
+              <div className="absolute right-0 mt-2 bg-white rounded-md overflow-hidden z-50
+                shadow-lg shadow-gray-400/40 ring-2 ring-gray-300 ring-opacity-40
+                [box-shadow:0_0_16px_4px_rgba(156,163,175,0.18)]">
+              <a
+                href="#profile"
+                className="flex mr-2 ml-2 mt-2 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+              >
+                <span className="flex flex-row items-center text-lg block px-4 py-3 text-md text-gray-900 font-medium  ">
+                    <span className="flex text-xl font-bold mr-2 w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200
+                     rounded-full justify-center items-center">
+                      {getInitials(user) || <User className="w-6 h-6" />}
+                    </span>
+
+                <div className="flex flex-col min-w-0">
+                  {user.first_name ? `${user.first_name} ${user.last_name}` : user.email}
+                    <span className="text-sm text-gray-500">{user.email}</span>
+                </div>
+                </span>
+                </a>
+                <hr className="border-gray-200 mt-2 mr-2 ml-2" />
 
                 <a
                   href="#profile"
-                  className="flex items-center px-5 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center mr-2 ml-2 mt-2 rounded-md px-3 py-3 text-md text-gray-700
+                  hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900"
                 >
                   <User className="w-5 h-5 mr-2" />
                   Profile
                 </a>
                 <a
                   href="#settings"
-                  className="flex items-center px-5 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                  className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 text-md text-gray-700
+                  hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900"
                 >
                   <Settings className="w-5 h-5 mr-2" />
                   Settings
@@ -74,7 +94,8 @@ const getInitials = (u: any) => {
                 <a
                   type="button"
                   onClick={() => { logout(); setOpen(false); navigate('/auth?mode=login'); }}
-                  className="flex items-center w-full px-5 py-2 mb-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                  className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md text-gray-700
+                  hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900 cursor-pointer"
                 >
                   <LogOut className="w-5 h-5 mr-2" />
                   Sign Out
