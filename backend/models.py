@@ -1,11 +1,14 @@
 import uuid
 from datetime import datetime
-from app import db  # Import db from your app module
+from db import db  # <-- import db from db.py
+
 
 class User(db.Model):
     __tablename__ = 'users'
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     email = db.Column(db.String(255), unique=True, nullable=False)
+    first_name = db.Column(db.String(255), nullable=True)
+    last_name = db.Column(db.String(255), nullable=True)
     password_hash = db.Column(db.String(255))
     google_id = db.Column(db.String(255), unique=True)
     is_guest = db.Column(db.Boolean, default=False)

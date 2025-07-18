@@ -10,7 +10,7 @@ interface InvoiceSidebarProps {
   onPreview: () => void;
   previewPdfUrl?: string | null;
   setPreviewPdfUrl: (url: string | null) => void;
-  previewInvoiceImage?: string | null;
+  previewInvoiceImage?: () => Promise<string | null>;
 }
 
 const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
@@ -22,22 +22,26 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   previewInvoiceImage,
 }) => {
   return (
-    <div className="w-full max-w-48 hidden md:flex flex-col sticky top-0 z-50 self-start ">
+    <div className="w-full max-w-48 hidden md:flex flex-col sticky top-0 z-10 self-start ">
       {/* Action Buttons */}
       <div className="flex flex-col gap-4 mt-2 mb-8">
         <InvoiceButton loading={loading} onClick={onSubmit} />
         <button
+          type="button"
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl flex items-center justify-center gap-2 text-black transition"
+          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
+          flex items-center justify-center gap-2 text-black transition"
         >
           <Send size={20} />
           Send Invoice
         </button>
         <button
+          type="button"
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl flex items-center justify-center gap-2 text-black transition"
+          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
+          flex items-center justify-center gap-2 text-black transition"
         >
           Preview
           <Eye size={20} />

@@ -23,7 +23,7 @@ body, #root {
   color: var(--foreground) !important;
 }
 
-.card, .rounded-2xl, .border, .bg-white, .bg-neutral-50, .bg-neutral-100 {
+.card, .rounded-2xl, .border, .bg-neutral-50, .bg-neutral-100 {
   background: var(--card-bg) !important;
   color: var(--foreground) !important;
   border-radius: var(--radius) !important;
@@ -39,12 +39,20 @@ body, #root {
   color: var(--muted) !important;
 }
 
+
 textarea{
   background: #fff !important;
   color: var(--foreground) !important;
-  border: 2px solid var(--border) !important;
+  border: 2px solid var(--border);
   border-radius: var(--radius) !important;
-  box-shadow: none !important;
+  box-shadow: none;
+}
+
+textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #10b981 !important; /* emerald-500 */
+  border-color: transparent !important;
+  transition: all 0.2s;
 }
 
 input {
@@ -93,6 +101,7 @@ button.primary:hover, .btn-primary:hover {
 .border-2 {
   border-color: #10162f;
   }
+
 .border-3 {
   border-color: var(--primary-hover) !important;
 }

@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { ChevronDown } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import PartyField from './PartyField';
 import InvoiceLine from './InvoiceLine';
@@ -7,74 +8,247 @@ import TaxDiscountSection from './TaxDiscountSection';
 import InvoiceSidebar from './InvoiceSidebar';
 import { Plus } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
+
+// Generate unique ID for items (same as in useInvoice hook)
+const generateId = () => {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+};
 
 // Add appropriate prop types as needed for your hooks and props
 // For now, this assumes all state/handlers are managed here; you may need to adjust if using a container/hook
 const InvoiceGenerator: React.FC = () => {
-  // Example state hooks (replace with your actual state management or hooks)
-  const [items, setItems] = useState<any[]>([
-  { name: '', description: '', quantity: 1, unit_cost: 0, showDescription: false }
-]);
-  const [from, setFrom] = useState('');
-  const [to, setTo] = useState('');
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [logoStatus, setLogoStatus] = useState('');
-  const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [issuedDate, setIssuedDate] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [paymentDetails, setPaymentDetails] = useState('');
-  const [terms, setTerms] = useState('');
-  const [taxPercent, setTaxPercent] = useState(0);
-  const [discountPercent, setDiscountPercent] = useState(0);
-  const [showTax, setShowTax] = useState(true);
-  const [showDiscount, setShowDiscount] = useState(false);
-  const [showShipping, setShowShipping] = useState(true);
-  const [shippingAmount, setShippingAmount] = useState(0);
-  const [taxType, setTaxType] = useState<'percent' | 'fixed'>('percent');
-  const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
-  const [loading, setLoading] = useState(false);
-  const [previewInvoiceImage, setPreviewInvoiceImage] = useState<string | null>(null);
+  // Use the invoice hook for all invoice-related state and functionality
+  const {
+    from, setFrom,
+    to, setTo,
+    invoiceNumber, setInvoiceNumber,
+    issuedDate, setIssuedDate,
+    dueDate, setDueDate,
+    items, setItems,
+    handleChange,
+    removeItem,
+    toggleDescription,
+    addItem,
+    taxPercent, setTaxPercent,
+    discountPercent, setDiscountPercent,
+    paymentDetails, setPaymentDetails,
+    terms, setTerms,
+    logoFile, setLogoFile,
+    logoUrl, setLogoUrl,
+    logoStatus, setLogoStatus,
+    taxType, setTaxType,
+    discountType, setDiscountType,
+    showTax, setShowTax,
+    showDiscount, setShowDiscount,
+    showShipping, setShowShipping,
+    shippingAmount, setShippingAmount,
+    handleLogoChange,
+    getSubtotal,
+    getTaxAmount,
+    getDiscountAmount,
+    getShippingAmount,
+    getTotal,
+    handleSubmit, // This is the PDF generation function
+    previewInvoice,
+    previewInvoiceImage,
+    loading, setLoading,
+    error, setError,
+  } = useInvoice();
+
+  // --- NEW STATE FOR USER/CLIENT/INVOICES ---
+  const [userId, setUserId] = useState<string>("demo-user-uuid"); // TODO: Replace with auth/session
+  const [clientId, setClientId] = useState<string | null>(null); // Optional
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
 
-  // Calculation helpers
-  const getSubtotal = () => items.reduce((sum, item) => sum + (item.unit_cost * item.quantity), 0);
-  const getTaxAmount = () => showTax ? (taxType === 'percent' ? getSubtotal() * (taxPercent / 100) : taxPercent) : 0;
-  const getDiscountAmount = () => showDiscount ? (discountType === 'percent' ? getSubtotal() * (discountPercent / 100) : discountPercent) : 0;
-  const getShippingAmount = () => showShipping ? shippingAmount : 0;
-  const getTotal = () => getSubtotal() + getTaxAmount() - getDiscountAmount() + getShippingAmount();
-
-  const handleLogoChange = (file: File | null, url: string | null) => {
-    setLogoFile(file);
-    setLogoUrl(url);
-    setLogoStatus(file ? 'Logo uploaded' : '');
-  };
-
-  const handleChange = (index: number, field: string, value: any) => {
-    setItems(items => items.map((item, i) => {
-      if (i !== index) return item;
-      let parsed = value;
-      if (field === 'quantity' || field === 'unit_cost') {
-        parsed = Math.max(0, parseFloat(value) || 0);
+  // --- FETCH INVOICES FROM BACKEND ---
+  const fetchInvoices = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/invoices?user_id=" + userId);
+      const data = await res.json();
+      if (Array.isArray(data.invoices)) {
+        setInvoices(data.invoices);
       }
-      return { ...item, [field]: parsed };
+    } catch (e) { /* ignore for now */ }
+  };
+  useEffect(() => { fetchInvoices(); }, [userId]);
+
+  // --- LOAD SELECTED INVOICE INTO FORM ---
+  const loadInvoice = (invoice: any) => {
+    setSelectedInvoiceId(invoice.id);
+    const d = invoice.data || {};
+    setFrom(d.from || "");
+    setTo(d.to || "");
+    // Ensure loaded items have IDs, add them if missing
+    const itemsWithIds = (d.items || []).map((item: any) => ({
+      ...item,
+      id: item.id || generateId() // Add ID if missing
     }));
+    setItems(itemsWithIds.length > 0 ? itemsWithIds : [{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
+    setInvoiceNumber(d.invoice_number || "");
+    setIssuedDate(d.issued_date || "");
+    setDueDate(d.due_date || "");
+    setPaymentDetails(d.payment_details || "");
+    setTerms(d.terms || "");
+    setTaxPercent(d.tax_percent || 0);
+    setDiscountPercent(d.discount_percent || 0);
+    setShippingAmount(d.shipping_amount || 0);
+    setTaxType(d.tax_type || 'percent');
+    setDiscountType(d.discount_type || 'percent');
+    setShowTax(d.show_tax ?? true);
+    setShowDiscount(d.show_discount ?? false);
+    setShowShipping(d.show_shipping ?? true);
+    setLogoUrl(d.logo_url || null);
+    // Optionally: setLogoFile(null);
   };
 
-  const removeItem = (index: number) => setItems(items => items.filter((_, i) => i !== index));
-  const addItem = () => setItems(items => [...items, { description: '', quantity: 1, unit_cost: 0 }]);
-  const toggleDescription = (index: number) => {
-    setItems(items => items.map((item, i) => i === index ? { ...item, showDescription: !item.showDescription } : item));
+  // --- RESET FORM FOR NEW INVOICE ---
+  const resetForm = () => {
+    setSelectedInvoiceId(null);
+    setFrom("");
+    setTo("");
+    setItems([{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
+    setInvoiceNumber("");
+    setIssuedDate("");
+    setDueDate("");
+    setPaymentDetails("");
+    setTerms("");
+    setTaxPercent(0);
+    setDiscountPercent(0);
+    setShippingAmount(0);
+    setTaxType('percent');
+    setDiscountType('percent');
+    setShowTax(true);
+    setShowDiscount(false);
+    setShowShipping(true);
+    setLogoUrl(null);
+    // Optionally: setLogoFile(null);
   };
 
-  const handleSubmit = () => {
+  // Handler for drag end
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const reordered = Array.from(items);
+    const [removed] = reordered.splice(result.source.index, 1);
+    reordered.splice(result.destination.index, 0, removed);
+    setItems(reordered);
+  };
+
+  // Type-safe wrapper for handleChange to work with DraggableInvoiceItem
+  const handleItemChange = (index: number, field: string, value: string | number) => {
+    // Type assertion to handle the field parameter type difference
+    handleChange(index, field as keyof InvoiceItem, value);
+  };
+
+  // All invoice-related state is now managed by useInvoice hook
+
+  // All helper functions are now provided by useInvoice hook
+
+  const saveInvoiceToDatabase = async () => {
     setLoading(true);
-    // TODO: Implement submit logic
-    setTimeout(() => setLoading(false), 1000);
+    setError(null);
+    try {
+      // Compose invoice data
+      const invoicePayload = {
+        user_id: userId,
+        client_id: clientId,
+        data: {
+          from,
+          to,
+          items,
+          invoice_number: invoiceNumber,
+          issued_date: issuedDate,
+          due_date: dueDate,
+          payment_details: paymentDetails,
+          terms,
+          tax_percent: taxPercent,
+          discount_percent: discountPercent,
+          shipping_amount: shippingAmount,
+          tax_type: taxType,
+          discount_type: discountType,
+          show_tax: showTax,
+          show_discount: showDiscount,
+          show_shipping: showShipping,
+          logo_url: logoUrl
+        },
+        issued_date: issuedDate,
+        due_date: dueDate,
+        status: "draft"
+      };
+
+      // Only save if user_id and required fields are present
+      const hasRequiredFields =
+        userId &&
+        invoiceNumber &&
+        Array.isArray(items) && items.length > 0 &&
+        from &&
+        to;
+
+      if (hasRequiredFields) {
+        const response = await fetch("http://localhost:5000/api/invoices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(invoicePayload)
+        });
+        const result = await response.json();
+        if (result.success) {
+          // Don't show alert here, we'll show it after PDF generation
+          fetchInvoices(); // Refresh invoice list
+          return true;
+        } else {
+          setError(result.error || "Failed to save invoice.");
+          return false;
+        }
+      }
+      return false;
+    } catch (err: any) {
+      setError(err.message || "An error occurred while saving the invoice.");
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleInvoiceSubmit = async () => {
+    // First save to database
+    const saved = await saveInvoiceToDatabase();
+    
+    // Then generate and download PDF
+    await handleSubmit();
+    
+    // Show success message if saved successfully
+    if (saved) {
+      alert("Invoice saved and downloaded successfully!");
+    } else {
+      alert("Invoice downloaded (not saved to database). Please check required fields and try again to save.");
+    }
+  };
+
+  const handlePreview = async () => {
+    try {
+      const previewUrl = await previewInvoiceImage();
+      if (previewUrl) {
+        setPreviewPdfUrl(previewUrl);
+      }
+    } catch (err) {
+      console.error('Error generating preview:', err);
+    }
   };
 
   const { currency } = useCurrency();
+
+  const handleSelectInvoice = (invoice: any) => {
+    if (invoice.id === 'new') {
+      resetForm();
+    } else {
+      loadInvoice(invoice);
+    }
+    setDropdownOpen(false);
+  };
 
   return (
     <div className="flex flex-row w-full m-auto content-center gap-8 main-container">
@@ -131,17 +305,32 @@ const InvoiceGenerator: React.FC = () => {
           </div>
         </header>
         <h2 className="text-xl font-semibold mb-4 text-gray-900">Items</h2>
-        {items?.map((item, index) => (
-          <InvoiceLine
-            key={index}
-            item={item}
-            index={index}
-            onChange={handleChange}
-            onRemove={() => removeItem(index)}
-            onToggleDescription={() => toggleDescription(index)}
-            itemsLength={items.length}
-          />
-        ))}
+        <DragDropContext onDragEnd={onDragEnd}>
+          <Droppable droppableId="invoice-lines-droppable">
+            {(provided: any) => (
+              <div ref={provided.innerRef} {...provided.droppableProps}>
+                {items?.map((item, index) => (
+                  <Draggable key={item.id} draggableId={item.id} index={index}>
+                    {(provided: any, snapshot: any) => (
+                      <InvoiceLine
+                        provided={provided}
+                        snapshot={snapshot}
+                        item={item}
+                        index={index}
+                        draggableId={item.id}
+                        onChange={handleItemChange}
+                        onRemove={() => removeItem(index)}
+                        onToggleDescription={() => toggleDescription(index)}
+                        itemsLength={items.length}
+                      />
+                    )}
+                  </Draggable>
+                ))}
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
+        </DragDropContext>
         <button
           onClick={addItem}
           className="mb-10 mt-2 px-4 py-2 bg-green-600 whitespace-nowrap text-white font-semibold rounded-md flex items-center gap-2"
@@ -182,8 +371,6 @@ const InvoiceGenerator: React.FC = () => {
               setDiscountType={setDiscountType as (val: 'percent' | 'fixed') => void}
             />
           </div>
-
-
         </div>
         {/* Total Display at bottom right - styled to match screenshot */}
         <div className="flex justify-end relative">
@@ -193,14 +380,12 @@ const InvoiceGenerator: React.FC = () => {
             <span className="text-2xl font-medium text-white">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
-
       </div>
-
       {/* Right Sidebar */}
       <InvoiceSidebar
         loading={loading}
-        onSubmit={handleSubmit}
-        onPreview={() => setPreviewInvoiceImage('')}
+        onSubmit={handleInvoiceSubmit}
+        onPreview={handlePreview}
         previewPdfUrl={previewPdfUrl}
         setPreviewPdfUrl={setPreviewPdfUrl}
         previewInvoiceImage={previewInvoiceImage}

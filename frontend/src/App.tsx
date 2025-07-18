@@ -2,10 +2,13 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SideMenu from './components/SideMenu';
 import { CurrencyProvider } from './context/CurrencyContext';
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
 import InvoiceGenerator from './components/InvoiceGenerator';
 import MainMenu from './components/MainMenu';
 import Footer from './components/Footer';
 import useInvoice from './hooks/useInvoice';
+import AuthPage from './pages/AuthPage';
 
 function Dashboard() {
   return <div className="p-6">Dashboard Page</div>;
@@ -19,28 +22,57 @@ function Settings() {
   return <div className="p-6">Settings Page</div>;
 }
 
+import { useLocation } from 'react-router-dom';
+
 const App: React.FC = () => {
   const invoice = useInvoice();
   return (
     <CurrencyProvider>
-      <Router>
-        <div className="min-h-screen w-full flex flex-col">
-          <MainMenu />
-          <div className="flex flex-row flex-1 main-content min-h-0">
-            <SideMenu />
-            <main className="flex-1 overflow-y-auto p-8">
-              <Routes>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/invoices" element={<InvoiceGenerator />} />
-                <Route path="/clients" element={<Clients />} />
-                <Route path="/settings" element={<Settings />} />
-              </Routes>
-            </main>
-          </div>
-          <Footer />
-        </div>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
     </CurrencyProvider>
+  );
+};
+
+import { useAuth } from './context/AuthContext';
+import { Navigate } from 'react-router-dom';
+
+const AppRoutes: React.FC = () => {
+  const location = useLocation();
+  const isAuthPage = location.pathname === '/auth';
+  const { user, loading } = useAuth();
+
+  if (loading) return null;
+
+  if (isAuthPage) {
+    // If user is logged in, redirect away from /auth
+    if (user) return <Navigate to="/" replace />;
+    return (
+      <Routes>
+        <Route path="/auth" element={<AuthPage />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <div className="min-h-screen w-full flex flex-col">
+      <MainMenu />
+      <div className="flex flex-row flex-1 main-content min-h-0">
+        <SideMenu />
+        <main className="flex-1 overflow-y-auto p-8">
+          <Routes>
+            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/invoices" element={<InvoiceGenerator />} />
+            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          </Routes>
+        </main>
+      </div>
+      <Footer />
+    </div>
   );
 };
 

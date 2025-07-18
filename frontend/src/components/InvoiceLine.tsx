@@ -1,8 +1,24 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { ChevronDown, ChevronUp, X, GripVertical } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 
-interface InvoiceLineProps {
+// Drag styles for react-beautiful-dnd
+const dragStyles = {
+  base: {
+    transition: 'box-shadow 0.2s cubic-bezier(.08,.52,.52,1)',
+    boxShadow: 'none',
+  },
+  dragging: {
+    boxShadow: '0 8px 24px rgba(0,0,0,0.13)',
+    zIndex: 2,
+  },
+  static: {
+    boxShadow: 'none',
+    zIndex: 1,
+  },
+};
+
+export interface InvoiceLineProps {
   item: {
     name: string;
     description?: string;
@@ -12,43 +28,74 @@ interface InvoiceLineProps {
     [key: string]: any;
   };
   index: number;
+  draggableId?: string;
+  provided?: any;
+  snapshot?: any;
+
   onChange: (index: number, field: string, value: string | number) => void;
   onRemove: (index: number) => void;
   onToggleDescription: (index: number) => void;
   itemsLength: number;
 }
 
-const InvoiceLine: React.FC<InvoiceLineProps> = ({ item, index, onChange, onRemove, onToggleDescription, itemsLength }) => {
+
+const InvoiceLine: React.FC<InvoiceLineProps> = ({ item, index, onChange, onRemove, onToggleDescription, itemsLength, provided, snapshot }) => {
   const { currency } = useCurrency();
 
   return (
-    <div className="flex group rounded-xl transition-all duration-300 items-start">
+    <div
+      ref={provided?.innerRef}
+      {...provided?.draggableProps}
+      style={{
+        ...provided?.draggableProps?.style,
+        marginBottom: '5px',
+      }}
+      className={`flex group rounded-xl transition-all duration-200 items-start border-none ${
+        snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-white'
+      }`}
+    >
+      {/* Drag handle icon */}
+      <div 
+        className="flex items-center justify-center self-center rounded-xs cursor-grab
+        active:cursor-grabbing border-gray-200"
+        {...provided?.dragHandleProps}
+        style={{ touchAction: 'none' }}
+      >
+        <GripVertical 
+          size={25}
+          className={`transition-colors ${
+            snapshot?.isDragging ? 'text-emerald-600' : 'text-neutral-400 hover:text-emerald-500'
+          }`} 
+        />
+      </div>
+      
       {/* Main content area */}
-      <div className="p-2 flex w-full bg-gray-50 hover:bg-gray-200 group flex-row gap-2 relative rounded-xl">
-        <div className="flex w-full flex-wrap md:flex-nowrap gap-4 self-start">
+      <div className="flex-1 p-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-r-xl">
+        <div className="flex w-full flex-wrap md:flex-nowrap gap-4">
           {/* Item name and description section */}
-          <div className="relative flex-1 max-w-lg">
+          <div className="relative flex-1">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Enter item name"
                 value={item.name}
                 onChange={(e) => onChange(index, 'name', e.target.value)}
-                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-md font-medium"
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
+                text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500
+                focus:border-transparent transition-all duration-200 text-md font-medium"
               />
               {/* Toggle description button */}
-              <a
-                role="button"
-                tabIndex={0}
+              <button
+                type="button"
                 onClick={() => onToggleDescription(index)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-80 transition-all duration-200 bg-green-50 hover:text-green-800 hover:bg-green-100 hover:border-neutral-300 text-green-600 rounded-full p-0.5"
-                aria-label={item.showDescription ? 'Hide description' : 'Show description'}
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition-all duration-200 bg-green-50 hover:text-green-800 hover:bg-green-100 text-green-600 rounded-full p-1"
+                aria-label={item.showDesc ? 'Hide description' : 'Show description'}
               >
-                {item.showDescription ? <ChevronUp size={25} /> : <ChevronDown size={25} />}
-              </a>
+                {item.showDesc ? <ChevronUp size={25} /> : <ChevronDown size={25} />}
+              </button>
             </div>
             {/* Description textarea */}
-            {item.showDescription && (
+            {item.showDesc && (
               <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
                 <textarea
                   placeholder="Add item description or notes..."
@@ -100,7 +147,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({ item, index, onChange, onRemo
                   {(item.quantity * item.unit_cost).toFixed(2)}
                 </span>
               </div>
-
             </div>
           </div>
         </div>
