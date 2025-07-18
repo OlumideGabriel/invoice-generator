@@ -3,10 +3,13 @@ from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 import logging
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
+import psycopg2
+from psycopg2.extras import RealDictCursor
+
 
 from db import db
 
@@ -269,6 +272,226 @@ def signin():
     if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
     return jsonify({'success': True, 'user': {'id': str(user.id), 'email': user.email, 'first_name': user.first_name, 'last_name': user.last_name}})
+
+
+@app.route('/api/dashboard', methods=['GET'])
+def get_dashboard_data():
+    try:
+        # Connect to your PostgreSQL database
+        conn = psycopg2.connect(
+            host=os.getenv('DB_HOST', 'localhost'),
+            database=os.getenv('DB_NAME', 'invoice_db'),
+            user=os.getenv('DB_USER', 'postgres'),
+            password=os.getenv('DB_PASSWORD', ''),
+            port=os.getenv('DB_PORT', '5432')
+        )
+
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        # Get dashboard statistics
+        stats_query = """
+        SELECT 
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount END), 0) as total_revenue,
+            COALESCE(SUM(CASE WHEN status IN ('sent', 'overdue') THEN amount END), 0) as pending_amount,
+            COUNT(*) as total_invoices,
+            COUNT(DISTINCT client_email) as total_clients,
+            COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_invoices,
+            COUNT(CASE WHEN status = 'overdue' THEN 1 END) as overdue_invoices
+        FROM invoices;
+        """
+
+        cursor.execute(stats_query)
+        stats_result = cursor.fetchone()
+
+        # Calculate monthly growth (comparing current month to previous month)
+        monthly_growth_query = """
+        WITH current_month AS (
+            SELECT COALESCE(SUM(amount), 0) as current_revenue
+            FROM invoices 
+            WHERE status = 'paid' 
+            AND EXTRACT(MONTH FROM created_date) = EXTRACT(MONTH FROM CURRENT_DATE)
+            AND EXTRACT(YEAR FROM created_date) = EXTRACT(YEAR FROM CURRENT_DATE)
+        ),
+        previous_month AS (
+            SELECT COALESCE(SUM(amount), 0) as previous_revenue
+            FROM invoices 
+            WHERE status = 'paid'
+            AND EXTRACT(MONTH FROM created_date) = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month')
+            AND EXTRACT(YEAR FROM created_date) = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month')
+        )
+        SELECT 
+            CASE 
+                WHEN p.previous_revenue > 0 THEN 
+                    ROUND(((c.current_revenue - p.previous_revenue) / p.previous_revenue * 100)::numeric, 1)
+                ELSE 0 
+            END as growth_percentage
+        FROM current_month c, previous_month p;
+        """
+
+        cursor.execute(monthly_growth_query)
+        growth_result = cursor.fetchone()
+        monthly_growth = float(growth_result['growth_percentage']) if growth_result else 0
+
+        # Get recent invoices (last 10)
+        recent_invoices_query = """
+        SELECT 
+            id,
+            invoice_number,
+            client_name,
+            client_email,
+            amount,
+            status,
+            created_date,
+            due_date,
+            description
+        FROM invoices
+        ORDER BY created_date DESC
+        LIMIT 10;
+        """
+
+        cursor.execute(recent_invoices_query)
+        recent_invoices = cursor.fetchall()
+
+        # Convert dates to ISO format for JSON serialization
+        for invoice in recent_invoices:
+            if invoice['created_date']:
+                invoice['created_date'] = invoice['created_date'].isoformat()
+            if invoice['due_date']:
+                invoice['due_date'] = invoice['due_date'].isoformat()
+
+        # Prepare response data
+        dashboard_data = {
+            'stats': {
+                'total_revenue': float(stats_result['total_revenue']),
+                'pending_amount': float(stats_result['pending_amount']),
+                'total_invoices': int(stats_result['total_invoices']),
+                'total_clients': int(stats_result['total_clients']),
+                'paid_invoices': int(stats_result['paid_invoices']),
+                'overdue_invoices': int(stats_result['overdue_invoices']),
+                'monthly_growth': monthly_growth
+            },
+            'recent_invoices': [dict(invoice) for invoice in recent_invoices]
+        }
+
+        cursor.close()
+        conn.close()
+
+        return jsonify(dashboard_data)
+
+    except Exception as e:
+        print(f"Error fetching dashboard data: {str(e)}")
+        return jsonify({'error': 'Failed to fetch dashboard data'}), 500
+
+
+# Additional helper routes you might need
+
+@app.route('/api/invoices/<invoice_id>', methods=['GET'])
+def get_invoice(invoice_id):
+    """Get a specific invoice by ID"""
+    try:
+        conn = psycopg2.connect(
+            host=os.getenv('DB_HOST', 'localhost'),
+            database=os.getenv('DB_NAME', 'invoice_db'),
+            user=os.getenv('DB_USER', 'postgres'),
+            password=os.getenv('DB_PASSWORD', ''),
+            port=os.getenv('DB_PORT', '5432')
+        )
+
+        cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+        query = """
+        SELECT * FROM invoices WHERE id = %s;
+        """
+
+        cursor.execute(query, (invoice_id,))
+        invoice = cursor.fetchone()
+
+        if not invoice:
+            return jsonify({'error': 'Invoice not found'}), 404
+
+        # Convert dates to ISO format
+        if invoice['created_date']:
+            invoice['created_date'] = invoice['created_date'].isoformat()
+        if invoice['due_date']:
+            invoice['due_date'] = invoice['due_date'].isoformat()
+
+        cursor.close()
+        conn.close()
+
+        return jsonify(dict(invoice))
+
+    except Exception as e:
+        print(f"Error fetching invoice: {str(e)}")
+        return jsonify({'error': 'Failed to fetch invoice'}), 500
+
+
+@app.route('/api/invoices/<invoice_id>/status', methods=['PUT'])
+def update_invoice_status(invoice_id):
+    """Update invoice status"""
+    try:
+        data = request.get_json()
+        new_status = data.get('status')
+
+        if new_status not in ['draft', 'sent', 'paid', 'overdue']:
+            return jsonify({'error': 'Invalid status'}), 400
+
+        conn = psycopg2.connect(
+            host=os.getenv('DB_HOST', 'localhost'),
+            database=os.getenv('DB_NAME', 'invoice_db'),
+            user=os.getenv('DB_USER', 'postgres'),
+            password=os.getenv('DB_PASSWORD', ''),
+            port=os.getenv('DB_PORT', '5432')
+        )
+
+        cursor = conn.cursor()
+
+        query = """
+        UPDATE invoices 
+        SET status = %s, updated_date = CURRENT_TIMESTAMP
+        WHERE id = %s
+        RETURNING id;
+        """
+
+        cursor.execute(query, (new_status, invoice_id))
+        updated_invoice = cursor.fetchone()
+
+        if not updated_invoice:
+            return jsonify({'error': 'Invoice not found'}), 404
+
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+        return jsonify({'message': 'Invoice status updated successfully'})
+
+    except Exception as e:
+        print(f"Error updating invoice status: {str(e)}")
+        return jsonify({'error': 'Failed to update invoice status'}), 500
+
+
+# Database table schema (run this to create your table if you haven't already)
+"""
+CREATE TABLE IF NOT EXISTS invoices (
+    id SERIAL PRIMARY KEY,
+    invoice_number VARCHAR(50) UNIQUE NOT NULL,
+    client_name VARCHAR(255) NOT NULL,
+    client_email VARCHAR(255) NOT NULL,
+    client_address TEXT,
+    amount DECIMAL(10, 2) NOT NULL,
+    status VARCHAR(20) DEFAULT 'draft' CHECK (status IN ('draft', 'sent', 'paid', 'overdue')),
+    created_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    due_date DATE NOT NULL,
+    description TEXT,
+    updated_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    tax_amount DECIMAL(10, 2) DEFAULT 0,
+    discount_amount DECIMAL(10, 2) DEFAULT 0
+);
+
+CREATE INDEX idx_invoices_status ON invoices(status);
+CREATE INDEX idx_invoices_created_date ON invoices(created_date);
+CREATE INDEX idx_invoices_due_date ON invoices(due_date);
+CREATE INDEX idx_invoices_client_email ON invoices(client_email);
+"""
 
 
 

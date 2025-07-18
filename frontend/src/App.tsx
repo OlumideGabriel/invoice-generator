@@ -9,10 +9,8 @@ import MainMenu from './components/MainMenu';
 import Footer from './components/Footer';
 import useInvoice from './hooks/useInvoice';
 import AuthPage from './pages/AuthPage';
+import Dashboard from './components/Dashboard'
 
-function Dashboard() {
-  return <div className="p-6">Dashboard Page</div>;
-}
 
 function Clients() {
   return <div className="p-6">Clients Page</div>;
