@@ -175,7 +175,7 @@ button:focus-visible {
 }
 
 .main-container {
-    justify-content: center;
+
 }
 
 @media only screen and (min-width: 1200px) {
@@ -237,4 +237,19 @@ button:focus-visible {
     background-color: var(--primary);
     color: var(--gray-1);
 
+}
+/* Add this to your CSS file */
+@keyframes slide-in {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: slide-in 0.3s ease-out;
 }

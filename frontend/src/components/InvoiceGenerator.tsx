@@ -10,15 +10,26 @@ import { Plus } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
+import { useAuth } from '../context/AuthContext';
 
 // Generate unique ID for items (same as in useInvoice hook)
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-// Add appropriate prop types as needed for your hooks and props
 // For now, this assumes all state/handlers are managed here; you may need to adjust if using a container/hook
 const InvoiceGenerator: React.FC = () => {
+
+  // --- NEW STATE FOR USER/CLIENT/INVOICES ---
+  const { user } = useAuth();
+  const userId = user?.id || user?.user_id;
+  const [clientId, setClientId] = useState<string | null>(null); // Optional
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+
+
   // Use the invoice hook for all invoice-related state and functionality
   const {
     from, setFrom,
@@ -57,18 +68,11 @@ const InvoiceGenerator: React.FC = () => {
     error, setError,
   } = useInvoice();
 
-  // --- NEW STATE FOR USER/CLIENT/INVOICES ---
-  const [userId, setUserId] = useState<string>("demo-user-uuid"); // TODO: Replace with auth/session
-  const [clientId, setClientId] = useState<string | null>(null); // Optional
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
 
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
     try {
-      const res = await fetch("http://localhost:5000/api/invoices?user_id=" + userId);
+      const res = await fetch(`http://localhost:5000/api/invoices?user_id=${userId}`);
       const data = await res.json();
       if (Array.isArray(data.invoices)) {
         setInvoices(data.invoices);
@@ -270,7 +274,8 @@ const InvoiceGenerator: React.FC = () => {
                 value={invoiceNumber}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNumber(e.target.value) }
                 placeholder="#"
-                className="w-40 p-2 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600 focus:outline-none focus:ring-1 focus:ring-indigo-400"
+                className="w-40 p-2 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600 focus:outline-none
+                focus:ring-1 focus:ring-indigo-400"
               />
             </div>
           </div>

@@ -9,10 +9,9 @@ import MainMenu from './components/MainMenu';
 import Footer from './components/Footer';
 import useInvoice from './hooks/useInvoice';
 import AuthPage from './pages/AuthPage';
+import Dashboard from './components/Dashboard';
+import ProfilePage from './pages/ProfilePage';
 
-function Dashboard() {
-  return <div className="p-6">Dashboard Page</div>;
-}
 
 function Clients() {
   return <div className="p-6">Clients Page</div>;
@@ -62,16 +61,19 @@ const AppRoutes: React.FC = () => {
       <MainMenu />
       <div className="flex flex-row flex-1 main-content min-h-0">
         <SideMenu />
+
+        {/* Main content area */}
         <main className="flex-1 overflow-y-auto p-8">
           <Routes>
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/invoices" element={<InvoiceGenerator />} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
-      <Footer />
+
     </div>
   );
 };

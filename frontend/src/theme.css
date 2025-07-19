@@ -60,6 +60,13 @@ input {
   border-radius: var(--radius) !important;
 }
 
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #10b981 !important; /* emerald-500 */
+  border-color: transparent !important;
+  transition: all 0.2s;
+}
+
 button, .btn {
   border-radius: var(--radius);
   box-shadow: none !important;

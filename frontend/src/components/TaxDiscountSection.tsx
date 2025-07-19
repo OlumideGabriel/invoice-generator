@@ -152,11 +152,13 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
       <div className="flex flex-col gap-4">
         {/* Tax Input */}
         {showTax && (
-          <div className="flex text-box justify-end  items-center gap-4 ">
+          <div className="flex text-box justify-end items-center gap-4 ">
             <label className="text-sm font-medium labels">Tax</label>
-            <div className="flex items-stretch border border-gray-300 rounded-lg bg-white w-full max-w-xs">
+            <div className="flex relative items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
                 {taxType === 'fixed' && (
-                <span className="px-4 py-3 text-gray-400 self-center font-medium text-md">{currency.symbol}</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
+                  {currency.symbol}
+                </span>
               )}
               <input
                 type="number"
@@ -169,19 +171,23 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                 placeholder="Value"
               />
               {taxType === 'percent' && (
-                <span className="px-4 py-3 text-gray-400 font-medium self-center text-md">%</span>
+                <span className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
+                  %
+                </span>
               )}
-              <span
+              <a
                 role="button"
                 tabIndex={0}
                 onClick={toggleTaxType}
-                className="small-icon rounded-r-[7px] p-3 border-l border-gray-300 transition-colors
-                duration-200 cursor-pointer flex items-center justify-center"
+                className="small-icon absolute right-0 top-1/2 -translate-y-1/2 rounded-r-[7px] p-2
+                items-stretch border-3 border-green-300 transition-colors
+                duration-200 cursor-pointer flex items-center self-stretch justify-center"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <svg className="w-6 h-[1.66rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
-              </span>
+              </a>
             </div>
             <button
               role="button"
@@ -199,9 +205,11 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
         {showDiscount && (
           <div className="flex text-box justify-end items-center gap-4">
             <label className="text-sm font-medium labels">Discount</label>
-            <div className="flex items-stretch border border-gray-300 rounded-lg bg-white w-full max-w-xs">
+            <div className="flex relative  border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
               {discountType === 'fixed' && (
-                <span className="px-4 py-3 text-gray-400 self-center font-medium text-md">{currency.symbol}</span>
+                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
+                  {currency.symbol}
+                </span>
               )}
               <input
                 type="number"
@@ -214,17 +222,21 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                 placeholder="Value"
               />
               {discountType === 'percent' && (
-                <span className="px-4 py-3 text-gray-400 self-center font-medium text-md">%</span>
+                <span className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
+                  %
+                </span>
               )}
               <span
                 role="button"
                 tabIndex={0}
                 onClick={toggleDiscountType}
-                className="small-icon rounded-r-[7px] p-3 border-l border-gray-300 transition-colors
-                duration-200 cursor-pointer flex items-center justify-center"
+                className="small-icon absolute right-0 top-1/2 -translate-y-1/2 rounded-r-[7px] p-2
+                 transition-colors
+                duration-200 cursor-pointer flex items-center self-stretch justify-center"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <svg className="w-6 h-[1.66rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </span>
             </div>
@@ -244,8 +256,10 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
         {showShipping && (
           <div className="flex justify-end items-center gap-4">
             <label className="text-sm font-medium labels">Shipping</label>
-            <div className="flex items-stretch border border-gray-300 rounded-lg bg-white w-full max-w-xs">
-              <span className="px-4 py-3 self-center text-gray-400 font-medium text-md">{currency.symbol}</span>
+            <div className=" relative flex items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
+                  {currency.symbol}
+                </span>
               <input
                 type="number"
                 value={shippingAmount}
@@ -256,11 +270,14 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                 placeholder="Value"
               />
               <span
-                className="rounded-r-lg px-4 py-4 text-gray-700 border-l opacity-0 flex items-center justify-center"
-                aria-hidden="true"
+                tabIndex={0}
+                className="absolute right-0 top-1/2 -translate-y-1/2 rounded-r-[7px] p-2
+                 transition-colors
+                duration-200 flex items-center opacity-0 self-stretch justify-center"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <svg className="w-6 h-[1.66rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </span>
 
