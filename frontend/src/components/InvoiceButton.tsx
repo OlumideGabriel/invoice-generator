@@ -23,7 +23,7 @@ const InvoiceButton: React.FC<InvoiceButtonProps> = ({ loading, onClick }) => {
     <button
       onClick={onClick}
       disabled={loading}
-      className={`w-full px-4 py-4 text-lg whitespace-nowrap font-medium rounded-xl flex items-center h-[3.5rem] justify-center gap-2 relative ${
+      className={`w-full px-4 button py-4 text-lg whitespace-nowrap font-medium rounded-xl flex items-center h-[3.5rem] justify-center gap-2 relative ${
         loading ? 'bg-gray-500 cursor-not-allowed' : 'download-button'
       }`}
     >

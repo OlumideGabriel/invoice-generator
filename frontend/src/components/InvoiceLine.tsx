@@ -74,26 +74,29 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({ item, index, onChange, onRemo
         <div className="flex w-full flex-wrap md:flex-nowrap gap-4">
           {/* Item name and description section */}
           <div className="relative flex-1">
-            <div className="relative">
+            <div className="relative w-full group">
               <input
                 type="text"
                 placeholder="Enter item name"
                 value={item.name}
                 onChange={(e) => onChange(index, 'name', e.target.value)}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg
-                text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500
-                focus:border-transparent transition-all duration-200 text-md font-medium"
+                  text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500
+                  focus:border-transparent transition-all duration-200 text-md font-medium"
               />
-              {/* Toggle description button */}
               <button
                 type="button"
                 onClick={() => onToggleDescription(index)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-60 hover:opacity-100 transition-all duration-200 bg-green-50 hover:text-green-800 hover:bg-green-100 text-green-600 rounded-full p-1"
+                className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 hover:opacity-100 transition-all
+                  duration-200 bg-green-50 hover:text-green-800 hover:bg-green-100 text-green-600 rounded-full p-1"
                 aria-label={item.showDesc ? 'Hide description' : 'Show description'}
+                aria-expanded={item.showDesc}
               >
                 {item.showDesc ? <ChevronUp size={25} /> : <ChevronDown size={25} />}
               </button>
             </div>
+
+
             {/* Description textarea */}
             {item.showDesc && (
               <div className="mt-3 animate-in slide-in-from-top-2 duration-200">

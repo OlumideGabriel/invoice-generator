@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowRightLeft, X, Plus, Minus, SquareMinus } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import Tooltip from './Tooltip';
 
 interface TaxDiscountSectionProps {
   taxPercent: number;
@@ -107,6 +108,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
     <div className="mb-6 ">
       {/* Toggle Buttons */}
       <div className="flex justify-end gap-3 mb-4">
+
         <a
           role="button"
           tabIndex={0}
@@ -146,6 +148,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                <Plus size={18} />
             </div> Shipping
         </a>
+
       </div>
 
       {/* Input Fields */}
@@ -175,6 +178,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                   %
                 </span>
               )}
+
               <a
                 role="button"
                 tabIndex={0}
@@ -188,6 +192,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                   d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                 </svg>
               </a>
+
             </div>
             <button
               role="button"

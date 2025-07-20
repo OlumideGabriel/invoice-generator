@@ -7,8 +7,10 @@ import {
   Users,
   Settings,
   User,
+  SquarePlus
 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
+import Tooltip from './Tooltip';
 
 interface MenuItem {
   path: string;
@@ -39,6 +41,7 @@ const menuItems: MenuItem[] = [
 
   { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
   { path: '/profile', label: 'Profile', icon: <User size={22} /> },
+  { path: '/invoices', label: 'Create', icon: <SquarePlus size={22} /> },
 ];
 
 
@@ -66,8 +69,10 @@ const SideMenu: React.FC = () => {
         } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
       >
         <nav className="flex flex-col gap-2">
+
           {menuItems.map(({ path, label, icon, submenu }) =>
             submenu ? (
+
               <a
                 key={label}
                 onClick={() => handleClick({ path, label, icon, submenu })}
@@ -79,6 +84,7 @@ const SideMenu: React.FC = () => {
                 {icon}
                 {!collapsed && label}
               </a>
+
             ) : (
               <Link
                 key={label}

@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronDownIcon } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import PartyField from './PartyField';
 import InvoiceLine from './InvoiceLine';
@@ -11,6 +12,14 @@ import { useCurrency } from '../context/CurrencyContext';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
 import { useAuth } from '../context/AuthContext';
+import { Calendar } from "@/components/ui/calendar"
+import { Button } from "@/components/ui/button"
+import { Label } from "@/components/ui/label"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
 
 // Generate unique ID for items (same as in useInvoice hook)
 const generateId = () => {
@@ -28,6 +37,12 @@ const InvoiceGenerator: React.FC = () => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+
+    // State for date picker
+
+const [date, setDate] = React.useState<Date | undefined>(
+    new Date(2025, 5, 12)
+  )
 
 
   // Use the invoice hook for all invoice-related state and functionality
@@ -298,6 +313,8 @@ const InvoiceGenerator: React.FC = () => {
                 className="w-full sm:w-40 p-2 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600"
               />
             </div>
+
+
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
               <label className="text-sm text-neutral-500">Due Date</label>
               <input

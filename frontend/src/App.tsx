@@ -11,6 +11,7 @@ import useInvoice from './hooks/useInvoice';
 import AuthPage from './pages/AuthPage';
 import Dashboard from './components/Dashboard';
 import ProfilePage from './pages/ProfilePage';
+import InvoicesPage from './pages/InvoicesPage';
 
 
 function Clients() {
@@ -70,6 +71,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/invoices/all" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>
