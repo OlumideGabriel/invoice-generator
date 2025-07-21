@@ -11,7 +11,7 @@
     }
 
     body {
-      font-family: Helvetica , sans-serif;
+      font-family: Helvetica, Arial, sans-serif;
       background: #f5f5f5;
       padding: 20px;
       color: #333;
@@ -31,7 +31,7 @@
     .header-section {
       padding: 20px;
       background: #F2F5F9; /* Placeholder for header background color */
-      border-radius: 20px;
+      border-radius: 15px;
       margin-bottom: 40px;
 
     }
@@ -194,7 +194,7 @@
       min-width: 250px;
       padding: 20px;
       background: #F2F5F9; /* Placeholder for total section background color */
-      border-radius: 20px;
+      border-radius: 15px;
     }
 
     .total-label {
@@ -209,12 +209,13 @@
     }
 
     /* Footer Section */
+
     .footer-section {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
       gap: 40px;
-      margin-top: 60px;
-      padding: 20px;
+      padding-left: 20px;
+      padding-right: 20px;
 
     }
 
@@ -238,20 +239,14 @@
     }
 
     .company-logo {
-      width: 60px;
-      height: 60px;
-      background: linear-gradient(135deg, #e8e5ff 0%, #d4d0ff 100%);
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 15px;
-      position: relative;
+      margin-left: 20px;
+      margin-top: 60px;
+      width: auto;
     }
 
     .logo-center {
       position: absolute;
-      width: 6px;
+      width: auto;
       height: 6px;
       background: #6366f1;
       border-radius: 50%;
@@ -265,13 +260,17 @@
       body {
         background: white;
         padding: 0;
-        margin: -20px;
+        margin: -15px;
       }
       .invoice-container {
         box-shadow: none;
         margin: 0;
         width: auto;
         min-height: auto;
+      }
+      footer-content {
+        position: absolute;
+        bottom: 100px;
       }
     }
 
@@ -283,12 +282,13 @@
 </head>
 <body>
   <div class="invoice-container">
+  <div class="content">
     <div class="header-section">
     <div class="invoice-header">
       <h1 class="invoice-title">Invoice</h1>
       <div class="invoice-meta">
       <div class="invoice-meta-label">Invoice No.</div>
-      <div class="invoice-number">#{{ invoice_number or '000123' }}</div>
+      <div class="invoice-number">#{{ invoice_number }}</div>
     </div>
     </div>
 
@@ -310,7 +310,11 @@
 
         <div class="date-info">
           <div class="date-label">Issued on</div>
-          <div class="date-value">{{ date }}</div>
+          {% if issued_date %}
+          <div class="date-value">{{ issued_date }}</div>
+            {% else %}
+            <div class="date-value">{{ date }}</div>
+          {% endif %}
         </div>
 
         <div class="date-info">
@@ -355,18 +359,21 @@
     <!-- Total -->
     <div class="total-section">
       <div class="total-row">
-        <div class="total-label">Total (USD)</div>
+        <div class="total-label">Total {{ currency }}</div>
         <div class="total-value">{{ '{:,.2f}'.format(total) if total else '0' }}</div>
       </div>
     </div>
-
+</div>
+    <div class="footer-content">
     <!-- Footer -->
-    <div class="footer-section">
-      <div class="footer-column">
+    <div class="company-logo">
         {% if logo_url %}
         <img src="{{ logo_url }}" alt="Logo" style="max-width: 60px; height: 60px; object-fit: contain; margin-bottom: 15px;" />
-
         {% endif %}
+      </div>
+
+    <div class="footer-section">
+      <div class="footer-column">
 
         <h3>{{ from.split('\n')[0] if from and '\n' in from else (from or 'Company Name LLC') }}</h3>
         <p>
@@ -380,27 +387,14 @@
         {% else %}
         <p><a href="mailto:email@company.com">email@company.com</a></p>
         {% endif %}
-
-        <p>
-          <small>ID#1 Label<br>1234567890-123</small>
-        </p>
-        <p>
-          <small>ID#2 Label<br>ABC-0987654321</small>
-        </p>
       </div>
 
       <div class="footer-column">
         <h3>Payment Instructions</h3>
         <p>
-          {% if payment_instructions %}
-            {{ payment_instructions|replace('\n', '<br/>')|safe }}
+          {% if payment_details %}
+            {{ payment_details|replace('\n', '<br/>')|safe }}
           {% endif %}
-        </p>
-        <p>
-          <small>ID#1 Label<br>1234567890-123</small>
-        </p>
-        <p>
-          <small>ID#2 Label<br>ABC-0987654321</small>
         </p>
       </div>
 
@@ -414,5 +408,6 @@
       </div>
     </div>
   </div>
+    </div>
 </body>
 </html>

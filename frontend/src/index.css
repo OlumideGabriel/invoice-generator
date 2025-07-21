@@ -72,7 +72,7 @@ body {
 
 /* Fix logo size */
 .logo-upload img {
-  max-width: 1600px;
+  width: 1600px;
   height: auto;
   object-fit: contain;
   @apply rounded;

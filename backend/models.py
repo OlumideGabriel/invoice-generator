@@ -42,3 +42,4 @@ class Invoice(db.Model):
     status = db.Column(db.String(50), default='draft')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    currency = db.Column(db.String(10), default='USD')

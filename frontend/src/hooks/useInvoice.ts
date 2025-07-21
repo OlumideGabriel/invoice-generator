@@ -131,6 +131,7 @@ function useInvoice() {
         show_tax: showTax,
         show_discount: showDiscount,
         show_shipping: showShipping,
+        currency: 'USD', // Assuming USD, replace with dynamic currency if needed
       };
 
       const res = await fetch('http://localhost:5000/generate-invoice', {
@@ -187,6 +188,7 @@ function useInvoice() {
         show_tax: showTax,
         show_discount: showDiscount,
         show_shipping: showShipping,
+        currency: 'USD', // Assuming USD, replace with dynamic currency if needed
       };
 
       const res = await fetch('http://localhost:5000/preview-invoice', {

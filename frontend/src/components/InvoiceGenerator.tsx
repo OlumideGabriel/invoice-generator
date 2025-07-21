@@ -97,32 +97,31 @@ const [date, setDate] = React.useState<Date | undefined>(
   useEffect(() => { fetchInvoices(); }, [userId]);
 
   // --- LOAD SELECTED INVOICE INTO FORM ---
-  const loadInvoice = (invoice: any) => {
-    setSelectedInvoiceId(invoice.id);
-    const d = invoice.data || {};
-    setFrom(d.from || "");
-    setTo(d.to || "");
-    // Ensure loaded items have IDs, add them if missing
-    const itemsWithIds = (d.items || []).map((item: any) => ({
-      ...item,
-      id: item.id || generateId() // Add ID if missing
-    }));
-    setItems(itemsWithIds.length > 0 ? itemsWithIds : [{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
-    setInvoiceNumber(d.invoice_number || "");
-    setIssuedDate(d.issued_date || "");
-    setDueDate(d.due_date || "");
-    setPaymentDetails(d.payment_details || "");
-    setTerms(d.terms || "");
-    setTaxPercent(d.tax_percent || 0);
-    setDiscountPercent(d.discount_percent || 0);
-    setShippingAmount(d.shipping_amount || 0);
-    setTaxType(d.tax_type || 'percent');
-    setDiscountType(d.discount_type || 'percent');
-    setShowTax(d.show_tax ?? true);
-    setShowDiscount(d.show_discount ?? false);
-    setShowShipping(d.show_shipping ?? true);
-    setLogoUrl(d.logo_url || null);
-    // Optionally: setLogoFile(null);
+    const loadInvoice = (invoice: any) => {
+      setSelectedInvoiceId(invoice.id);
+      const d = invoice.data || {};
+      setFrom(d.from || "");
+      setTo(d.to || "");
+      // Ensure loaded items have IDs, add them if missing
+      const itemsWithIds = (d.items || []).map((item: any) => ({
+        ...item,
+        id: item.id || generateId() // Add ID if missing
+      }));
+      setItems(itemsWithIds.length > 0 ? itemsWithIds : [{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
+      setInvoiceNumber(d.invoice_number || "");
+      setIssuedDate(d.issued_date || "");
+      setDueDate(d.due_date || "");
+      setPaymentDetails(d.payment_details || "");
+      setTerms(d.terms || "");
+      setTaxPercent(d.tax_percent || 0);
+      setDiscountPercent(d.discount_percent || 0);
+      setShippingAmount(d.shipping_amount || 0);
+      setTaxType(d.tax_type || 'percent');
+      setDiscountType(d.discount_type || 'percent');
+      setShowTax(d.show_tax ?? true);
+      setShowDiscount(d.show_discount ?? false);
+      setShowShipping(d.show_shipping ?? true);
+      setLogoUrl(d.logo_url || null);
   };
 
   // --- RESET FORM FOR NEW INVOICE ---
@@ -192,11 +191,12 @@ const [date, setDate] = React.useState<Date | undefined>(
           show_tax: showTax,
           show_discount: showDiscount,
           show_shipping: showShipping,
-          logo_url: logoUrl
+          logo_url: logoUrl,
         },
         issued_date: issuedDate,
         due_date: dueDate,
-        status: "draft"
+        status: "draft",
+        currency: typeof currency === 'string' ? currency : currency.symbol
       };
 
       // Only save if user_id and required fields are present

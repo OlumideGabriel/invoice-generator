@@ -13,6 +13,7 @@ import AuthPage from './pages/AuthPage';
 import Dashboard from './pages/Dashboard';
 import ProfilePage from './pages/ProfilePage';
 import InvoicesPage from './pages/InvoicesPage';
+import ClientsPage from './pages/ClientsPage';
 
 
 
@@ -71,7 +72,7 @@ const AppRoutes: React.FC = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/create-invoice" element={<InvoiceGenerator />} />
-            <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
+            <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />

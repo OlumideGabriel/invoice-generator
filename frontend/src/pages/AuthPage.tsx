@@ -152,7 +152,7 @@ const AuthPage: React.FC = () => {
       <div className="flex-1 flex flex-col justify-center items-center bg-gradient-to-tr from-emerald-400
       to-emerald-900 px-8 md:px-16 py-12 min-h-screen relative">
         <button
-            onClick={() => navigate('/invoices')}
+            onClick={() => navigate('/create-invoice')}
         className="mb-20 bg-white/10 text-white border-none
         px-6 py-2 rounded-8 text-sm font-medium cursor-pointer hover:bg-white/20 transition
          backdrop-blur">Continue as guest →</button>

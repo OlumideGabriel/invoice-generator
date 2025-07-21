@@ -30,15 +30,7 @@ const menuItems: MenuItem[] = [
       { label: 'Create Invoice', path: '/create-invoice', icon: <FileText size={22} /> },
     ],
   },
-  { path: '/clients',
-      label: 'Clients',
-      icon: <Users size={22} />,
-    submenu: [
-        { label: 'All Clients', path: '/clients', icon: <Users size={20} />},
-        { label: 'Create Client', path: '/clients/new', icon: <Users size={22} /> },
-    ],
-  },
-
+  { path: '/clients', label: 'Clients', icon: <Users size={22} /> },
   { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
   { path: '/profile', label: 'Profile', icon: <User size={22} /> },
   { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },

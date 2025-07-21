@@ -24,73 +24,55 @@ const Dashboard = () => {
         return '';
     };
 
-    // Format currency
-    const formatCurrency = (amount) => {
+    // Format currency - updated to match InvoicesPage logic
+    const formatCurrency = (amount, currencySymbol = '£') => {
         if (amount === null || amount === undefined || isNaN(amount)) {
             amount = 0;
         }
 
-        let currencyCode = 'USD';
-        if (typeof currency === 'string') {
-            currencyCode = currency;
-        } else if (currency && typeof currency === 'object' && currency.code) {
-            currencyCode = currency.code;
-        }
-
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currencyCode,
-        }).format(amount);
+        return `${currencySymbol}${amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        })}`;
     };
 
-    // Calculate invoice totals - matching InvoicesPage logic
+    // Calculate invoice totals - matching InvoicesPage logic exactly
     const calculateInvoiceTotal = (invoice) => {
         if (!invoice || !invoice.data) return 0;
 
-        // First check if amount is directly available
-        if (invoice.data.amount !== undefined) {
-            return invoice.data.amount;
-        }
+        let total = 0;
 
-        // Fallback calculation if amount is not provided
+        // Calculate items total
         if (Array.isArray(invoice.data.items)) {
-            const itemsTotal = invoice.data.items.reduce((sum, item) => {
+            total = invoice.data.items.reduce((sum, item) => {
                 const quantity = Number(item.quantity) || 0;
                 const unitCost = Number(item.unit_cost) || 0;
                 return sum + (quantity * unitCost);
             }, 0);
-
-            let total = itemsTotal;
-
-            // Add shipping
-            if (invoice.data.show_shipping && invoice.data.shipping_amount) {
-                total += parseFloat(invoice.data.shipping_amount) || 0;
-            }
-
-            // Add tax
-            if (invoice.data.show_tax && invoice.data.tax_percent) {
-                const taxPercent = parseFloat(invoice.data.tax_percent) || 0;
-                if (invoice.data.tax_type === 'percent') {
-                    total += (itemsTotal * taxPercent) / 100;
-                } else {
-                    total += taxPercent;
-                }
-            }
-
-            // Apply discount
-            if (invoice.data.show_discount && invoice.data.discount_percent && invoice.data.discount_percent > 0) {
-                const discountPercent = parseFloat(invoice.data.discount_percent) || 0;
-                if (invoice.data.discount_type === 'percent') {
-                    total -= (total * discountPercent) / 100;
-                } else {
-                    total -= discountPercent;
-                }
-            }
-
-            return total;
         }
 
-        return 0;
+        // Add shipping if enabled
+        if (invoice.data.show_shipping && invoice.data.shipping_amount) {
+            total += Number(invoice.data.shipping_amount) || 0;
+        }
+
+        // Apply discount if enabled
+        if (invoice.data.show_discount && invoice.data.discount_percent) {
+            const discountAmount = invoice.data.discount_type === 'percent'
+                ? (total * invoice.data.discount_percent) / 100
+                : invoice.data.discount_percent;
+            total -= discountAmount;
+        }
+
+        // Apply tax if enabled
+        if (invoice.data.show_tax && invoice.data.tax_percent) {
+            const taxAmount = invoice.data.tax_type === 'percent'
+                ? (total * invoice.data.tax_percent) / 100
+                : invoice.data.tax_percent;
+            total += taxAmount;
+        }
+
+        return Math.max(0, total); // Ensure total is never negative
     };
 
     // Get dashboard metrics - using correct data structure
@@ -144,29 +126,62 @@ const Dashboard = () => {
         };
     };
 
-    // Format date
+    // Format date - updated to match InvoicesPage
     const formatDate = (dateString) => {
         if (!dateString) return 'N/A';
         try {
-            return new Date(dateString).toLocaleDateString('en-US', {
-                year: 'numeric',
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-GB', {
+                day: 'numeric',
                 month: 'short',
-                day: 'numeric'
+                year: 'numeric'
             });
         } catch (error) {
             return 'Invalid Date';
         }
     };
 
-    // Get status badge color
-    const getStatusColor = (status) => {
-        switch (status) {
-            case 'draft': return 'bg-yellow-100 text-yellow-800';
-            case 'sent': return 'bg-blue-100 text-blue-800';
-            case 'paid': return 'bg-green-100 text-green-800';
-            case 'overdue': return 'bg-red-100 text-red-800';
-            default: return 'bg-gray-100 text-gray-800';
+    // Get status badge color - updated to match InvoicesPage
+    const getStatusConfig = (status = '') => {
+        switch (status.toLowerCase()) {
+            case 'draft':
+                return {
+                    label: 'Draft',
+                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                };
+            case 'sent':
+            case 'in progress':
+                return {
+                    label: 'Sent',
+                    className: 'bg-blue-50 text-blue-600 border border-blue-200'
+                };
+            case 'paid':
+                return {
+                    label: 'Paid',
+                    className: 'bg-green-50 text-green-600 border border-green-200'
+                };
+            case 'overdue':
+                return {
+                    label: 'Overdue',
+                    className: 'bg-red-50 text-red-600 border border-red-200'
+                };
+            default:
+                return {
+                    label: status.charAt(0).toUpperCase() + status.slice(1),
+                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                };
         }
+    };
+
+    // Get customer initials - matching InvoicesPage
+    const getCustomerInitials = (customerName) => {
+        if (!customerName || customerName === 'Unknown Customer') return 'UC';
+        return customerName
+            .split(' ')
+            .map(word => word.charAt(0))
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
     };
 
     // Fetch dashboard data - using same API endpoint as InvoicesPage
@@ -181,7 +196,11 @@ const Dashboard = () => {
                     throw new Error('Failed to fetch dashboard data');
                 }
                 const data = await response.json();
-                setDashboardData(data);
+                if (data.success) {
+                    setDashboardData(data);
+                } else {
+                    throw new Error('API returned unsuccessful response');
+                }
             } catch (err) {
                 setError(err.message);
             } finally {
@@ -227,9 +246,9 @@ const Dashboard = () => {
                         <div className="flex items-center space-x-4">
                             <button
                                 onClick={() => navigate('/create-invoice')}
-                                className="label-1 px-4 py-2 rounded-lg flex items-center space-x-2"
+                                className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
                             >
-                                <Plus className="h-5 w-5" />
+                                <Plus className="h-5 w-5 mr-2" />
                                 <span>New Invoice</span>
                             </button>
                         </div>
@@ -242,7 +261,9 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                                <p className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.totalRevenue)}</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {formatCurrency(metrics.totalRevenue, '£')}
+                                </p>
                             </div>
                             <div className="bg-green-100 p-3 rounded-full">
                                 <DollarSign className="h-6 w-6 text-green-600" />
@@ -278,7 +299,9 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
-                                <p className="text-2xl font-bold text-gray-900">{formatCurrency(metrics.avgInvoiceValue)}</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {formatCurrency(metrics.avgInvoiceValue, '£')}
+                                </p>
                             </div>
                             <div className="bg-orange-100 p-3 rounded-full">
                                 <TrendingUp className="h-6 w-6 text-orange-600" />
@@ -304,38 +327,54 @@ const Dashboard = () => {
                             </div>
                             <div className="divide-y divide-gray-200">
                                 {metrics.recentInvoices.length > 0 ? (
-                                    metrics.recentInvoices.map((invoice) => (
-                                        <div key={invoice.id} className="px-6 py-4 hover:bg-gray-50">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="bg-blue-100 p-2 rounded-full">
-                                                        <FileText className="h-4 w-4 text-blue-600" />
+                                    metrics.recentInvoices.map((invoice) => {
+                                        const statusConfig = getStatusConfig(invoice.status);
+                                        const totalAmount = calculateInvoiceTotal(invoice);
+                                        const customerName = invoice.data?.to || 'Unknown Customer';
+                                        const customerInitials = getCustomerInitials(customerName);
+
+                                        return (
+                                            <div key={invoice.id} className="px-6 py-4 hover:bg-gray-50">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center space-x-3">
+                                                        <div className="flex-shrink-0 h-8 w-8">
+                                                            <div className="h-8 w-8 rounded-full bg-gray-900 flex items-center justify-center">
+                                                                <span className="text-white text-sm font-medium">
+                                                                    {customerInitials}
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-gray-900">
+                                                                {customerName}
+                                                            </p>
+                                                            <p className="text-sm text-gray-500">
+                                                                Invoice #{invoice.data?.invoice_number || 'N/A'}
+                                                            </p>
+                                                        </div>
                                                     </div>
-                                                    <div>
+                                                    <div className="text-right">
                                                         <p className="text-sm font-medium text-gray-900">
-                                                            Invoice #{invoice.data?.invoice_number || 'N/A'}
+                                                            {formatCurrency(
+                                                                totalAmount,
+                                                                invoice.data?.currency_symbol ||
+                                                                invoice.currency?.symbol ||
+                                                                '£'
+                                                            )}
                                                         </p>
-                                                        <p className="text-sm text-gray-500">
-                                                            To: {invoice.data?.to || 'Unknown Client'}
-                                                        </p>
-                                                    </div>
-                                                </div>
-                                                <div className="text-right">
-                                                    <p className="text-sm font-medium text-gray-900">
-                                                        {formatCurrency(calculateInvoiceTotal(invoice))}
-                                                    </p>
-                                                    <div className="flex items-center space-x-2 mt-1">
-                                                        <span className={`inline-flex px-2 py-1 text-xs rounded-full ${getStatusColor(invoice.status || 'draft')}`}>
-                                                            {invoice.status || 'draft'}
-                                                        </span>
-                                                        <span className="text-xs text-gray-500">
-                                                            {formatDate(invoice.data?.issued_date)}
-                                                        </span>
+                                                        <div className="flex items-center space-x-2 mt-1">
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>
+                                                                {statusConfig.label}
+                                                            </span>
+                                                            <span className="text-xs text-gray-500">
+                                                                {formatDate(invoice.data?.issued_date)}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                    ))
+                                        );
+                                    })
                                 ) : (
                                     <div className="px-6 py-8 text-center">
                                         <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -344,7 +383,8 @@ const Dashboard = () => {
                                             onClick={() => navigate('/create-invoice')}
                                             className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
                                         >
-                            </button>
+                                            Create your first invoice
+                                        </button>
                                     </div>
                                 )}
                             </div>

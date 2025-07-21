@@ -10,6 +10,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from datetime import datetime, timedelta
 from sqlalchemy import text, func, extract, and_, or_
+from clients import Clients
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -153,7 +154,8 @@ def parse_invoice_data(data):
         'payment_details': data.get('payment_details', ''),
         'payment_instructions': data.get('payment_instructions', ''),
         'terms': data.get('terms', ''),
-        'logo_url': data.get('logo_url', None)
+        'logo_url': data.get('logo_url', None),
+        'currency': data.get('currency', 'USD'),
     }
 
     return template_data
@@ -196,6 +198,7 @@ def generate_invoice():
         pdf = HTML(string=html).write_pdf()
 
         response = make_response(pdf)
+        print(template_data)
         response.headers['Content-Type'] = 'application/pdf'
         response.headers['Content-Disposition'] = f'attachment; filename=invoice_{template_data["invoice_number"]}.pdf'
         return response
@@ -230,7 +233,8 @@ def get_invoices():
             'data': inv.data,
             'issued_date': inv.issued_date,
             'due_date': inv.due_date,
-            'status': inv.status
+            'status': inv.status,
+            'currency': inv.data.get('currency', 'USD') if isinstance(inv.data, dict) else 'USD',
         }
         for inv in invoices
     ]
@@ -490,6 +494,47 @@ def db_info():
             'status': 'error',
             'message': str(e)
         }), 500
+
+@app.route('/api/clients', methods=['POST'])
+def create_client():
+    """Create a new client"""
+    return Clients.create_client()
+
+
+@app.route('/api/clients', methods=['GET'])
+def get_clients():
+    """Get all clients for a user with optional filtering and pagination"""
+    return Clients.get_clients()
+
+
+@app.route('/api/clients/<uuid:client_id>', methods=['GET'])
+def get_client(client_id):
+    """Get a specific client by ID"""
+    return Clients.get_client(str(client_id))
+
+
+@app.route('/api/clients/<uuid:client_id>', methods=['PUT'])
+def update_client(client_id):
+    """Update a client"""
+    return Clients.update_client(str(client_id))
+
+
+@app.route('/api/clients/<uuid:client_id>', methods=['DELETE'])
+def delete_client(client_id):
+    """Delete a client"""
+    return Clients.delete_client(str(client_id))
+
+
+@app.route('/api/clients/<uuid:client_id>/invoices', methods=['GET'])
+def get_client_invoices(client_id):
+    """Get all invoices for a specific client"""
+    return Clients.get_client_invoices(str(client_id))
+
+
+@app.route('/api/clients/bulk-delete', methods=['DELETE'])
+def bulk_delete_clients():
+    """Delete multiple clients at once"""
+    return Clients.bulk_delete_clients()
 
 
 if __name__ == '__main__':
