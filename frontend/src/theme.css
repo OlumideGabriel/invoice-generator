@@ -67,19 +67,19 @@ input:focus {
   transition: all 0.2s;
 }
 
-button-custom, .btn {
+.button-custom, .btn {
   border-radius: var(--radius);
   box-shadow: none !important;
   font-weight: 600;
   transition: background 0.2s, color 0.2s;
 }
 
-button-custom.secondary, .btn-secondary {
+.button-custom.secondary, .btn-secondary {
   background: var(--primary-hover) !important;
   color: var(--foreground) !important;
   border: none !important;
 }
-button-custom.secondary:hover, .btn-secondary:hover {
+.button-custom.secondary:hover, .btn-secondary:hover {
   background: var(--dark-hover) !important;
 }
 

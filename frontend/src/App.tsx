@@ -5,13 +5,16 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import InvoiceGenerator from './components/InvoiceGenerator';
+import PartyField from './components/PartyField';
 import MainMenu from './components/MainMenu';
 import Footer from './components/Footer';
 import useInvoice from './hooks/useInvoice';
 import AuthPage from './pages/AuthPage';
-import Dashboard from './components/Dashboard';
+import Dashboard from './pages/Dashboard';
 import ProfilePage from './pages/ProfilePage';
 import InvoicesPage from './pages/InvoicesPage';
+
+
 
 
 function Clients() {
@@ -64,14 +67,14 @@ const AppRoutes: React.FC = () => {
         <SideMenu />
 
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto">
           <Routes>
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/invoices" element={<InvoiceGenerator />} />
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/create-invoice" element={<InvoiceGenerator />} />
             <Route path="/clients" element={<ProtectedRoute><Clients /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/invoices/all" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+            <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
           </Routes>
         </main>
       </div>

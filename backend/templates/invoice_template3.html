@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Invoice</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: Helvetica , sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      color: #333;
+      line-height: 1.4;
+    }
+
+    .invoice-container {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    /* Header Section */
+    .header-section {
+      padding: 20px;
+      background: #F2F5F9; /* Placeholder for header background color */
+      border-radius: 20px;
+      margin-bottom: 40px;
+
+    }
+    .invoice-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .top-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+
+    }
+
+    .invoice-title {
+      font-size: 36px;
+      font-weight: 700;
+      color: #333;
+      margin: 0;
+    }
+
+    .invoice-meta {
+      text-align: right;
+      color: #666;
+      font-size: 14px;
+      width: 40%;
+    }
+
+    .invoice-meta-label {
+      color: #999;
+      margin-bottom: 5px;
+    }
+
+    .invoice-number {
+      font-size: 24px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .date-info {
+      margin-bottom: 15px;
+    }
+
+    .date-label {
+      color: #999;
+      font-size: 13px;
+    }
+
+    .date-value {
+      color: #333;
+      font-weight: 500;
+    }
+
+    /* Billing Section */
+    .billing-section {
+
+      width: 40%;
+    }
+
+    .billing-label {
+      color: #999;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .client-name {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 5px;
+    }
+
+    .client-address {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    /* Services Section */
+    .services-section {
+      margin-bottom: 60px;
+        padding: 20px;
+    }
+
+    .services-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 30px;
+    }
+
+    .services-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .services-table thead th {
+      background: none;
+      border: none;
+      padding: 15px 0;
+      text-align: left;
+      font-weight: 500;
+      color: #666;
+      font-size: 14px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .services-table thead th:nth-child(2),
+    .services-table thead th:nth-child(3),
+    .services-table thead th:nth-child(4) {
+      text-align: right;
+    }
+
+    .services-table tbody td {
+      border: none;
+      padding: 10px 0;
+      vertical-align: top;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .services-table tbody td:nth-child(2),
+    .services-table tbody td:nth-child(3),
+    .services-table tbody td:nth-child(4) {
+      text-align: right;
+    }
+
+    .item-name, .item-total {
+      font-weight: 600;
+      color: #121722;
+      font-size: 15px;
+    }
+
+    .item-description {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+
+    .item-qty, .item-price {
+      color: #60737D;
+      font-size: 15px;
+      font-weight: 500;
+    }
+
+    /* Total Section */
+    .total-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 80px;
+
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      min-width: 250px;
+      padding: 20px;
+      background: #F2F5F9; /* Placeholder for total section background color */
+      border-radius: 20px;
+    }
+
+    .total-label {
+      color: #666;
+      font-size: 16px;
+    }
+
+    .total-value {
+      color: #333;
+      font-size: 24px;
+      font-weight: 600;
+    }
+
+    /* Footer Section */
+    .footer-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 40px;
+      margin-top: 60px;
+      padding: 20px;
+
+    }
+
+    .footer-column h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 15px;
+    }
+
+    .footer-column p {
+      font-size: 14px;
+      color: #666;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .footer-column a {
+      color: #4285f4;
+      text-decoration: none;
+    }
+
+    .company-logo {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #e8e5ff 0%, #d4d0ff 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 15px;
+      position: relative;
+    }
+
+    .logo-center {
+      position: absolute;
+      width: 6px;
+      height: 6px;
+      background: #6366f1;
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+        margin: -20px;
+      }
+      .invoice-container {
+        box-shadow: none;
+        margin: 0;
+        width: auto;
+        min-height: auto;
+      }
+    }
+
+    @page {
+      size: A4;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <div class="header-section">
+    <div class="invoice-header">
+      <h1 class="invoice-title">Invoice</h1>
+      <div class="invoice-meta">
+      <div class="invoice-meta-label">Invoice No.</div>
+      <div class="invoice-number">#{{ invoice_number or '000123' }}</div>
+    </div>
+    </div>
+
+    <div class="top-section">
+
+    <!-- Billing Information -->
+    <div class="billing-section">
+      <div class="billing-label">Billed To:</div>
+      <div class="client-name">{{ to.split('\n')[0] if to and '\n' in to else (to or 'Client Name') }}</div>
+      <div class="client-address">
+        {% if to %}
+          {{ to.split('\n')[1:] | join('\n') | replace('\n', '<br/>') | safe if '\n' in to else 'Address / Contact Info' }}
+        {% endif %}
+      </div>
+    </div>
+
+      <!-- Header -->
+      <div class="invoice-meta">
+
+        <div class="date-info">
+          <div class="date-label">Issued on</div>
+          <div class="date-value">{{ date }}</div>
+        </div>
+
+        <div class="date-info">
+          <div class="date-label">Payment Due</div>
+          <div class="date-value">{{ due_date }}</div>
+        </div>
+      </div>
+</div>
+    </div>
+
+    <!-- Items -->
+    <div class="services-section">
+
+      <table class="services-table">
+        <thead>
+          <tr>
+            <th style="width: 50%; font-weight: bold; color: #121722; font-size: 15px">Items</th>
+            <th style="width: 15%;">Qty.</th>
+            <th style="width: 20%;">Price</th>
+            <th style="width: 15%;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          <tr>
+            <td>
+              <div class="item-name">{{ item.name }}</div>
+              {% if item.description %}
+              <div class="item-description">{{ item.description|replace('\n', '<br/>')|safe }}</div>
+              {% endif %}
+            </td>
+            <td class="item-qty">{{ item.quantity }}</td>
+            <td class="item-price">{{ '{:,.2f}'.format(item.unit_cost) }}</td>
+            <td class="item-total">{{ '{:,.2f}'.format(item.quantity * item.unit_cost) }}</td>
+          </tr>
+          {% endfor %}
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Total -->
+    <div class="total-section">
+      <div class="total-row">
+        <div class="total-label">Total (USD)</div>
+        <div class="total-value">{{ '{:,.2f}'.format(total) if total else '0' }}</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer-section">
+      <div class="footer-column">
+        {% if logo_url %}
+        <img src="{{ logo_url }}" alt="Logo" style="max-width: 60px; height: 60px; object-fit: contain; margin-bottom: 15px;" />
+
+        {% endif %}
+
+        <h3>{{ from.split('\n')[0] if from and '\n' in from else (from or 'Company Name LLC') }}</h3>
+        <p>
+          {% if from and '\n' in from %}
+            {{ from.split('\n')[1:] | join('<br/>') | safe }}
+          {% endif %}
+        </p>
+
+        {% if company_email %}
+        <p><a href="mailto:{{ company_email }}">{{ company_email }}</a></p>
+        {% else %}
+        <p><a href="mailto:email@company.com">email@company.com</a></p>
+        {% endif %}
+
+        <p>
+          <small>ID#1 Label<br>1234567890-123</small>
+        </p>
+        <p>
+          <small>ID#2 Label<br>ABC-0987654321</small>
+        </p>
+      </div>
+
+      <div class="footer-column">
+        <h3>Payment Instructions</h3>
+        <p>
+          {% if payment_instructions %}
+            {{ payment_instructions|replace('\n', '<br/>')|safe }}
+          {% endif %}
+        </p>
+        <p>
+          <small>ID#1 Label<br>1234567890-123</small>
+        </p>
+        <p>
+          <small>ID#2 Label<br>ABC-0987654321</small>
+        </p>
+      </div>
+
+      <div class="footer-column">
+        <h3>Terms</h3>
+        <p>
+          {% if terms %}
+            {{ terms|replace('\n', '<br/>')|safe }}
+          {% endif %}
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

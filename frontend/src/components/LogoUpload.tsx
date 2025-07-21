@@ -60,7 +60,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
       >
         {logoUrl ? (
           <>
-            <img src={logoUrl} alt="Logo Preview" className="object-contain h-32 max-w-xs" />
+            <img src={logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain p-4" />
             <button
               type="button"
               onClick={handleRemoveLogo}

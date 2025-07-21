@@ -175,7 +175,7 @@ h1 {
 }
 
 .main-container {
-
+padding: 2rem;
 }
 
 @media only screen and (min-width: 1200px) {

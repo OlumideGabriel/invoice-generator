@@ -1,332 +1,355 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp, Calendar, DollarSign, User, FileText } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Search, ArrowUpDown, Filter, Upload, Plus, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
-import Tooltip from '../components/Tooltip';
 
-const InvoicesPage = () => {
-  const [expandedInvoice, setExpandedInvoice] = useState(null);
-
-  // Sample data - replace with your actual API response
-  interface InvoiceItem {
-  id: string;
-  name: string;
-  description?: string;
-  showDesc?: boolean;
-  quantity: number;
-  unit_cost: number;
-}
-
+// Define types
 interface InvoiceData {
-  invoice_number: string;
-  from: string;
-  to: string;
-  due_date: string;
+  to?: string;
+  amount?: number;
+  currency?: string;
+  invoice_number?: string;
   issued_date?: string;
-  items: InvoiceItem[];
-  show_shipping?: boolean;
-  shipping_amount?: number;
-  show_tax?: boolean;
-  tax_type?: string;
-  tax_percent?: number;
-  show_discount?: boolean;
-  discount_type?: string;
-  discount_percent?: number;
-  payment_details?: string;
-  terms?: string;
+  due_date?: string;
+  [key: string]: any;
 }
 
 interface Invoice {
   id: string;
   status: string;
   data: InvoiceData;
+  [key: string]: any;
 }
 
 interface InvoiceApiResponse {
-  success: boolean;
   invoices: Invoice[];
 }
 
-const [invoices, setInvoices] = useState<InvoiceApiResponse | null>(null);
-const [loading, setLoading] = useState<boolean>(true);
-const [error, setError] = useState<string | null>(null);
+// Helper functions
+const calculateInvoiceTotal = (invoice: Invoice): number => {
+  if (invoice.data?.amount !== undefined) {
+    return invoice.data.amount;
+  }
+  // Fallback calculation if amount is not provided
+  if (Array.isArray(invoice.data?.items)) {
+    return invoice.data.items.reduce((sum: number, item: any) => {
+      const quantity = Number(item.quantity) || 0;
+      const unitCost = Number(item.unit_cost) || 0;
+      return sum + (quantity * unitCost);
+    }, 0);
+  }
+  return 0;
+};
 
-React.useEffect(() => {
-  setLoading(true);
-  fetch('/api/invoices')
-    .then(res => res.json())
-    .then(data => {
-      setInvoices(data);
-      setLoading(false);
-    })
-    .catch(err => {
-      setError('Failed to load invoices' as string);
-      setLoading(false);
-    });
-}, []);
-
-  const calculateInvoiceTotal = (invoice) => {
-    const itemsTotal = invoice.data.items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0);
-    let total = itemsTotal;
-
-    if (invoice.data.show_shipping) {
-      total += invoice.data.shipping_amount;
-    }
-
-    if (invoice.data.show_tax) {
-      if (invoice.data.tax_type === 'fixed') {
-        total += invoice.data.tax_percent;
-      } else {
-        total += (total * invoice.data.tax_percent) / 100;
-      }
-    }
-
-    if (invoice.data.show_discount) {
-      if (invoice.data.discount_type === 'fixed') {
-        total -= invoice.data.discount_percent;
-      } else {
-        total -= (total * invoice.data.discount_percent) / 100;
-      }
-    }
-
-    return total;
+const getBillingPeriod = (issuedDate?: string, dueDate?: string): string => {
+  if (!issuedDate) return 'N/A';
+  
+  const format = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
+  if (dueDate) {
+    return `${format(issuedDate)} - ${format(dueDate)}`;
+  }
+  return `Issued: ${format(issuedDate)}`;
+};
+
+const InvoicesPage = () => {
+  // Your existing interfaces
+  interface InvoiceItem {
+    id: string;
+    name: string;
+    description?: string;
+    showDesc?: boolean;
+    quantity: number;
+    unit_cost: number;
+  }
+
+  const { user } = useAuth();
+  const { currency } = useCurrency();
+  
+  const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [invoicesData, setInvoicesData] = useState<InvoiceApiResponse | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setStatusError] = useState<string | null>(null);
+
+  // API call effect
+  useEffect(() => {
+    if (!user?.id) return;
+
+    setLoading(true);
+    fetch(`/api/invoices?user_id=${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setInvoicesData(data);
+        setLoading(false);
+      })
+      .catch(err => {
+        setError('Failed to load invoices');
+        setLoading(false);
+      });
+  }, [user?.id]);
+
+  // Transform API data to match table requirements
+  const invoices = invoicesData?.invoices.map(invoice => ({
+    ...invoice,
+    data: {
+      ...invoice.data,
+      // Add computed fields needed for the table
+      customer_name: invoice.data.to || 'Unknown Customer',
+      amount: calculateInvoiceTotal(invoice),
+      currency: 'USD', // You might want to add this to your API response
+      billing_period: getBillingPeriod(invoice.data.issued_date, invoice.data.due_date),
+      sent_date: invoice.data.issued_date || new Date().toISOString()
+    }
+  })) || [];
+
+  const formatAmount = (amount: number = 0, curr: string = currency) => {
+    const symbol = curr === 'USD' ? '$' : '£';
+    return `${symbol}${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString('en-GB', {
+      day: 'numeric',
       month: 'short',
-      day: 'numeric'
+      year: 'numeric'
     });
   };
 
-  const getStatusColor = (status) => {
+  const getStatusConfig = (status: string = '') => {
     switch (status.toLowerCase()) {
       case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'sent':
-        return 'bg-blue-100 text-blue-800';
+        return {
+          label: 'draft',
+          className: 'bg-gray-100 text-gray-700 border border-gray-200'
+        };
+      case 'in progress':
+        return {
+          label: 'in progress',
+          className: 'bg-blue-50 text-blue-600 border border-blue-200'
+        };
       case 'paid':
-        return 'bg-green-100 text-green-800';
+        return {
+          label: 'paid',
+          className: 'bg-green-50 text-green-600 border border-green-200'
+        };
       case 'overdue':
-        return 'bg-red-100 text-red-800';
+        return {
+          label: 'overdue',
+          className: 'bg-red-50 text-red-600 border border-red-200'
+        };
       default:
-        return 'bg-gray-100 text-gray-800';
+        return {
+          label: status,
+          className: 'bg-gray-100 text-gray-700 border border-gray-200'
+        };
     }
   };
 
-  const toggleExpand = (invoiceId) => {
-    setExpandedInvoice(expandedInvoice === invoiceId ? null : invoiceId);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedInvoices(new Set(invoices.map(invoice => invoice.id)));
+    } else {
+      setSelectedInvoices(new Set());
+    }
   };
 
-  if (loading) {
+  const handleSelectInvoice = (invoiceId: string, checked: boolean) => {
+    const newSelected = new Set(selectedInvoices);
+    if (checked) {
+      newSelected.add(invoiceId);
+    } else {
+      newSelected.delete(invoiceId);
+    }
+    setSelectedInvoices(newSelected);
+  };
+
+  if (loading && !invoicesData) {
     return (
-      <div className="p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded">
-        Loading invoices...
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  if (error || !invoices || invoices.success === false) {
+  if (error && !invoicesData) {
     return (
-      <div className="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-        {error || 'Failed to load invoices'}
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-red-600 text-center">
+          <p className="text-xl font-semibold mb-2">Error</p>
+          <p>{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-white">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Invoices</h1>
-        <p className="text-gray-600">Total invoices: {invoices.invoices.length}</p>
-      </div>
-
-      <div className="space-y-4">
-        {invoices.invoices.map((invoice) => (
-          <div key={invoice.id} className="border border-gray-200 rounded-lg shadow-sm">
-            <div
-              className="p-4 cursor-pointer hover:bg-gray-50 transition-colors"
-              onClick={() => toggleExpand(invoice.id)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    <span className="font-semibold text-lg">#{invoice.data.invoice_number}</span>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-gray-700">{invoice.data.from} → {invoice.data.to}</span>
-                  </div>
-
-                  <div className="flex items-center space-x-2">
-                    <DollarSign className="h-4 w-4 text-green-600" />
-                    <span className="font-medium text-green-600">
-                      ${calculateInvoiceTotal(invoice).toFixed(2)}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex items-center space-x-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(invoice.status)}`}>
-                    {invoice.status.toUpperCase()}
-                  </span>
-
-                  <div className="flex items-center space-x-2 text-sm text-gray-500">
-                    <Calendar className="h-4 w-4" />
-                    <span>Due: {formatDate(invoice.data.due_date)}</span>
-                  </div>
-
-                  {expandedInvoice === invoice.id ? (
-                    <ChevronUp className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <ChevronDown className="h-5 w-5 text-gray-400" />
-                  )}
-                </div>
-              </div>
+    <div className="bg-gray-50 min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex justify-between items-start mb-2">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
+              <p className="text-gray-600 mt-1">Manage your customers</p>
             </div>
-
-            {expandedInvoice === invoice.id && (
-              <div className="border-t border-gray-200 p-4 bg-gray-50">
-                {/* Download Button for Invoice PDF */}
-                <button
-                  className="mb-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                  onClick={async (e) => {
-                    e.stopPropagation();
-                    // TODO: Replace with useInvoice hook's handleSubmit or direct fetch to /generate-invoice
-                    try {
-                      const response = await fetch(`/generate-invoice?id=${invoice.id}`, {
-                        method: 'GET',
-                      });
-                      if (!response.ok) throw new Error('Failed to generate PDF');
-                      const blob = await response.blob();
-                      const url = window.URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `invoice_${invoice.data.invoice_number}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                    } catch (err) {
-                      alert('PDF download failed');
-                    }
-                  }}
-                >
-                  Download PDF
-                </button>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Invoice Details */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-900 mb-3">Invoice Details</h3>
-
-                    <div className="grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="text-gray-500">Invoice ID:</span>
-                        <p className="font-medium break-all">{invoice.id}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Issued Date:</span>
-                        <p className="font-medium">{invoice.data.issued_date ? formatDate(invoice.data.issued_date) : ''}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Due Date:</span>
-                        <p className="font-medium">{formatDate(invoice.data.due_date)}</p>
-                      </div>
-                      <div>
-                        <span className="text-gray-500">Status:</span>
-                        <p className="font-medium capitalize">{invoice.status}</p>
-                      </div>
-                    </div>
-
-                    {invoice.data.terms && (
-                      <div>
-                        <span className="text-gray-500">Terms:</span>
-                        <span className="ml-2">{invoice.data.terms}</span>
-                      </div>
-                    )}
-
-                    {invoice.data.payment_details && (
-                      <div>
-                        <span className="text-gray-500 text-sm">Payment Details:</span>
-                        <p className="font-medium whitespace-pre-line">{invoice.data.payment_details}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Items */}
-                  <div>
-                    <h3 className="font-semibold text-gray-900 mb-3">Items</h3>
-                    <div className="space-y-2">
-                      {invoice.data.items.map((item) => (
-                        <div key={item.id} className="flex justify-between items-center p-2 bg-white rounded border">
-                          <div>
-                            <p className="font-medium">{item.name}</p>
-                            {item.description && item.showDesc && (
-                              <p className="text-sm text-gray-600">{item.description}</p>
-                            )}
-                            <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-medium">${(item.quantity * item.unit_cost).toFixed(2)}</p>
-                            <p className="text-sm text-gray-500">${item.unit_cost}/unit</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Totals */}
-                    <div className="mt-4 pt-4 border-t border-gray-200">
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>Subtotal:</span>
-                          <span>${invoice.data.items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0).toFixed(2)}</span>
-                        </div>
-
-                        {invoice.data.show_shipping && (
-                          <div className="flex justify-between">
-                            <span>Shipping:</span>
-                            <span>${(invoice.data.shipping_amount ?? 0).toFixed(2)}</span>
-                          </div>
-                        )}
-
-                        {invoice.data.show_tax && (
-                          <div className="flex justify-between">
-                            <span>Tax ({invoice.data.tax_type === 'fixed' ? 'Fixed' : invoice.data.tax_percent + '%'}):</span>
-                            <span>${invoice.data.tax_type === 'fixed' ? (invoice.data.tax_percent ?? 0).toFixed(2) : (((invoice.data.items.reduce((sum, item) => sum + (item.quantity * item.unit_cost), 0) + (invoice.data.show_shipping ? (invoice.data.shipping_amount ?? 0) : 0)) * (invoice.data.tax_percent ?? 0) / 100).toFixed(2))}</span>
-                          </div>
-                        )}
-
-                        {invoice.data.show_discount && (
-                          <div className="flex justify-between text-red-600">
-                            <span>Discount ({invoice.data.discount_type === 'fixed' ? 'Fixed' : invoice.data.discount_percent + '%'}):</span>
-                            <span>-${invoice.data.discount_type === 'fixed' ? (invoice.data.discount_percent ?? 0).toFixed(2) : 'calculated'}</span>
-                          </div>
-                        )}
-
-                        <div className="flex justify-between font-semibold text-lg pt-2 border-t border-gray-300">
-                          <span>Total:</span>
-                          <span>${calculateInvoiceTotal(invoice).toFixed(2)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            <div className="flex space-x-3">
+              <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                <Upload className="w-4 h-4 mr-2" />
+                Import
+              </button>
+              <button 
+                onClick={() => {
+                  // Add navigation to create invoice page
+                  window.location.href = '/create-invoice';
+                }}
+                className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Create Invoice
+              </button>
+            </div>
           </div>
-        ))}
-      </div>
-
-      {invoices.invoices.length === 0 && (
-        <div className="text-center py-12">
-          <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices found</h3>
-          <p className="text-gray-500">Create your first invoice to get started.</p>
         </div>
-      )}
+
+        {/* Filters and Search */}
+        <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="flex items-center space-x-4">
+            <button className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+              <Filter className="w-4 h-4 mr-2" />
+              Status
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+              />
+            </div>
+            <button className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+              <ArrowUpDown className="w-4 h-4 mr-2" />
+              Sort order
+            </button>
+          </div>
+        </div>
+
+        {/* Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th scope="col" className="w-12 px-6 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedInvoices.size === invoices.length && invoices.length > 0}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    />
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Customer
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Amount
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Currency
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Invoice #
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Billing period
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sent
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Due Date
+                  </th>
+                  <th scope="col" className="w-12 px-6 py-3">
+                    <span className="sr-only">Actions</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {invoices.map((invoice) => {
+                  const statusConfig = getStatusConfig(invoice.status);
+                  return (
+                    <tr key={invoice.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedInvoices.has(invoice.id)}
+                          onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center">
+                          <div className="flex-shrink-0 h-8 w-8">
+                            <div className="h-8 w-8 rounded-full bg-gray-900 flex items-center justify-center">
+                              <span className="text-white text-sm font-medium">H</span>
+                            </div>
+                          </div>
+                          <div className="ml-3">
+                            <div className="text-sm font-medium text-gray-900">
+                              {invoice.data.customer_name}
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatAmount(invoice.data.amount, invoice.data.currency)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {invoice.data.currency}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>
+                          {statusConfig.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {invoice.data.invoice_number || '-'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {invoice.data.billing_period}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(invoice.data.sent_date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(invoice.data.due_date)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button className="text-gray-400 hover:text-gray-600">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

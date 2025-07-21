@@ -26,22 +26,22 @@ const menuItems: MenuItem[] = [
     label: 'Invoices',
     icon: <FileText size={22} />,
     submenu: [
-      { label: 'All Invoices', path: '/invoices/all', icon: <FileText size={20} /> },
-      { label: 'Create Invoice', path: '/invoices', icon: <FileText size={22} /> },
+      { label: 'All Invoices', path: '/invoices', icon: <FileText size={20} /> },
+      { label: 'Create Invoice', path: '/create-invoice', icon: <FileText size={22} /> },
     ],
   },
   { path: '/clients',
       label: 'Clients',
       icon: <Users size={22} />,
     submenu: [
-        { label: 'All Clients', path: '/clients/all', icon: <Users size={20} />},
-        { label: 'Create Client', path: '/clients/create', icon: <Users size={22} /> },
+        { label: 'All Clients', path: '/clients', icon: <Users size={20} />},
+        { label: 'Create Client', path: '/clients/new', icon: <Users size={22} /> },
     ],
   },
 
   { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
   { path: '/profile', label: 'Profile', icon: <User size={22} /> },
-  { path: '/invoices', label: 'Create', icon: <SquarePlus size={22} /> },
+  { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
 ];
 
 

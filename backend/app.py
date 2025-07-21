@@ -9,8 +9,7 @@ from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from datetime import datetime, timedelta
-import psycopg2
-from psycopg2.extras import RealDictCursor
+from sqlalchemy import text, func, extract, and_, or_
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -166,7 +165,7 @@ def preview_invoice():
         data = request.get_json()
         app.logger.debug(f"[PREVIEW] Received data: {data}")
         template_data = parse_invoice_data(data)
-        html = render_template('invoice_template.html', **template_data)
+        html = render_template('invoice_template3.html', **template_data)
 
         # Render PDF first
         pdf_io = BytesIO()
@@ -193,7 +192,7 @@ def generate_invoice():
         data = request.get_json()
         app.logger.debug(f"[GENERATE] Received data: {data}")
         template_data = parse_invoice_data(data)
-        html = render_template('invoice_template2.html', **template_data)
+        html = render_template('invoice_template3.html', **template_data)
         pdf = HTML(string=html).write_pdf()
 
         response = make_response(pdf)
@@ -276,196 +275,159 @@ def save_invoice():
 
 @app.route('/api/dashboard', methods=['GET'])
 def get_dashboard_data():
+    user_id = request.args.get('user_id')
+    if not user_id:
+        return jsonify({'error': 'user_id is required'}), 400
+
     try:
-        # Connect to your PostgreSQL database
-        conn = psycopg2.connect(
-            host=os.getenv('DB_HOST', 'localhost'),
-            database=os.getenv('DB_NAME', 'invoicegen'),
-            user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASSWORD', ''),
-        )
+        from sqlalchemy.orm import Session
+        session = Session(bind=db.engine)
 
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
+        # Check if user exists
+        user = session.get(User, user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
 
-        # Get dashboard statistics
-        stats_query = """
-        SELECT 
-            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount END), 0) as total_revenue,
-            COALESCE(SUM(CASE WHEN status IN ('sent', 'overdue') THEN amount END), 0) as pending_amount,
-            COUNT(*) as total_invoices,
-            COUNT(DISTINCT client_email) as total_clients,
-            COUNT(CASE WHEN status = 'paid' THEN 1 END) as paid_invoices,
-            COUNT(CASE WHEN status = 'overdue' THEN 1 END) as overdue_invoices
-        FROM invoices;
-        """
+        # Get all invoices for the user
+        invoices = session.query(Invoice).filter_by(user_id=user_id).all()
 
-        cursor.execute(stats_query)
-        stats_result = cursor.fetchone()
-
-        # Calculate monthly growth (comparing current month to previous month)
-        monthly_growth_query = """
-        WITH current_month AS (
-            SELECT COALESCE(SUM(amount), 0) as current_revenue
-            FROM invoices 
-            WHERE status = 'paid' 
-            AND EXTRACT(MONTH FROM created_date) = EXTRACT(MONTH FROM CURRENT_DATE)
-            AND EXTRACT(YEAR FROM created_date) = EXTRACT(YEAR FROM CURRENT_DATE)
-        ),
-        previous_month AS (
-            SELECT COALESCE(SUM(amount), 0) as previous_revenue
-            FROM invoices 
-            WHERE status = 'paid'
-            AND EXTRACT(MONTH FROM created_date) = EXTRACT(MONTH FROM CURRENT_DATE - INTERVAL '1 month')
-            AND EXTRACT(YEAR FROM created_date) = EXTRACT(YEAR FROM CURRENT_DATE - INTERVAL '1 month')
-        )
-        SELECT 
-            CASE 
-                WHEN p.previous_revenue > 0 THEN 
-                    ROUND(((c.current_revenue - p.previous_revenue) / p.previous_revenue * 100)::numeric, 1)
-                ELSE 0 
-            END as growth_percentage
-        FROM current_month c, previous_month p;
-        """
-
-        cursor.execute(monthly_growth_query)
-        growth_result = cursor.fetchone()
-        monthly_growth = float(growth_result['growth_percentage']) if growth_result else 0
-
-        # Get recent invoices (last 10)
-        recent_invoices_query = """
-        SELECT 
-            id,
-            invoice_number,
-            client_name,
-            client_email,
-            amount,
-            status,
-            created_date,
-            due_date,
-            description
-        FROM invoices
-        ORDER BY created_date DESC
-        LIMIT 10;
-        """
-
-        cursor.execute(recent_invoices_query)
-        recent_invoices = cursor.fetchall()
-
-        # Convert dates to ISO format for JSON serialization
-        for invoice in recent_invoices:
-            if invoice['created_date']:
-                invoice['created_date'] = invoice['created_date'].isoformat()
-            if invoice['due_date']:
-                invoice['due_date'] = invoice['due_date'].isoformat()
-
-        # Prepare response data
-        dashboard_data = {
-            'stats': {
-                'total_revenue': float(stats_result['total_revenue']),
-                'pending_amount': float(stats_result['pending_amount']),
-                'total_invoices': int(stats_result['total_invoices']),
-                'total_clients': int(stats_result['total_clients']),
-                'paid_invoices': int(stats_result['paid_invoices']),
-                'overdue_invoices': int(stats_result['overdue_invoices']),
-                'monthly_growth': monthly_growth
-            },
-            'recent_invoices': [dict(invoice) for invoice in recent_invoices]
+        # Initialize stats
+        stats = {
+            'total_revenue': 0.0,
+            'pending_amount': 0.0,
+            'total_invoices': len(invoices),
+            'total_clients': 0,
+            'paid_invoices': 0,
+            'overdue_invoices': 0,
+            'monthly_growth': 0.0
         }
 
-        cursor.close()
-        conn.close()
+        # Track unique clients
+        client_ids = set()
 
-        return jsonify(dashboard_data)
+        for invoice in invoices:
+            if invoice.client_id:
+                client_ids.add(str(invoice.client_id))
+
+            # Get amount from invoice data
+            amount = 0.0
+            if isinstance(invoice.data, dict):
+                try:
+                    amount = float(invoice.data.get('amount', 0))
+                except (ValueError, TypeError):
+                    pass
+
+            # Update stats based on status
+            if invoice.status == 'paid':
+                stats['total_revenue'] += amount
+                stats['paid_invoices'] += 1
+            elif invoice.status == 'overdue':
+                stats['pending_amount'] += amount
+                stats['overdue_invoices'] += 1
+            elif invoice.status == 'sent':
+                stats['pending_amount'] += amount
+
+        stats['total_clients'] = len(client_ids)
+
+        # Get recent invoices (last 5)
+        recent_invoices = []
+        for inv in sorted(invoices, key=lambda x: x.created_at, reverse=True)[:5]:
+            recent_invoices.append({
+                'id': str(inv.id),
+                'invoice_number': inv.data.get('invoice_number', '') if isinstance(inv.data, dict) else '',
+                'client_name': inv.data.get('to', '') if isinstance(inv.data, dict) else '',
+                'client_email': inv.data.get('email', '') if isinstance(inv.data, dict) else '',
+                'amount': float(inv.data.get('amount', 0)) if isinstance(inv.data, dict) else 0.0,
+                'status': inv.status,
+                'created_date': inv.created_at.isoformat() if inv.created_at else None,
+                'due_date': inv.due_date.isoformat() if inv.due_date else None,
+                'description': ', '.join([item.get('name', '') for item in inv.data.get('items', [])])
+                if isinstance(inv.data, dict) and isinstance(inv.data.get('items'), list)
+                else ''
+            })
+
+        return jsonify({
+            'success': True,
+            'data': {
+                'stats': stats,
+                'recent_invoices': recent_invoices
+            }
+        })
 
     except Exception as e:
-        print(f"Error fetching dashboard data: {str(e)}")
-        return jsonify({'error': 'Failed to fetch dashboard data'}), 500
+        app.logger.error(f"Error in get_dashboard_data: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch dashboard data',
+            'message': str(e)
+        }), 500
 
 
 # Additional helper routes you might need
 
-@app.route('/api/invoices/<invoice_id>', methods=['GET'])
+@app.route('/api/invoices/<uuid:invoice_id>', methods=['GET'])
 def get_invoice(invoice_id):
     """Get a specific invoice by ID"""
     try:
-        conn = psycopg2.connect(
-            host=os.getenv('DB_HOST', 'localhost'),
-            database=os.getenv('DB_NAME', 'invoice_db'),
-            user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASSWORD', ''),
-            port=os.getenv('DB_PORT', '5432')
-        )
-
-        cursor = conn.cursor(cursor_factory=RealDictCursor)
-
-        query = """
-        SELECT * FROM invoices WHERE id = %s;
-        """
-
-        cursor.execute(query, (invoice_id,))
-        invoice = cursor.fetchone()
-
+        # Get invoice using SQLAlchemy
+        invoice = db.session.query(Invoice).filter_by(id=invoice_id).first()
         if not invoice:
-            return jsonify({'error': 'Invoice not found'}), 404
+            return jsonify({'success': False, 'error': 'Invoice not found'}), 404
 
-        # Convert dates to ISO format
-        if invoice['created_date']:
-            invoice['created_date'] = invoice['created_date'].isoformat()
-        if invoice['due_date']:
-            invoice['due_date'] = invoice['due_date'].isoformat()
-
-        cursor.close()
-        conn.close()
-
-        return jsonify(dict(invoice))
+        return jsonify({
+            'success': True,
+            'invoice': {
+                'id': str(invoice.id),
+                'user_id': str(invoice.user_id),
+                'client_id': str(invoice.client_id) if invoice.client_id else None,
+                'data': invoice.data,
+                'status': invoice.status,
+                'created_at': invoice.created_at.isoformat() if invoice.created_at else None,
+                'updated_at': invoice.updated_at.isoformat() if hasattr(invoice, 'updated_at') and invoice.updated_at else None,
+                'issued_date': invoice.issued_date.isoformat() if invoice.issued_date else None,
+                'due_date': invoice.due_date.isoformat() if invoice.due_date else None
+            }
+        })
 
     except Exception as e:
-        print(f"Error fetching invoice: {str(e)}")
-        return jsonify({'error': 'Failed to fetch invoice'}), 500
+        app.logger.error(f"Error getting invoice {invoice_id}: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to get invoice'}), 500
 
 
-@app.route('/api/invoices/<invoice_id>/status', methods=['PUT'])
+@app.route('/api/invoices/<uuid:invoice_id>/status', methods=['PUT'])
 def update_invoice_status(invoice_id):
     """Update invoice status"""
     try:
         data = request.get_json()
         new_status = data.get('status')
-
-        if new_status not in ['draft', 'sent', 'paid', 'overdue']:
-            return jsonify({'error': 'Invalid status'}), 400
-
-        conn = psycopg2.connect(
-            host=os.getenv('DB_HOST', 'localhost'),
-            database=os.getenv('DB_NAME', 'invoice_db'),
-            user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASSWORD', ''),
-            port=os.getenv('DB_PORT', '5432')
-        )
-
-        cursor = conn.cursor()
-
-        query = """
-        UPDATE invoices 
-        SET status = %s, updated_date = CURRENT_TIMESTAMP
-        WHERE id = %s
-        RETURNING id;
-        """
-
-        cursor.execute(query, (new_status, invoice_id))
-        updated_invoice = cursor.fetchone()
-
-        if not updated_invoice:
-            return jsonify({'error': 'Invoice not found'}), 404
-
-        conn.commit()
-        cursor.close()
-        conn.close()
-
-        return jsonify({'message': 'Invoice status updated successfully'})
-
+        
+        if not new_status:
+            return jsonify({'success': False, 'error': 'Status is required'}), 400
+            
+        # Get and update invoice using SQLAlchemy
+        invoice = db.session.query(Invoice).filter_by(id=invoice_id).first()
+        if not invoice:
+            return jsonify({'success': False, 'error': 'Invoice not found'}), 404
+            
+        # Update status
+        invoice.status = new_status
+        if hasattr(invoice, 'updated_at'):
+            invoice.updated_at = datetime.utcnow()
+            
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'invoice': {
+                'id': str(invoice.id),
+                'status': invoice.status
+            }
+        })
+        
     except Exception as e:
-        print(f"Error updating invoice status: {str(e)}")
-        return jsonify({'error': 'Failed to update invoice status'}), 500
+        db.session.rollback()
+        app.logger.error(f"Error updating invoice {invoice_id} status: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to update invoice status'}), 500
 
 
 @app.route('/api/auth/signup', methods=['POST'])
@@ -511,12 +473,23 @@ def signin():
 
 
 # Debug route to check database connection
-@app.route('/api/debug/db-info')
+@app.route('/db-info')
 def db_info():
-    return jsonify({
-        'database_uri': app.config['SQLALCHEMY_DATABASE_URI'],
-        'database_type': 'postgresql' if 'postgresql' in app.config['SQLALCHEMY_DATABASE_URI'] else 'other'
-    })
+    try:
+        # Test database connection using SQLAlchemy
+        db.session.execute(text('SELECT 1'))
+        db_version = db.session.execute(text('SELECT version()')).scalar()
+        return jsonify({
+            'status': 'success',
+            'database': str(db.engine.url),
+            'version': db_version
+        })
+    except Exception as e:
+        app.logger.error(f"Database connection failed: {str(e)}", exc_info=True)
+        return jsonify({
+            'status': 'error',
+            'message': str(e)
+        }), 500
 
 
 if __name__ == '__main__':
