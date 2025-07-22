@@ -192,11 +192,18 @@ const [date, setDate] = React.useState<Date | undefined>(
           show_discount: showDiscount,
           show_shipping: showShipping,
           logo_url: logoUrl,
+          // Include all currency variants in the data object
+          currency: typeof currency === 'string' ? currency : currency.code,
+          currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
+          currency_label: typeof currency === 'string' ? currency : currency.label
         },
         issued_date: issuedDate,
         due_date: dueDate,
         status: "draft",
-        currency: typeof currency === 'string' ? currency : currency.symbol
+        // Include currency in the root object for backward compatibility
+        currency: typeof currency === 'string' ? currency : currency.code,
+        currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
+        currency_label: typeof currency === 'string' ? currency : currency.label
       };
 
       // Only save if user_id and required fields are present
@@ -328,29 +335,37 @@ const [date, setDate] = React.useState<Date | undefined>(
         </header>
         <h2 className="text-xl font-semibold mb-4 text-gray-900">Items</h2>
         <DragDropContext onDragEnd={onDragEnd}>
-          <Droppable droppableId="invoice-lines-droppable">
-            {(provided: any) => (
-              <div ref={provided.innerRef} {...provided.droppableProps}>
-                {items?.map((item, index) => (
-                  <Draggable key={item.id} draggableId={item.id} index={index}>
-                    {(provided: any, snapshot: any) => (
-                      <InvoiceLine
-                        provided={provided}
-                        snapshot={snapshot}
-                        item={item}
-                        index={index}
-                        draggableId={item.id}
-                        onChange={handleItemChange}
-                        onRemove={() => removeItem(index)}
-                        onToggleDescription={() => toggleDescription(index)}
-                        itemsLength={items.length}
-                      />
-                    )}
-                  </Draggable>
+          <Droppable droppableId="invoice-lines-droppable" type="CARD">
+            {(provided: any) => {
+              // Handle the Droppable props manually to avoid defaultProps warning
+              const droppableProps = {
+                ...provided.droppableProps,
+                // Add any default props you need here
+              };
+              
+              return (
+                <div ref={provided.innerRef} {...droppableProps}>
+                  {items?.map((item, index) => (
+                    <Draggable key={item.id} draggableId={item.id} index={index}>
+                      {(provided) => (
+                        <InvoiceLine
+                          provided={provided}
+                          snapshot={provided.draggableProps}
+                          item={item}
+                          index={index}
+                          draggableId={item.id}
+                          onChange={handleItemChange}
+                          onRemove={() => removeItem(index)}
+                          onToggleDescription={() => toggleDescription(index)}
+                          itemsLength={items.length}
+                        />
+                      )}
+                    </Draggable>
                 ))}
-                {provided.placeholder}
-              </div>
-            )}
+                  {provided.placeholder}
+                </div>
+              );
+            }}
           </Droppable>
         </DragDropContext>
         <button

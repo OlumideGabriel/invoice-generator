@@ -412,7 +412,7 @@ const InvoicesPage = () => {
                           {formatAmount(totalAmount, invoice.data?.currency_symbol || invoice.currency?.symbol || '£')}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {invoice.data?.currency?.code || invoice.currency?.code || 'GBP'}
+                          {invoice.data?.currency || invoice.currency?.currency || 'GBP'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>

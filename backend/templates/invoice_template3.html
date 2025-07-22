@@ -31,7 +31,7 @@
     .header-section {
       padding: 20px;
       background: #F2F5F9; /* Placeholder for header background color */
-      border-radius: 15px;
+      border-radius: 10px;
       margin-bottom: 40px;
 
     }
@@ -119,8 +119,8 @@
     }
 
     .services-title {
-      font-size: 20px;
-      font-weight: 600;
+      font-size: 21px;
+      font-weight: 500;
       color: #333;
       margin-bottom: 30px;
     }
@@ -160,8 +160,8 @@
       text-align: right;
     }
 
-    .item-name, .item-total {
-      font-weight: 600;
+    .item-name {
+      font-weight: 500;
       color: #121722;
       font-size: 15px;
     }
@@ -173,7 +173,7 @@
       line-height: 1.4;
     }
 
-    .item-qty, .item-price {
+    .item-qty, .item-price, .item-total{
       color: #60737D;
       font-size: 15px;
       font-weight: 500;
@@ -183,7 +183,7 @@
     .total-section {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: 80px;
+      margin-bottom: 100px;
 
     }
 
@@ -192,9 +192,9 @@
       justify-content: space-between;
       align-items: center;
       min-width: 250px;
-      padding: 20px;
+      padding: 10px 20px;
       background: #F2F5F9; /* Placeholder for total section background color */
-      border-radius: 15px;
+      border-radius: 10px;
     }
 
     .total-label {
@@ -239,9 +239,11 @@
     }
 
     .company-logo {
-      margin-left: 20px;
-      margin-top: 60px;
-      width: auto;
+      height: 60px;
+    }
+
+    .footer-content {
+      margin-top: 40px;
     }
 
     .logo-center {
@@ -268,10 +270,7 @@
         width: auto;
         min-height: auto;
       }
-      footer-content {
-        position: absolute;
-        bottom: 100px;
-      }
+
     }
 
     @page {
@@ -359,21 +358,22 @@
     <!-- Total -->
     <div class="total-section">
       <div class="total-row">
-        <div class="total-label">Total {{ currency }}</div>
+        <div class="total-label">Total ({{ currency }})</div>
         <div class="total-value">{{ '{:,.2f}'.format(total) if total else '0' }}</div>
       </div>
     </div>
 </div>
     <div class="footer-content">
     <!-- Footer -->
-    <div class="company-logo">
+
+
+    <div class="footer-section">
+      <div class="footer-column">
+        <div class="company-logo">
         {% if logo_url %}
         <img src="{{ logo_url }}" alt="Logo" style="max-width: 60px; height: 60px; object-fit: contain; margin-bottom: 15px;" />
         {% endif %}
       </div>
-
-    <div class="footer-section">
-      <div class="footer-column">
 
         <h3>{{ from.split('\n')[0] if from and '\n' in from else (from or 'Company Name LLC') }}</h3>
         <p>

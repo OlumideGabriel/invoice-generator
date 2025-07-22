@@ -155,7 +155,8 @@ def parse_invoice_data(data):
         'payment_instructions': data.get('payment_instructions', ''),
         'terms': data.get('terms', ''),
         'logo_url': data.get('logo_url', None),
-        'currency': data.get('currency', 'USD'),
+        'currency': data.get('currency'),
+        'currency_symbol': data.get('currency_symbol'),
     }
 
     return template_data

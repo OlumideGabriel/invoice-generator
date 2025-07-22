@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useCurrency as useCurrencyContext, CurrencyOption } from '../context/CurrencyContext';
 
 // Generate unique ID for items
 const generateId = () => {
@@ -14,7 +15,39 @@ export interface InvoiceItem {
   showDesc?: boolean;
 }
 
-function useInvoice() {
+interface UseInvoiceOptions {
+  currency?: CurrencyOption | string;
+}
+
+// Default currency object that matches CurrencyOption type
+const defaultCurrency: CurrencyOption = {
+  code: 'EUR',
+  symbol: '€',
+  label: 'Euro (€)'
+};
+
+// Helper function to safely use the currency context
+const useSafeCurrency = () => {
+  try {
+    return useCurrencyContext?.();
+  } catch (e) {
+    return { currency: defaultCurrency };
+  }
+};
+
+function useInvoice(options: UseInvoiceOptions = {}) {
+  const [currency, setCurrency] = useState<CurrencyOption | string>(defaultCurrency);
+  const currencyContext = useSafeCurrency();
+
+  useEffect(() => {
+    if (options.currency) {
+      setCurrency(options.currency);
+    } else if (currencyContext?.currency) {
+      setCurrency(currencyContext.currency);
+    } else {
+      setCurrency(defaultCurrency);
+    }
+  }, [currencyContext, options.currency]);
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -54,7 +87,7 @@ function useInvoice() {
   };
 
   const toggleDescription = (index: number) => {
-    setItems(items => items.map((item, i) => 
+    setItems(items => items.map((item, i) =>
       i === index ? { ...item, showDesc: !item.showDesc } : item
     ));
   };
@@ -68,7 +101,7 @@ function useInvoice() {
 
   const removeItem = (idx: number) => setItems(items => items.filter((_, i) => i !== idx));
 
-  const getSubtotal = () => 
+  const getSubtotal = () =>
     items.reduce((sum, item) => sum + (Number(item.quantity || 0) * Number(item.unit_cost || 0)), 0);
 
   const getTaxAmount = () => {
@@ -90,6 +123,8 @@ function useInvoice() {
     return shippingAmount;
   };
 
+
+
   const getTotal = () => {
     const subtotal = getSubtotal();
     const tax = getTaxAmount();
@@ -103,6 +138,7 @@ function useInvoice() {
     setLogoUrl(url);
     setLogoStatus(url ? 'Logo uploaded successfully!' : 'Logo preview only (upload failed)');
   };
+
 
   const handleSubmit = async (): Promise<void> => {
     setLoading(true);
@@ -131,7 +167,9 @@ function useInvoice() {
         show_tax: showTax,
         show_discount: showDiscount,
         show_shipping: showShipping,
-        currency: 'USD', // Assuming USD, replace with dynamic currency if needed
+        currency: typeof currency === 'string' ? currency : currency?.code || 'EUR',
+        currency_symbol: typeof currency === 'string' ? currency : currency?.symbol || '€',
+        currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
       };
 
       const res = await fetch('http://localhost:5000/generate-invoice', {
@@ -188,7 +226,9 @@ function useInvoice() {
         show_tax: showTax,
         show_discount: showDiscount,
         show_shipping: showShipping,
-        currency: 'USD', // Assuming USD, replace with dynamic currency if needed
+        currency: typeof currency === 'string' ? currency : currency?.code || 'EUR',
+        currency_symbol: typeof currency === 'string' ? currency : currency?.symbol || '€',
+        currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
       };
 
       const res = await fetch('http://localhost:5000/preview-invoice', {
