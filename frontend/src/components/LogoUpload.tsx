@@ -24,7 +24,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
         // Upload to backend
         const formData = new FormData();
         formData.append('logo', file);
-        const response = await fetch('http://localhost:5000/upload-logo', {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/upload-logo`, {
           method: 'POST',
           body: formData,
         });

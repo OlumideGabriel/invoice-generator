@@ -165,7 +165,7 @@ const AuthPage: React.FC = () => {
           our platform simplifies your invoicing process.</p>
         <div className="max-w-lg w-full relative">
             <img
-              src="http://localhost:5000/static/uploads/to-do.jpg"
+              src="/public/to-do.jpg"
               alt="To Do"
               className="max-w-full h-auto rounded-xl shadow-lg"
             />
