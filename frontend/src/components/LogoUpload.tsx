@@ -52,7 +52,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
   };
 
   return (
-    <div className="mb-6 w-full md:w-1/3">
+    <div className="mb-6 w-full md:w-96">
       <div
         onClick={handleClick}
         className="h-40 md:max-w-xs border-2 border-dashed border-3 bg-green-100 rounded-xl flex items-center

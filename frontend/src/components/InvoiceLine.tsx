@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, X, GripVertical } from 'lucide-react';
+import { ChevronDown, ChevronUp, X, GripVertical, Trash2 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 
 type DraggableProvided = any;
@@ -173,17 +173,26 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       </div>
 
       {/* Remove button */}
-      <div className="flex flex-col justify-center self-center bg-red-50 self-stretch" onClick={() => onRemove(index)}>
+      <div className={`flex md:hidden flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600
+          self-stretch cursor-pointer
+      ml-1 p-2 rounded-lg cursor-pointer ${itemsLength > 1 ? ' transition-colors' : 'hidden'}`}
 
-        <button
+        onClick={() => onRemove(index)}
+        aria-label="Remove item"
+      >
+      <X size={18} />
+
+
+      </div>
+      <button
           onClick={() => onRemove(index)}
-          className={`p-1 rounded-lg transition-all duration-200 ease-in-out ml-4 focus:outline-none focus:ring-2
-              focus:ring-red-500 focus:ring-offset-1 ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
+          className={`p-1 md:flex hidden rounded-lg transition-all duration-200 ease-in-out ml-2 focus:outline-none focus:ring-2
+              focus:ring-red-500 focus:ring-offset-1 ${itemsLength > 1 ? 'small-icon transition-colors' : 'md:hidden'}`}
           aria-label="Remove item"
         >
           <X size={18} />
+
         </button>
-      </div>
     </div>
     </div>
   );

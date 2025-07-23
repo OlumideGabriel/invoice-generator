@@ -37,25 +37,20 @@ const menuItems: MenuItem[] = [
 {/* Mobile menu items */}
 
 const mobileMenuItems: MenuItem[] = [
-  { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={22} /> },
+  { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={30} /> },
   {
     path: '/invoices',
     label: 'Invoices',
-    icon: <FileText size={22} />,
-    submenu: [
-      { label: 'All Invoices', path: '/invoices', icon: <FileText size={20} /> },
-      { label: 'Create Invoice', path: '/create-invoice', icon: <FileText size={22} /> },
-    ],
+    icon: <FileText size={30} />,
   },
-  { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
-  { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
-  { path: '/profile', label: 'Profile', icon: <User size={22} /> },
+  { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={30} /> },
+  { path: '/settings', label: 'Settings', icon: <Settings size={30} /> },
+  { path: '/profile', label: 'Profile', icon: <User size={30} /> },
 ];
 
 const ICON_SIZE = 20;
 const SideMenu: React.FC = () => {
   const location = useLocation();
-  const { currency, setCurrency, currencyOptions } = useCurrency();
 
   const [collapsed, setCollapsed] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -144,18 +139,17 @@ const SideMenu: React.FC = () => {
     </div>
 
     {/* Mobile Sidebar */}
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f6e9df] border-gray-200 z-50">
       <nav className="flex justify-around items-center py-3">
         {mobileMenuItems.map(({ path, label, icon }) => (
           <Link
             key={label}
             to={path}
-            className={`flex flex-col items-center text-gray-700 hover:text-black/100 ${
-              location.pathname === path ? 'text-black/100' : ''
+            className={`flex flex-col py-3 px-6 items-center cursor-pointer rounded-lg text-gray-700 hover:text-black/100 ${
+              location.pathname === path ? 'bg-black/90 text-neutral-100 hover:text-neutral-100' : 'text-gray-800'
             }`}
           >
             {icon}
-            <span className="text-xs">{label}</span>
           </Link>
         ))}
       </nav>

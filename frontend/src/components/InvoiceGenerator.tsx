@@ -374,7 +374,7 @@ const [date, setDate] = React.useState<Date | undefined>(
         >
           <Plus /> Add Item
         </button>
-        <div className="w-full flex flex-col md:flex-row gap-6 mb-6 justify-between items-start">
+        <div className="w-full flex-1 md:flex flex-col md:flex-row gap-6 mb-6 justify-between items-start">
           <div className="flex-1 w-full">
             <PaymentSection
               paymentDetails={paymentDetails}
@@ -383,7 +383,7 @@ const [date, setDate] = React.useState<Date | undefined>(
               setTerms={setTerms}
             />
           </div>
-          <div className="flex flex-col justify-items-end ">
+          <div className="flex flex-col justify-end ">
             {/* Subtotal Display */}
             <div className="mb-2 flex justify-end mb-5">
               <span className="text-gray-500 font-medium mr-2">Subtotal:</span>
@@ -410,8 +410,8 @@ const [date, setDate] = React.useState<Date | undefined>(
           </div>
         </div>
         {/* Total Display at bottom right - styled to match screenshot */}
-        <div className="flex justify-end relative">
-          <div className="bg-neutral-950 rounded-md px-10 md:px-20 py-5 flex items-center md:min-w-lg gap-2">
+        <div className="flex justify-end flex-wrap md:w-lg w-full md:bg-transparent bg-neutral-950 rounded-md">
+          <div className="bg-neutral-950 rounded-md px-10 md:px-20 py-5 flex justify-end items-center gap-2">
             <span className="text-lg font-medium text-gray-200 pr-7">Total</span>
             <span className="text-lg font-medium text-gray-400">{typeof currency === 'string' ? currency : currency.code}</span>
             <span className="text-2xl font-medium text-white">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
