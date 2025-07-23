@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceGen Backend</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff41;
+            margin: 0;
+            padding: 40px;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 40px;
+            background: rgba(0, 255, 65, 0.05);
+            text-align: center;
+            max-width: 500px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 10px #00ff41;
+        }
+
+        .status {
+            margin: 20px 0;
+            font-size: 1.2em;
+        }
+
+        .stats {
+            margin-top: 30px;
+            text-align: left;
+        }
+
+        .stat-line {
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 3px solid #00ff41;
+            background: rgba(0, 255, 65, 0.02);
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ INVOICEGEN API ⚡</h1>
+        <div class="status">
+            <span class="blink">●</span> BACKEND ONLINE
+        </div>
+
+        <div class="stats">
+            <div class="stat-line">
+                <strong>Database:</strong> {{ db_status }}
+            </div>
+            <div class="stat-line">
+                <strong>Routes:</strong> {{ route_count }}
+            </div>
+            <div class="stat-line">
+                <strong>Mode:</strong> {{ 'DEBUG' if debug_mode else 'PRODUCTION' }}
+            </div>
+            <div class="stat-line">
+                <strong>Time:</strong> {{ current_time }}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

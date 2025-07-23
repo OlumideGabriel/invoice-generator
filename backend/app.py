@@ -6,12 +6,15 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 import logging
+from datetime import datetime
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from datetime import datetime
 from sqlalchemy import text
 from clients import Clients
+
+
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -538,6 +541,31 @@ def get_client_invoices(client_id):
 def bulk_delete_clients():
     """Delete multiple clients at once"""
     return Clients.bulk_delete_clients()
+
+
+@app.route('/', methods=['GET'])
+def home():
+    """Simple JSON status for debugging"""
+
+    # Check database status
+    try:
+        db.session.execute(text('SELECT 1'))
+        db_status = "connected"
+    except Exception as e:
+        db_status = f"error: {str(e)}"
+
+    # Get basic stats
+    route_count = len([rule for rule in app.url_map.iter_rules()])
+    current_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    return jsonify({
+        "service": "InvoiceGen Backend API",
+        "status": "online",
+        "database": db_status,
+        "routes": route_count,
+        "debug_mode": app.debug,
+        "timestamp": current_time
+    })
 
 
 if __name__ == '__main__':
