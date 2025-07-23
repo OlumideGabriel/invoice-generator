@@ -16,8 +16,6 @@ import InvoicesPage from './pages/InvoicesPage';
 import ClientsPage from './pages/ClientsPage';
 
 
-
-
 function Clients() {
   return <div className="p-6">Clients Page</div>;
 }
