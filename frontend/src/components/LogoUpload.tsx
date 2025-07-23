@@ -52,10 +52,10 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
   };
 
   return (
-    <div className="mb-6 w-64">
+    <div className="mb-6 w-full md:w-1/3">
       <div
         onClick={handleClick}
-        className="h-40 max-w-xs border-2 border-dashed border-3 bg-green-100 rounded-xl flex items-center
+        className="h-40 md:max-w-xs border-2 border-dashed border-3 bg-green-100 rounded-xl flex items-center
         justify-center cursor-pointer hover:border-green-400 hover:bg-green-200 transition relative group overflow-hidden"
       >
         {logoUrl ? (
@@ -65,7 +65,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
               type="button"
               onClick={handleRemoveLogo}
               className="label-2 absolute top-2 right-2 bg-white rounded-1/2 !p-0.5 shadow
-              group-hover:bg-red-400 opacity-0 group-hover:opacity-100 group-hover:border-red-100"
+              group-hover:bg-red-400 opacity-100 md:opacity-0 group-hover:opacity-100 group-hover:border-red-100"
               aria-label="Remove logo"
             >
               <X size={18} />

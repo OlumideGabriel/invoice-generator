@@ -25,7 +25,7 @@ const PartyField: React.FC<PartyFieldProps> = ({ label, value, onChange }) => {
   };
 
   return (
-    <div className="mb-6">
+    <div className="mb-6 w-full">
       <div
         className="relative group"
         onMouseEnter={handleMouseEnter}
@@ -36,12 +36,13 @@ const PartyField: React.FC<PartyFieldProps> = ({ label, value, onChange }) => {
           onChange={onChange}
           onClick={handleClick}
           rows={3}
-          className="flex flex-col w-64 min-h-[100px] p-3 rounded-md bg-neutral-700 border
+          className="flex md:w-64 w-full min-h-[100px] p-3 rounded-md bg-neutral-700 border
           border-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
         <button
-          className={`absolute bg-green-100 text-green-800 rounded-full p-0.5 right-2 top-2  transition-opacity duration-300
-          ${isClicked ? "opacity-0" : isHovering ? "opacity-60" : "opacity-10"}`}
+          className={`absolute bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900
+              rounded-full p-0.5 right-2 top-2 ease-in-ease-out transition-opacity duration-300
+          ${isClicked ? "opacity-0" : isHovering ? "opacity-60" : "opacity-60 md:opacity-0"}`}
         >
           <Plus size={18} />
         </button>

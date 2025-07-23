@@ -25,10 +25,7 @@ const menuItems: MenuItem[] = [
     path: '/invoices',
     label: 'Invoices',
     icon: <FileText size={22} />,
-    submenu: [
-      { label: 'All Invoices', path: '/invoices', icon: <FileText size={20} /> },
-      { label: 'Create Invoice', path: '/create-invoice', icon: <FileText size={22} /> },
-    ],
+
   },
   { path: '/clients', label: 'Clients', icon: <Users size={22} /> },
   { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
@@ -36,6 +33,24 @@ const menuItems: MenuItem[] = [
   { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
 ];
 
+
+{/* Mobile menu items */}
+
+const mobileMenuItems: MenuItem[] = [
+  { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={22} /> },
+  {
+    path: '/invoices',
+    label: 'Invoices',
+    icon: <FileText size={22} />,
+    submenu: [
+      { label: 'All Invoices', path: '/invoices', icon: <FileText size={20} /> },
+      { label: 'Create Invoice', path: '/create-invoice', icon: <FileText size={22} /> },
+    ],
+  },
+  { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
+  { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
+  { path: '/profile', label: 'Profile', icon: <User size={22} /> },
+];
 
 const ICON_SIZE = 20;
 const SideMenu: React.FC = () => {
@@ -52,8 +67,10 @@ const SideMenu: React.FC = () => {
     }
   };
 
+
   return (
-    <div className="relative flex">
+      <div>
+    <div className="hidden md:flex relative">
       {/* Sidebar */}
       <aside
         className={`transition-all duration-400 ${
@@ -100,7 +117,7 @@ const SideMenu: React.FC = () => {
       </aside>
 
       {/* Submenu Panel */}
-      {collapsed && expandedItem && (
+       {collapsed && expandedItem && (
         <div className="w-48 bg-[#f6e9df] pt-10 border-neutral-300 shadow-sm">
           {menuItems
               .find(item => item.label === expandedItem)
@@ -121,7 +138,30 @@ const SideMenu: React.FC = () => {
         </div>
 
       )}
+
+
+
     </div>
+
+    {/* Mobile Sidebar */}
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
+      <nav className="flex justify-around items-center py-3">
+        {mobileMenuItems.map(({ path, label, icon }) => (
+          <Link
+            key={label}
+            to={path}
+            className={`flex flex-col items-center text-gray-700 hover:text-black/100 ${
+              location.pathname === path ? 'text-black/100' : ''
+            }`}
+          >
+            {icon}
+            <span className="text-xs">{label}</span>
+          </Link>
+        ))}
+      </nav>
+      </div>
+    </div>
+
   );
 };
 

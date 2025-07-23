@@ -80,16 +80,16 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
         <GripVertical 
           size={25}
           className={`transition-colors ${
-            snapshot?.isDragging ? 'text-emerald-600' : 'text-neutral-400 hover:text-emerald-500'
+            snapshot?.isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
           }`} 
         />
 
       
       {/* Main content area */}
-      <div className="flex-1 p-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-r-xl">
+      <div className="flex-1 p-3 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-xl md:rounded-r-xl">
         <div className="flex w-full flex-wrap md:flex-nowrap gap-4">
           {/* Item name and description section */}
-          <div className="relative flex-1">
+          <div className="relative flex-2 w-full">
             <div className="relative w-full group">
               <input
                 type="text"
@@ -138,7 +138,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
             />
           </div>
           {/* Unit cost and amount section */}
-          <div className="flex flex-col sm:flex-row items-start gap-4">
+          <div className="md:flex flex-1 flex-col md:flex-row items-start gap-4">
             {/* Unit cost input */}
             <div className="flex flex-col">
               <div className="relative">
@@ -152,20 +152,20 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   min={0}
                   step={0.01}
                   onChange={(e) => onChange(index, 'unit_cost', Number(e.target.value))}
-                  className="w-32 pl-8 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-md font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+                  className="md:w-32 w-full pl-8 pr-3 py-3 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 text-md font-medium
+                  focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                 />
               </div>
             </div>
             {/* Amount display */}
-            <div className="flex flex-col">
-              <div className="flex items-center justify-between min-w-32 px-4 py-3 rounded-lg">
-                  <span className="text-md font-bold text-emerald-900">
+            <div className="flex flex-col w-full">
+              <div className="flex md:items-center justify-end md:justify-start min-w-40 mt-1 md:mt-0 py-3 rounded-lg">
+                  <div className="text-md  font-semibold text-emerald-900">
                     <span className="text-sm mr-2 text-gray-600 font-medium">
                       {currency.code}
                     </span>
                     {(item.quantity * item.unit_cost).toFixed(2)}
-                  </span>
-
+                  </div>
               </div>
             </div>
           </div>
@@ -173,7 +173,8 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       </div>
 
       {/* Remove button */}
-      <div className="flex flex-col justify-end self-center">
+      <div className="flex flex-col justify-center self-center bg-red-50 self-stretch" onClick={() => onRemove(index)}>
+
         <button
           onClick={() => onRemove(index)}
           className={`p-1 rounded-lg transition-all duration-200 ease-in-out ml-4 focus:outline-none focus:ring-2

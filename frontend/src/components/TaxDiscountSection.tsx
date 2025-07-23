@@ -105,7 +105,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
   // Store previous values when closing a section
   // (preserve advanced logic from user's working version)
   return (
-    <div className="mb-6 ">
+    <div className="mb-6">
       {/* Toggle Buttons */}
       <div className="flex justify-end gap-3 mb-4">
 

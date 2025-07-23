@@ -22,10 +22,13 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   previewInvoiceImage,
 }) => {
   return (
+      <>
     <div className="w-full max-w-48 hidden md:flex flex-col sticky top-8 z-10 self-start ">
       {/* Action Buttons */}
       <div className="flex flex-col gap-4 mb-8">
         <InvoiceButton loading={loading} onClick={onSubmit} />
+
+        {/* Preview Button */}
         <button
           type="button"
           onClick={onPreview}
@@ -77,6 +80,11 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         </div>
       )}
     </div>
+    <div className="md:hidden mb-20">
+    <InvoiceButton loading={loading} onClick={onSubmit} />
+    </div>
+
+    </>
   );
 };
 
