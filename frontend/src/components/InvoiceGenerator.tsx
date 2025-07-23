@@ -277,9 +277,9 @@ const [date, setDate] = React.useState<Date | undefined>(
   };
 
   return (
-    <div className="flex flex-col md:flex-row w-full m-auto content-center gap-8 main-container">
+    <div className="flex flex-col md:flex-row w-full m-auto justify-center  gap-8 main-container ">
       {/* Left Panel (Main Invoice Form) */}
-      <div className="basis-128 max-w-5xl w-full border-2 bg-neutral-900 rounded-3xl p-8 overflow-auto">
+      <div className="basis-128 max-w-5xl w-full border-2 bg-neutral-900 rounded-3xl p-8">
         <div className="flex flex-col sm:flex-row items-start justify-between mb-6">
           <LogoUpload
             logoFile={logoFile}

@@ -193,3 +193,6 @@ cython_debug/
 .cursorignore
 .cursorindexingignore
 
+# Node Modules
+node_modules/
+

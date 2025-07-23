@@ -4,6 +4,7 @@ from flask_cors import CORS
 from weasyprint import HTML
 from dotenv import load_dotenv
 import os
+import psycopg2
 import logging
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,6 +19,7 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
+DATABASE_URL = os.environ.get("DATABASE_URL")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeClosed } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 import { useLocation } from 'react-router-dom';
@@ -60,7 +60,8 @@ const AuthPage: React.FC = () => {
     <div className="min-h-screen w-full flex flex-row bg-[#1a1a2e] overflow-hidden">
       {/* Left Section (Form) */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-20 relative min-h-screen bg-[#fff0e5]">
-        <div className="absolute top-10 left-10 text-2xl font-bold text-emerald-900 select-none">⚡️</div>
+        <div className="absolute top-10 left-10 text-2xl font-bold text-emerald-900 select-none">
+        <img src="/logocart-new-logo3.png" alt="Apple logo" className="w-8 h-8 rounded-lg" />️</div>
         <div className="max-w-md w-full mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-3 leading-tight">
             {mode === 'signup' ? 'Create an account' : 'Sign in to your account'}
@@ -115,9 +116,9 @@ const AuthPage: React.FC = () => {
                 onClick={() => setShowPassword(v => !v)}
               >
                 {showPassword ? (
-                  <EyeOff size={22} />
-                ) : (
                   <Eye size={22} />
+                ) : (
+                  <EyeClosed size={22} />
                 )}
               </a>
             </div>
@@ -132,16 +133,16 @@ const AuthPage: React.FC = () => {
               {loading ? (mode === 'signup' ? 'Creating account...' : 'Signing in...') : (mode === 'signup' ? 'Create account' : 'Sign in')}
             </button>
             <div className="relative text-center text-gray-500 text-sm my-6">
-              <span className="relative z-10 px-4">Or register with</span>
+              <span className="relative z-10 px-4">or</span>
               <div className="absolute left-0 top-1/2 w-full border-t border-white/10 -z-10" style={{transform: 'translateY(-50%)'}}></div>
             </div>
             <div className="flex gap-4">
               <button type="button" className="flex-1 flex items-center justify-center gap-3 px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition" onClick={() => alert('Google registration would be implemented here')}>
-                <img src="/vite.svg" alt="Google logo" className="w-6 h-6" />
+                <img src="/google.png" alt="Google logo" className="w-6 h-6" />
                 Google
               </button>
               <button type="button" className="flex-1 flex items-center justify-center gap-3 px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition" onClick={() => alert('Apple registration would be implemented here')}>
-                <img src="/vite.svg" alt="Apple logo" className="w-6 h-6" />
+                <img src="/apple-logo.png" alt="Apple logo" className="w-6 h-6" />
                 Apple
               </button>
             </div>
@@ -149,7 +150,7 @@ const AuthPage: React.FC = () => {
         </div>
       </div>
       {/* Right Section (Carousel/Marketing) */}
-      <div className="flex-1 flex flex-col justify-center items-center bg-gradient-to-tr from-emerald-400
+      <div className=" hidden flex-1 lg:flex flex-col justify-center items-center bg-gradient-to-tr from-emerald-400
       to-emerald-900 px-8 md:px-16 py-12 min-h-screen relative">
         <button
             onClick={() => navigate('/create-invoice')}

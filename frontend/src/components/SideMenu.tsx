@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -62,6 +62,27 @@ const SideMenu: React.FC = () => {
     }
   };
 
+        useEffect(() => {
+          const handleResize = () => {
+            if (window.innerWidth < 1120) {
+              setCollapsed(true);
+            } else {
+                setCollapsed(false);
+                }
+
+          };
+
+          // Set initial state
+          handleResize();
+
+          // Add event listener
+          window.addEventListener('resize', handleResize);
+
+          // Cleanup event listener on component unmount
+          return () => {
+            window.removeEventListener('resize', handleResize);
+          };
+        }, []);
 
   return (
       <div>
@@ -94,9 +115,13 @@ const SideMenu: React.FC = () => {
                 key={label}
                 to={path}
                 onClick={() => {
-                  handleClick({ path, label, icon, submenu });
-                  setCollapsed(false);
-                  setExpandedItem(null);
+                  if (path === '/create-invoice' && window.innerWidth < 1000) {
+                    setCollapsed(!collapsed); // Toggle collapse state
+                  } else {
+                    handleClick({ path, label, icon, submenu });
+                    setCollapsed(false);
+                    setExpandedItem(null);
+                  }
                 }}
                 className={`flex menu-item items-center gap-3 h-[3.2rem] max-h-[3.2rem] px-4 py-3 font-medium
                     transition-colors duration-150 text-xl  ${
