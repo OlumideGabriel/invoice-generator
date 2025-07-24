@@ -52,6 +52,12 @@ with app.app_context():
 
 
 @app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
+    return response
+
+@app.after_request
 def add_permissions_policy_header(response):
     response.headers['Permissions-Policy'] = 'payment=*'
     return response
