@@ -25,8 +25,7 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL',
-    f'postgresql://postgres:{DB_PASSWORD}@localhost/invoicegen'
+    'DATABASE_URL'
 )
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False

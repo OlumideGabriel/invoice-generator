@@ -163,9 +163,10 @@ const AuthPage: React.FC = () => {
         <p className="text-white/90 text-lg md:text-xl mb-12 text-center max-w-2xl">
           Whether you&apos;re a freelancer or a business owner,<br />
           our platform simplifies your invoicing process.</p>
+
         <div className="max-w-lg w-full relative">
             <img
-              src="/public/to-do.jpg"
+              src="/to-do.jpg"
               alt="To Do"
               className="max-w-full h-auto rounded-xl shadow-lg"
             />
