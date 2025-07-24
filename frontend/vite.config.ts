@@ -1,15 +1,19 @@
-import path from "path"
-import react from "@vitejs/plugin-react"
-import { defineConfig } from "vite"
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import path from "path";
 
-// https://vite.dev/config/
 export default defineConfig({
-    base: '/',
+  base: "/frontend/",
   plugins: [react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}
-})
+  server: {
+    // Uncomment if using local API during development
+    // proxy: {
+    //   '/api': 'http://localhost:5000',
+    // },
+  },
+});
