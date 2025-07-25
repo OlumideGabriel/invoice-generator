@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ArrowUpDown, Filter, Upload, Plus, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
+import { API_BASE_URL } from '../config/api';
 
 // Define types based on your actual data structure
 interface Currency {
@@ -124,7 +125,7 @@ const InvoicesPage = () => {
     if (!user?.id) return;
 
     setLoading(true);
-    fetch(`/api/invoices?user_id=${user.id}`)
+    fetch(`${API_BASE_URL}/api/invoices?user_id=${user.id}`)
       .then(res => res.json())
       .then((data: InvoiceApiResponse) => {
         if (data.success) {
