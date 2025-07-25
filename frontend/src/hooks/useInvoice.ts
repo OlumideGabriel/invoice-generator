@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useCurrency as useCurrencyContext, CurrencyOption } from '../context/CurrencyContext';
+import { API_BASE_URL } from '../config/api';
+
 
 // Generate unique ID for items
 const generateId = () => {
@@ -172,7 +174,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
       };
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/generate-invoice`, {
+      const res = await fetch(`${API_BASE_URL}/generate-invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -231,7 +233,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
       };
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/preview-invoice`, {
+      const res = await fetch(`${API_BASE_URL}/api/preview-invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -273,7 +275,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         due_date: dueDate,
       };
 
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/preview-invoice`, {
+      const res = await fetch(`${API_BASE_URL}/api/preview-invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),

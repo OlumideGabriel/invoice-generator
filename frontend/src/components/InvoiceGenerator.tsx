@@ -15,6 +15,8 @@ import { useAuth } from '../context/AuthContext';
 import { Calendar } from "@/components/ui/calendar"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
+import { API_BASE_URL } from '../config/api';
+
 import {
   Popover,
   PopoverContent,
@@ -87,7 +89,7 @@ const [date, setDate] = React.useState<Date | undefined>(
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/invoices?user_id=${userId}`);
+      const res = await fetch(`${API_BASE_URL}/api/invoices?user_id=${userId}`);
       const data = await res.json();
       if (Array.isArray(data.invoices)) {
         setInvoices(data.invoices);
@@ -215,7 +217,7 @@ const [date, setDate] = React.useState<Date | undefined>(
         to;
 
       if (hasRequiredFields) {
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/invoices`, {
+        const response = await fetch(`${API_BASE_URL}/api/invoices`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(invoicePayload)
