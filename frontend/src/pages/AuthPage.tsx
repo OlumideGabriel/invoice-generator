@@ -36,17 +36,7 @@ const AuthPage: React.FC = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-          .then(async res => {
-          const text = await res.text();
-          console.log('Response Text:', text);
-          try {
-            const data = JSON.parse(text);
-            console.log('Parsed JSON:', data);
-          } catch (e) {
-            console.error('Failed to parse JSON', e);
-          }
-        })
-        .catch(console.error);
+
       const data = await response.json();
       if (data.success) {
         // If backend returns user object, use it. Otherwise, TODO: update backend to return user data.
