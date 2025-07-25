@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeClosed } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-
+import { API_BASE_URL } from '../config/api';
 import { useLocation } from 'react-router-dom';
 
 const AuthPage: React.FC = () => {
@@ -31,10 +31,10 @@ const AuthPage: React.FC = () => {
       const payload = mode === 'signup'
         ? { first_name: firstName, last_name: lastName, email, password }
         : { email, password };
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {  // <- prepend baseUrl
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
       });
 
       const data = await response.json();

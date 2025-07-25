@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import Tooltip from '../components/Tooltip';
+import { API_BASE_URL } from '../config/api';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -191,7 +192,7 @@ const Dashboard = () => {
 
             try {
                 setLoading(true);
-                const response = await fetch(`/api/invoices?user_id=${user.id}`);
+                const response = await fetch(`${API_BASE_URL}/api/invoices?user_id=${user.id}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch dashboard data');
                 }
