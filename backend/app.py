@@ -76,7 +76,7 @@ def upload_logo():
     logo_path = os.path.join(UPLOAD_FOLDER, logo.filename)
     logo.save(logo_path)
 
-    logo_url = f"http://localhost:5000/uploads/{logo.filename}"
+    logo_url = f"{request.host_url}/uploads/{logo.filename}"
     return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
 
