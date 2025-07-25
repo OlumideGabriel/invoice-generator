@@ -27,7 +27,7 @@ const AuthPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const endpoint = mode === 'signup' ? '/api/auth/signup' : '/api/auth/signin';
+      const endpoint = mode === 'signup' ? 'api/auth/signup' : 'api/auth/signin';
       const payload = mode === 'signup'
         ? { first_name: firstName, last_name: lastName, email, password }
         : { email, password };
