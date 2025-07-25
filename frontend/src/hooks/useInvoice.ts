@@ -233,7 +233,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
       };
 
-      const res = await fetch(`${API_BASE_URL}/preview-invoice`, {
+      const res = await fetch(`${API_BASE_URL}preview-invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -275,7 +275,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         due_date: dueDate,
       };
 
-      const res = await fetch(`${API_BASE_URL}/preview-invoice`, {
+      const res = await fetch(`${API_BASE_URL}preview-invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
