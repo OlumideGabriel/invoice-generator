@@ -192,7 +192,7 @@ const Dashboard = () => {
 
             try {
                 setLoading(true);
-                const response = await fetch(`${API_BASE_URL}/api/invoices?user_id=${user.id}`);
+                const response = await fetch(`${API_BASE_URL}api/invoices?user_id=${user.id}`);
                 if (!response.ok) {
                     throw new Error('Failed to fetch dashboard data');
                 }

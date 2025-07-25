@@ -89,7 +89,7 @@ const [date, setDate] = React.useState<Date | undefined>(
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
     try {
-      const res = await fetch(`${API_BASE_URL}/api/invoices?user_id=${userId}`);
+      const res = await fetch(`${API_BASE_URL}api/invoices?user_id=${userId}`);
       const data = await res.json();
       if (Array.isArray(data.invoices)) {
         setInvoices(data.invoices);
@@ -217,7 +217,7 @@ const [date, setDate] = React.useState<Date | undefined>(
         to;
 
       if (hasRequiredFields) {
-        const response = await fetch(`${API_BASE_URL}/api/invoices`, {
+        const response = await fetch(`${API_BASE_URL}api/invoices`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(invoicePayload)

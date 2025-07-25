@@ -125,7 +125,7 @@ const InvoicesPage = () => {
     if (!user?.id) return;
 
     setLoading(true);
-    fetch(`${API_BASE_URL}/api/invoices?user_id=${user.id}`)
+    fetch(`${API_BASE_URL}api/invoices?user_id=${user.id}`)
       .then(res => res.json())
       .then((data: InvoiceApiResponse) => {
         if (data.success) {

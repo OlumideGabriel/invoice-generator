@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
+import { API_BASE_URL } from '../config/api';
 
 interface LogoUploadProps {
   logoFile: File | null;
@@ -24,7 +25,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
         // Upload to backend
         const formData = new FormData();
         formData.append('logo', file);
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/upload-logo`, {
+        const response = await fetch(`${API_BASE_URL}upload-logo`, {
           method: 'POST',
           body: formData,
         });
