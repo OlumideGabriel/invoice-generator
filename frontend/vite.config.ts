@@ -12,7 +12,7 @@ export default defineConfig({
   },
 server: {
   proxy: {
-    '/api': 'https://invoice-generator-iisl.onrender.com'
+    '/api': 'http://localhost:5000'
   }
 }
 })
