@@ -566,7 +566,7 @@ const InvoicesPage = () => {
                                     ))}
                                     <div className="border-t border-gray-100 mt-1 pt-1">
                                       <button
-                                        onClick={() => confirmDelete(invoice.id)}
+                                        onClick={() => deleteInvoice(invoice.id)}
                                         className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
                                       >
                                         <Trash2 className="w-4 h-4 mr-2" />
