@@ -95,9 +95,6 @@ button-custom.primary:hover, .btn-primary:hover {
   background: var(--card-bg) !important;
 }
 
-.border {
-  border-color: var(--gray);
-}
 
 .border-3 {
   border-color: var(--primary-hover) !important;

@@ -60,7 +60,7 @@ const getInitials = (u: any) => {
           <Bell className="self-center w-9 h-9 p-1.5 rounded-full text-gray-400
           hover:text-gray-200 hover:bg-neutral-200 cursor-pointer transition-colors duration-150" />
            </span>
-           <Tooltip message="Profile" position="bottom">
+
             <a
               onClick={() => setOpen(!open)}
               className="flex items-center justify-center w-5 h-5 px-5 py-5 rounded-full bg-blue-300 hover:bg-blue-200
@@ -70,7 +70,7 @@ const getInitials = (u: any) => {
               {getInitials(user) || <User className="w-5 h-5 rounded-full" />}
 
             </a>
-            </Tooltip>
+
             {open && (
               <div className="absolute right-0 top-10 mt-2 bg-white rounded-md overflow-hidden z-50
                 shadow-lg shadow-gray-400/40 ring-2 ring-gray-300 ring-opacity-40

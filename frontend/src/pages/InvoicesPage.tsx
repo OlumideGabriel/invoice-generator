@@ -467,6 +467,8 @@ const InvoicesPage = () => {
                       <span className="sr-only">Actions</span>
                     </th>
                   </tr>
+
+
                 </thead>
 
                  {/* Ivoices table body */}
@@ -546,10 +548,10 @@ const InvoicesPage = () => {
                                 )}
                               </button>
 
-                              {isDropdownActive && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                                {isDropdownActive && (
+                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 ">
                                   <div className="py-1">
-                                    <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                                    <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b z-50 border-gray-100">
                                       Change Status
                                     </div>
                                     {STATUS_OPTIONS.map((status) => (
@@ -575,7 +577,9 @@ const InvoicesPage = () => {
                                     </div>
                                   </div>
                                 </div>
-                              )}
+                                    )}
+
+
                             </div>
                           </td>
                         </tr>
@@ -583,6 +587,7 @@ const InvoicesPage = () => {
                     })}
                  </tbody>
             </table>
+
 
           </div>
         )}
