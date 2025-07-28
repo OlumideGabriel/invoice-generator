@@ -58,7 +58,7 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-row bg-neutral-900 overflow-hidden">
+    <div className="min-h-screen max-h-[100svh] w-full flex flex-row bg-neutral-900 overflow-hidden">
       {/* Left Section (Form) */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-20 relative min-h-screen bg-[#fff]">
 

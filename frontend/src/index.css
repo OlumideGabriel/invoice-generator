@@ -166,11 +166,11 @@ h1 {
   transition: background-color 0.2s ease-in-out;
 }
 .menu-item:hover {
-  background-color: #eaeaea;
+  background-color: #e2e5eb;
   color: #000;
 }
 .menu-item.active {
-  background-color: #eaeaea;
+  background-color: #e2e5eb;
   color: #000;
 }
 
