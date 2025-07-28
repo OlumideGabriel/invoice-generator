@@ -24,7 +24,7 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL_1")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL_1'
+    'DATABASE_URL'
 )
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -442,8 +442,7 @@ def delete_invoice(invoice_id):
 @app.route('/api/invoices/bulk/delete', methods=['POST'])
 def bulk_delete_invoices():
     """
-    POST /api/invoices/bulk/delete
-    Delete multiple invoices at once
+    POST /api/invoices/bulk/delete     multiple invoices at once
 
     Request body:
     {
