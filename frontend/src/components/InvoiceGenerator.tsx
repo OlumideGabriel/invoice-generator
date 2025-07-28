@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, ChevronDownIcon } from 'lucide-react';
 import LogoUpload from './LogoUpload';
@@ -244,10 +243,10 @@ const [date, setDate] = React.useState<Date | undefined>(
   const handleInvoiceSubmit = async () => {
     // First save to database
     const saved = await saveInvoiceToDatabase();
-    
+
     // Then generate and download PDF
     await handleSubmit();
-    
+
     // Show success message if saved successfully
     if (saved) {
       alert("Invoice saved and downloaded successfully!");
@@ -279,18 +278,20 @@ const [date, setDate] = React.useState<Date | undefined>(
   };
 
   return (
-    <div className="flex flex-col md:flex-row w-full m-auto justify-center  gap-8 main-container ">
+    <div className="flex flex-col xl:flex-row w-full m-auto justify-center gap-4 lg:gap-8  p-2 sm:p-8">
       {/* Left Panel (Main Invoice Form) */}
-      <div className="basis-128 max-w-5xl w-full border-2 bg-neutral-900 rounded-3xl p-8">
-        <div className="flex flex-col sm:flex-row items-start justify-between mb-6">
-          <LogoUpload
-            logoFile={logoFile}
-            logoUrl={logoUrl}
-            logoStatus={logoStatus}
-            handleLogoChange={handleLogoChange}
-          />
-          <div className="mb-6 w-full flex flex-col sm:items-end gap-4">
-            <h1 className="text-7xl">Invoice</h1>
+      <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border !border-gray-200 w-full bg-neutral-900 rounded-2xl p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
+          <div className="w-full sm:w-auto">
+            <LogoUpload
+              logoFile={logoFile}
+              logoUrl={logoUrl}
+              logoStatus={logoStatus}
+              handleLogoChange={handleLogoChange}
+            />
+          </div>
+          <div className="mb-6 w-full sm:w-auto flex flex-col sm:items-end gap-4">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Invoice</h1>
             <div className="flex items-center gap-2">
               <input
                 id="invoice-number"
@@ -298,23 +299,27 @@ const [date, setDate] = React.useState<Date | undefined>(
                 value={invoiceNumber}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNumber(e.target.value) }
                 placeholder="#"
-                className="w-full md:w-40 p-3 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600 focus:outline-none
+                className="w-full sm:w-32 md:w-40 p-3 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600 focus:outline-none
                 focus:ring-1 focus:ring-indigo-400"
               />
             </div>
           </div>
         </div>
         {error && <div className="text-red-400 mb-4">{error}</div>}
-        <header className="flex flex-col md:flex-row flex-wrap justify-between gap-6 mb-6">
+        <header className="flex flex-col lg:flex-row items-center md:flex-wrap justify-between gap-6 mb-6">
 
-            <div className="flex flex-col md:flex-row gap-4 mb-6">
-                <PartyField label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
-                <PartyField label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+            <div className="flex flex-col lg:flex-row gap-4 mb-6 w-full lg:w-auto">
+                <div className="w-full lg:w-auto">
+                  <PartyField label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
+                </div>
+                <div className="w-full lg:w-auto">
+                  <PartyField label="To" value={to} onChange={(e) => setTo(e.target.value)} />
+                </div>
               </div>
 
-          <div className="flex-1 w-full flex flex-col gap-4 justify-end self-start">
+          <div className="flex-1 w-full flex flex-col gap-4 justify-end self-start lg:self-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
-              <label className="text-sm text-neutral-500">Issued Date</label>
+              <label className="text-sm text-neutral-500 sm:min-w-fit">Issued Date</label>
               <input
                 type="date"
                 value={issuedDate}
@@ -325,7 +330,7 @@ const [date, setDate] = React.useState<Date | undefined>(
 
 
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
-              <label className="text-sm text-neutral-500">Due Date</label>
+              <label className="text-sm text-neutral-500 sm:min-w-fit">Due Date</label>
               <input
                 type="date"
                 value={dueDate}
@@ -344,7 +349,7 @@ const [date, setDate] = React.useState<Date | undefined>(
                 ...provided.droppableProps,
                 // Add any default props you need here
               };
-              
+
               return (
                 <div ref={provided.innerRef} {...droppableProps}>
                   {items?.map((item, index) => (
@@ -376,7 +381,7 @@ const [date, setDate] = React.useState<Date | undefined>(
         >
           <Plus /> Add Item
         </button>
-        <div className="w-full flex-1 md:flex flex-col md:flex-row gap-6 mb-6 justify-between items-start">
+        <div className="w-full flex-1 flex flex-col lg:flex-row gap-6 mb-6 justify-between items-start">
           <div className="flex-1 w-full">
             <PaymentSection
               paymentDetails={paymentDetails}
@@ -385,9 +390,9 @@ const [date, setDate] = React.useState<Date | undefined>(
               setTerms={setTerms}
             />
           </div>
-          <div className="flex flex-col justify-end ">
+          <div className="flex flex-col justify-end w-full lg:w-auto">
             {/* Subtotal Display */}
-            <div className="mb-2 flex justify-end mb-5">
+            <div className="mb-2 flex justify-between lg:justify-end mb-5">
               <span className="text-gray-500 font-medium mr-2">Subtotal:</span>
               <span className="font-semibold">{getSubtotal().toLocaleString(undefined, { style: 'currency', currency: typeof currency === 'string' ? currency : currency.code })}</span>
             </div>
@@ -412,23 +417,25 @@ const [date, setDate] = React.useState<Date | undefined>(
           </div>
         </div>
         {/* Total Display at bottom right - styled to match screenshot */}
-        <div className="flex justify-end flex-wrap md:w-lg w-full md:bg-transparent bg-neutral-950 rounded-md">
-          <div className="bg-neutral-950 rounded-md px-10 md:px-20 py-5 flex justify-end items-center gap-2">
-            <span className="text-lg font-medium text-gray-200 pr-7">Total</span>
+        <div className="flex justify-end flex-wrap w-full">
+          <div className="bg-neutral-950 rounded-md px-6 sm:px-10 lg:px-20 py-5 flex justify-end items-center gap-2 w-full sm:w-auto">
+            <span className="text-lg font-medium text-gray-200 pr-3 sm:pr-7">Total</span>
             <span className="text-lg font-medium text-gray-400">{typeof currency === 'string' ? currency : currency.code}</span>
-            <span className="text-2xl font-medium text-white">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            <span className="text-xl sm:text-2xl font-medium text-white">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
       </div>
       {/* Right Sidebar */}
-      <InvoiceSidebar
-        loading={loading}
-        onSubmit={handleInvoiceSubmit}
-        onPreview={handlePreview}
-        previewPdfUrl={previewPdfUrl}
-        setPreviewPdfUrl={setPreviewPdfUrl}
-        previewInvoiceImage={previewInvoiceImage}
-      />
+      <div className="w-full xl:w-auto xl:flex-shrink-0">
+        <InvoiceSidebar
+          loading={loading}
+          onSubmit={handleInvoiceSubmit}
+          onPreview={handlePreview}
+          previewPdfUrl={previewPdfUrl}
+          setPreviewPdfUrl={setPreviewPdfUrl}
+          previewInvoiceImage={previewInvoiceImage}
+        />
+      </div>
     </div>
   );
 };

@@ -13,8 +13,7 @@ from db import db
 from datetime import datetime
 from sqlalchemy import text
 from clients import Clients
-
-
+from invoices import InvoiceOperations
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -22,10 +21,10 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("DATABASE_URL_1")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
-    'DATABASE_URL'
+    'DATABASE_URL_1'
 )
 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -409,41 +408,84 @@ def get_invoice(invoice_id):
         return jsonify({'success': False, 'error': 'Failed to get invoice'}), 500
 
 
+
 @app.route('/api/invoices/<uuid:invoice_id>/status', methods=['PUT'])
 def update_invoice_status(invoice_id):
-    """Update invoice status"""
-    try:
-        data = request.get_json()
-        new_status = data.get('status')
-        
-        if not new_status:
-            return jsonify({'success': False, 'error': 'Status is required'}), 400
-            
-        # Get and update invoice using SQLAlchemy
-        invoice = db.session.query(Invoice).filter_by(id=invoice_id).first()
-        if not invoice:
-            return jsonify({'success': False, 'error': 'Invoice not found'}), 404
-            
-        # Update status
-        invoice.status = new_status
-        if hasattr(invoice, 'updated_at'):
-            invoice.updated_at = datetime.utcnow()
-            
-        db.session.commit()
-        
-        return jsonify({
-            'success': True,
-            'invoice': {
-                'id': str(invoice.id),
-                'status': invoice.status
-            }
-        })
-        
-    except Exception as e:
-        db.session.rollback()
-        app.logger.error(f"Error updating invoice {invoice_id} status: {str(e)}", exc_info=True)
-        return jsonify({'success': False, 'error': 'Failed to update invoice status'}), 500
+    """
+    Enhanced version of status update with better validation and logging
+    PATCH /api/invoices/<invoice_id>/status
 
+    Request body:
+    {
+        "status": "paid|draft|sent|overdue|cancelled",
+        "user_id": "<uuid>" (optional for additional security)
+    }
+    """
+    return InvoiceOperations.update_invoice_status(str(invoice_id))
+
+
+# Add delete functionality (NEW)
+@app.route('/api/invoices/<invoice_id>', methods=['DELETE'])
+def delete_invoice(invoice_id):
+    """
+    DELETE /api/invoices/<invoice_id>?user_id=<uuid>
+    OR
+    DELETE /api/invoices/<invoice_id>
+    with JSON body: {"user_id": "<uuid>"}
+
+    Delete a specific invoice
+    """
+    return InvoiceOperations.delete_invoice(str(invoice_id))
+
+
+# Add bulk delete functionality (NEW)
+@app.route('/api/invoices/bulk/delete', methods=['POST'])
+def bulk_delete_invoices():
+    """
+    POST /api/invoices/bulk/delete
+    Delete multiple invoices at once
+
+    Request body:
+    {
+        "invoice_ids": ["uuid1", "uuid2", ...],
+        "user_id": "<uuid>" (optional for additional security)
+    }
+    """
+    return InvoiceOperations.bulk_delete_invoices()
+
+
+# Add invoice statistics (NEW)
+@app.route('/api/invoices/statistics/<uuid:user_id>', methods=['GET'])
+def get_invoice_statistics(user_id):
+    """
+    GET /api/invoices/statistics/<user_id>
+    Get invoice statistics for a user
+    """
+    return InvoiceOperations.get_invoice_statistics(str(user_id))
+
+
+# Add utility route for valid statuses (NEW)
+@app.route('/api/invoices/status/valid', methods=['GET'])
+def get_valid_invoice_statuses():
+    """
+    GET /api/invoices/status/valid
+    Get list of valid invoice statuses
+    """
+    return jsonify({
+        'success': True,
+        'valid_statuses': InvoiceOperations.VALID_STATUSES
+    })
+
+
+# Optional: Update your existing PUT route to use PATCH instead (more RESTful)
+# Keep your existing route but you can also add this one
+@app.route('/api/invoices/<uuid:invoice_id>/status', methods=['PUT'])
+def update_invoice_status_legacy(invoice_id):
+    """
+    Legacy PUT route for backwards compatibility
+    Redirects to the enhanced PATCH version
+    """
+    return InvoiceOperations.update_invoice_status(str(invoice_id))
 
 @app.route('/api/auth/signup', methods=['POST'])
 def signup():

@@ -166,17 +166,14 @@ h1 {
   transition: background-color 0.2s ease-in-out;
 }
 .menu-item:hover {
-  background-color: #f6e9df;
+  background-color: #eaeaea;
   color: #000;
 }
 .menu-item.active {
-  background-color: #f6e9df;
+  background-color: #eaeaea;
   color: #000;
 }
 
-.main-container {
-padding: 2rem;
-}
 
 @media only screen and (min-width: 1200px) {
     .main-container-3q {

@@ -33,7 +33,7 @@ const getInitials = (u: any) => {
 };
 
   return (
-    <header className="top-0 z-50 w-full bg-neutral-800 shadow-md" onMouseLeave={() => setOpen(false)}>
+    <header className="top-0 z-50 w-full bg-neutral-800 shadow-sm" onMouseLeave={() => setOpen(false)}>
       <div className="flex items-center justify-between main-menu mr-3 ml-3 px-4 py-5">
         {/* Logo and dark mode toggle */}
         <div className="flex items-center space-x-6">

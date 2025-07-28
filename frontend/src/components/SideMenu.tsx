@@ -28,8 +28,10 @@ const menuItems: MenuItem[] = [
 
   },
   { path: '/clients', label: 'Clients', icon: <Users size={22} /> },
-  { path: '/settings', label: 'Settings', icon: <Settings size={22} /> },
-  { path: '/profile', label: 'Profile', icon: <User size={22} /> },
+  { path: '/settings', label: 'Settings', icon: <Settings size={22} />,
+
+  },
+
   { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
 ];
 
@@ -44,8 +46,7 @@ const mobileMenuItems: MenuItem[] = [
     icon: <FileText size={30} />,
   },
   { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={30} /> },
-  { path: '/settings', label: 'Settings', icon: <Settings size={30} /> },
-  { path: '/profile', label: 'Profile', icon: <User size={30} /> },
+  { path: '/settings', label: 'SettingsPage', icon: <Settings size={30} /> },
 ];
 
 const ICON_SIZE = 20;
@@ -85,8 +86,8 @@ const SideMenu: React.FC = () => {
         }, []);
 
   return (
-      <div>
-    <div className="hidden md:flex relative">
+      <div className="bg-neutral-900 border-r border-gray-200">
+    <div className="hidden md:flex relative items-stretch">
       {/* Sidebar */}
       <aside
         className={`transition-all duration-400 ${
@@ -103,7 +104,7 @@ const SideMenu: React.FC = () => {
                 onClick={() => handleClick({ path, label, icon, submenu })}
                 className={`flex menu-item text-gray-700 items-center gap-3 px-4 py-3 h-[3.2rem] max-h-[3.2rem] font-medium transition-colors
                     duration-150 text-left text-xl  ${
-                  expandedItem === label ? 'text-black/100 bg-[#f6e9df]' : ''
+                  expandedItem === label ? 'text-black/100 bg-neutral-900' : ''
                 }`}
               >
                 {icon}

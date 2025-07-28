@@ -3,7 +3,7 @@ import { User, Mail, Lock, Save, Camera, ArrowLeft, Edit2, Check, X, CreditCard,
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-const ProfilePage = () => {
+const SettingsPage = () => {
   const navigate = useNavigate();
   const { user, updateProfile } = useAuth();
 
@@ -471,4 +471,4 @@ const ProfilePage = () => {
   );
 };
 
-export default ProfilePage;
+export default SettingsPage;

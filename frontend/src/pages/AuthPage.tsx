@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Eye, EyeClosed } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
 import { useLocation } from 'react-router-dom';
@@ -58,11 +58,10 @@ const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen w-full flex flex-row bg-[#1a1a2e] overflow-hidden">
+    <div className="min-h-screen w-full flex flex-row bg-neutral-900 overflow-hidden">
       {/* Left Section (Form) */}
-      <div className="flex-1 flex flex-col justify-center px-8 md:px-20 relative min-h-screen bg-[#fff0e5]">
-        <div className="absolute top-10 left-10 text-2xl font-bold text-emerald-900 select-none">
-        <img src="/logocart-new-logo3.png" alt="Apple logo" className="w-8 h-8 rounded-lg" />️</div>
+      <div className="flex-1 flex flex-col justify-center px-8 md:px-20 relative min-h-screen bg-[#fff]">
+
         <div className="max-w-md w-full mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-3 leading-tight">
             {mode === 'signup' ? 'Create an account' : 'Sign in to your account'}
@@ -119,7 +118,7 @@ const AuthPage: React.FC = () => {
                 {showPassword ? (
                   <Eye size={22} />
                 ) : (
-                  <EyeClosed size={22} />
+                  <EyeOff size={22} />
                 )}
               </a>
             </div>
