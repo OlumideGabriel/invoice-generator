@@ -111,7 +111,7 @@ const AuthPage: React.FC = () => {
               <input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" className="w-full bg-white placeholder-gray-400 border border-neutral-200 px-5 py-4 rounded-lg text-gray-900 text-md font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200" value={password} onChange={e => setPassword(e.target.value)} required />
               <a
                 aria-label={showPassword ? 'Hide password' : 'Show password'}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-emerald-300 hover:text-emerald-600 text-lg"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-600 text-lg"
                 tabIndex={-1}
                 onClick={() => setShowPassword(v => !v)}
               >
