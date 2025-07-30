@@ -14,6 +14,8 @@ from datetime import datetime
 from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
+from itsdangerous import URLSafeTimedSerializer
+from flask_mail import Mail, Message
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -39,6 +41,10 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+#
+mail = Mail(app)
+s = URLSafeTimedSerializer(app.secret_key)
 
 # Create tables if they don't exist
 with app.app_context():
