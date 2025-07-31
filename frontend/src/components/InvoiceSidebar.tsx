@@ -10,7 +10,6 @@ interface InvoiceSidebarProps {
   onPreview: () => void;
   previewPdfUrl?: string | null;
   setPreviewPdfUrl: (url: string | null) => void;
-  previewInvoiceImage?: () => Promise<string | null>;
 }
 
 const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
@@ -19,7 +18,6 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   onPreview,
   previewPdfUrl,
   setPreviewPdfUrl,
-  previewInvoiceImage,
 }) => {
   return (
       <>
@@ -28,27 +26,30 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
       <div className="flex flex-col gap-4 mb-8">
         <InvoiceButton loading={loading} onClick={onSubmit} />
 
-        {/* Preview Button */}
+        {/* Send Button */}
         <button
           type="button"
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
+          className="w-full hidden px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
           flex items-center justify-center gap-2 text-black transition"
         >
           <Send size={20} />
           Send Invoice
         </button>
+
+        {/* Preview Button */}
         <button
           type="button"
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
+          className="w-full px-8 hidden py-4 text-lg bg-[#CCF1D3] hover:bg-[#6CDD82] h-[3.5rem] whitespace-nowrap font-medium rounded-xl
           flex items-center justify-center gap-2 text-black transition"
         >
           Preview
           <Eye size={20} />
         </button>
+
       </div>
       {/* Divider */}
       <hr className="my-3 border-gray-900" />

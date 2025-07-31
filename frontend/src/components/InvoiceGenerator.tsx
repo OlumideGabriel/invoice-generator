@@ -163,9 +163,6 @@ const [date, setDate] = React.useState<Date | undefined>(
     handleChange(index, field as keyof InvoiceItem, value);
   };
 
-  // All invoice-related state is now managed by useInvoice hook
-
-  // All helper functions are now provided by useInvoice hook
 
   const saveInvoiceToDatabase = async () => {
     setLoading(true);
@@ -377,9 +374,10 @@ const [date, setDate] = React.useState<Date | undefined>(
         </DragDropContext>
         <button
           onClick={addItem}
-          className="mb-10 mt-2 px-4 py-2 bg-green-600 whitespace-nowrap text-white font-semibold rounded-md flex items-center gap-2"
+          className="mb-10 mt-2 lg:ml-[1.6rem] px-4 py-3 bg-[#6CDD82] hover:bg-[#39C454] whitespace-nowrap
+          text-black font-medium rounded-lg flex items-center gap-2"
         >
-          <Plus /> Add Item
+          <Plus size={20} /> Add Item
         </button>
         <div className="w-full flex-1 flex flex-col lg:flex-row gap-6 mb-6 justify-between items-start">
           <div className="flex-1 w-full">
