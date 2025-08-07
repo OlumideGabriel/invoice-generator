@@ -1,4 +1,6 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, send_file
+from google.oauth2 import id_token
+from google.auth.transport import requests as grequests
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
@@ -6,14 +8,14 @@ from dotenv import load_dotenv
 import os
 import psycopg2
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
-from datetime import datetime
 from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
+import jwt
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -22,6 +24,7 @@ app = Flask(__name__)
 load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL_1")
+GOOGLE_CLIENT_ID = os.environ.get("YOUR_GOOGLE_CLIENT_ID")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL'
@@ -512,6 +515,59 @@ def signup():
         import traceback
         print(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route("/api/auth/google", methods=["POST"])
+def google_login():
+    token = request.json.get("token")
+
+    try:
+        idinfo = id_token.verify_oauth2_token(token, grequests.Request(), GOOGLE_CLIENT_ID)
+
+        # Extract details
+        sub = idinfo["sub"]
+        first_name = idinfo.get("given_name")
+        last_name = idinfo.get("family_name")
+        email = idinfo.get("email")
+        picture = idinfo.get("picture")
+
+        # Check if user exists
+        user = User.query.filter_by(email=email).first()
+        if not user:
+            # Create new user with UUID and no password
+            user = User(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                password_hash=None,  # Or skip entirely if nullable
+                google_id = sub
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        # JWT session management
+        payload = {
+            'user_id': str(user.id),
+            'email': user.email,
+            'exp': datetime.utcnow() + timedelta(days=7)
+        }
+        jwt_token = jwt.encode(payload, jwt_secret, algorithm='HS256')
+        if isinstance(jwt_token, bytes):
+            jwt_token = jwt_token.decode('utf-8')
+
+        return jsonify({
+            "message": "Login successful",
+            "token": jwt_token,
+            "user": {
+                "id": str(user.id),
+                "first_name": user.first_name,
+                "last_name": user.last_name,
+                "email": user.email,
+                "picture": picture
+            }
+        }), 200
+
+    except ValueError:
+        return jsonify({"message": "Invalid token"}), 401
 
 
 @app.route('/api/auth/signin', methods=['POST'])
