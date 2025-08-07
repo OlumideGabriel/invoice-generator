@@ -4,7 +4,9 @@ interface GoogleLoginButtonProps {
   onSuccess: (token: string) => void;
 }
 
-const GOOGLE_CLIENT_ID = process.env.REACT_APP_GOOGLE_CLIENT_ID || '';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
+
+console.log('Google Client ID:', GOOGLE_CLIENT_ID);
 
 export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess }) => {
   const divRef = useRef<HTMLDivElement>(null);
