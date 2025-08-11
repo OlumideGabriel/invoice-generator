@@ -34,7 +34,7 @@ const getInitials = (u: any) => {
 
   return (
     <header className="top-0 z-50 w-full bg-neutral-800 shadow-sm" onMouseLeave={() => setOpen(false)}>
-      <div className="flex items-center justify-between main-menu mr-3 ml-3 px-4 py-5">
+      <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
         {/* Logo and dark mode toggle */}
         <div className="flex items-center space-x-6">
           <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ const getInitials = (u: any) => {
           </div>
         ) : (
           <button
-            className="ml-4 px-5 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg shadow transition-colors duration-150"
+            className="ml-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow transition-colors duration-150"
             onClick={() => navigate('/auth?mode=login') }
           >
             Sign In

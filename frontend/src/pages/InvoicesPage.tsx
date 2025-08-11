@@ -371,7 +371,7 @@ const InvoicesPage = () => {
             </button>
             <button
               onClick={() => {
-                window.location.href = '/create-invoice';
+                window.location.href = '/';
               }}
               className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
             >

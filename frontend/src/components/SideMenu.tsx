@@ -20,7 +20,7 @@ interface MenuItem {
 }
 
 const menuItems: MenuItem[] = [
-  { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={22} /> },
+  { path: '/Dashboard', label: 'Dashboard', icon: <LayoutDashboard size={22} /> },
   {
     path: '/invoices',
     label: 'Invoices',
@@ -32,20 +32,20 @@ const menuItems: MenuItem[] = [
 
   },
 
-  { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={22} /> },
+  { path: '/', label: 'Create', icon: <SquarePlus size={22} /> },
 ];
 
 
 {/* Mobile menu items */}
 
 const mobileMenuItems: MenuItem[] = [
-  { path: '/', label: 'Dashboard', icon: <LayoutDashboard size={30} /> },
+  { path: '/Dashboard', label: 'Dashboard', icon: <LayoutDashboard size={30} /> },
   {
     path: '/invoices',
     label: 'Invoices',
     icon: <FileText size={30} />,
   },
-  { path: '/create-invoice', label: 'Create', icon: <SquarePlus size={30} /> },
+  { path: '/', label: 'Create', icon: <SquarePlus size={30} /> },
   { path: '/settings', label: 'SettingsPage', icon: <Settings size={30} /> },
 ];
 
@@ -116,7 +116,7 @@ const SideMenu: React.FC = () => {
                 key={label}
                 to={path}
                 onClick={() => {
-                  if (path === '/create-invoice' && window.innerWidth < 1000) {
+                  if (path === '/' && window.innerWidth < 1000) {
                     setCollapsed(!collapsed); // Toggle collapse state
                   } else {
                     handleClick({ path, label, icon, submenu });

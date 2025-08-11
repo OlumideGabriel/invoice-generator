@@ -68,8 +68,8 @@ const AppRoutes: React.FC = () => {
         {/* Main content area */}
         <main className="flex-1 overflow-y-auto">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/create-invoice" element={<InvoiceGenerator />} />
+            <Route path="/Dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={<InvoiceGenerator />} />
             <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
 

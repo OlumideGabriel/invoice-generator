@@ -213,11 +213,11 @@
     .footer-section {
       display: grid;
       grid-template-columns: 1fr 1fr 1fr;
-      gap: 40px;
+      gap: 20px;
       padding-left: 20px;
       padding-right: 20px;
       position: fixed;
-      width: 100%;
+      width: 95%;
       margin-top: 20px;
       border-top: 1px solid; /* for demo */
     }
@@ -244,7 +244,7 @@
     }
 
     .footer-content {
-      margin-top: 40px;
+      margin-top: 35px;
     }
 
     .logo-center {
@@ -287,7 +287,7 @@
     }
 
     @page {
-      size: A4;
+      size: Letter;
       margin: 0;
     }
   </style>
@@ -312,7 +312,7 @@
       <div class="client-name">{{ to.split('\n')[0] if to and '\n' in to else (to or 'Client Name') }}</div>
       <div class="client-address">
         {% if to %}
-          {{ to.split('\n')[1:] | join('\n') | replace('\n', '<br/>') | safe if '\n' in to else 'Address / Contact Info' }}
+          {{ to.split('\n')[1:] | join('\n') | replace('\n', '<br/>') | safe if '\n' in to  }}
         {% endif %}
       </div>
     </div>
@@ -367,6 +367,21 @@
         </tbody>
       </table>
     </div>
+
+    <!-- if Tax -->
+    {% if tax_amount > 0 %}
+        <div class="total-row">
+          <span>Tax</span>
+          <span>${{ '%.2f' | format(tax_amount) }}</span>
+        </div>
+        {% endif %}
+    <!-- if Discount -->
+        {% if discount_amount > 0 %}
+        <div class="total-row">
+          <span>Discount</span>
+          <span>-${{ '%.2f' | format(discount_amount) }}</span>
+        </div>
+        {% endif %}
 
     <!-- Total -->
     <div class="total-section">

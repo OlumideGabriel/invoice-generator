@@ -246,7 +246,7 @@ const Dashboard = () => {
                         </div>
                         <div className="flex items-center space-x-4">
                             <button
-                                onClick={() => navigate('/create-invoice')}
+                                onClick={() => navigate('/')}
                                 className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
                             >
                                 <Plus className="h-5 w-5 mr-2" />
@@ -381,7 +381,7 @@ const Dashboard = () => {
                                         <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                                         <p className="text-gray-500">No invoices yet</p>
                                         <button
-                                            onClick={() => navigate('/create-invoice')}
+                                            onClick={() => navigate('/')}
                                             className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
                                         >
                                             Create your first invoice
@@ -420,7 +420,7 @@ const Dashboard = () => {
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                             <div className="space-y-3">
                                 <button
-                                    onClick={() => navigate('/create-invoice')}
+                                    onClick={() => navigate('/')}
                                     className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg"
                                 >
                                     <FileText className="h-5 w-5 text-blue-600" />
