@@ -175,9 +175,9 @@ const AuthPage: React.FC = () => {
       <div className=" hidden flex-1 lg:flex flex-col justify-center items-center bg-gradient-to-tr from-emerald-400
       to-emerald-900 px-8 md:px-16 py-12 min-h-screen relative">
         <button
-            onClick={() => navigate('/create-invoice')}
+            onClick={() => navigate('/')}
         className="mb-20 bg-white/10 text-white border-none
-        px-6 py-2 rounded-8 text-sm font-medium cursor-pointer hover:bg-white/20 transition
+        px-6 py-3 rounded-md text-sm font-medium cursor-pointer hover:bg-white/20 transition
          backdrop-blur">Continue as guest →</button>
         <h2 className="text-2xl md:text-4xl font-medium text-white mb-5 text-center">
           Invoicing Made Super Easy
@@ -193,7 +193,7 @@ const AuthPage: React.FC = () => {
               className="max-w-full h-auto rounded-xl shadow-lg"
             />
             <a
-    href="https://www.instagram.com/semklo.design"
+    href="#"
     className="absolute bottom-2 right-2 text-xs text-white hover:text-white bg-black/10 px-2 py-1 rounded-full hover:bg-black/20 transition"
   >
     source: semklo.design
