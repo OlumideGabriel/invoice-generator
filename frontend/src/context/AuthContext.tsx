@@ -11,7 +11,13 @@ export const AuthProvider = ({ children }: any) => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
       setLoading(false);
+
+      // Remove hash fragment from URL (e.g. #access_token=...)
+      if (window.location.hash)
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
     });
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
