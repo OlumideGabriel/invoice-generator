@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, send_file
-from google.oauth2 import id_token
-from google.auth.transport import requests as grequests
+import requests
+import json
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
@@ -16,6 +16,8 @@ from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
 import jwt
+import time
+from functools import lru_cache
 
 
 logging.basicConfig(level=logging.DEBUG)
@@ -23,8 +25,8 @@ logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
 load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
-DATABASE_URL = os.environ.get("DATABASE_URL_1")
-GOOGLE_CLIENT_ID = os.environ.get("YOUR_GOOGLE_CLIENT_ID")
+DATABASE_URL = os.environ.get("DATABASE_URL")
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL'
@@ -516,58 +518,84 @@ def signup():
         print(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@lru_cache(maxsize=1)
+def get_supabase_jwks():
+    """Fetch and cache Supabase JWKS keys."""
+    jwks_url = f"{SUPABASE_URL}/auth/v1/keys"
+    res = requests.get(jwks_url, timeout=5)
+    res.raise_for_status()
+    return res.json()
+
 @app.route("/api/auth/google", methods=["POST"])
 def google_login():
-    token = request.json.get("token")
+    # Get token from frontend
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        return jsonify({"error": "Missing or invalid Authorization header"}), 401
+    token = auth_header.split(" ", 1)[1]
 
     try:
-        idinfo = id_token.verify_oauth2_token(token, grequests.Request(), GOOGLE_CLIENT_ID)
+        # Get Supabase JWKS
+        jwks = get_supabase_jwks()
+        unverified_header = jwt.get_unverified_header(token)
+        key = next((k for k in jwks["keys"] if k["kid"] == unverified_header["kid"]), None)
+        if not key:
+            return jsonify({"error": "Invalid signing key"}), 401
 
-        # Extract details
-        sub = idinfo["sub"]
-        first_name = idinfo.get("given_name")
-        last_name = idinfo.get("family_name")
-        email = idinfo.get("email")
-        picture = idinfo.get("picture")
+        # Verify token
+        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+        payload = jwt.decode(token, public_key, algorithms=["RS256"], options={"verify_aud": False})
 
-        # Check if user exists
-        user = User.query.filter_by(email=email).first()
-        if not user:
-            # Create new user with UUID and no password
-            user = User(
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                password_hash=None,  # Or skip entirely if nullable
-                google_id = sub
-            )
-            db.session.add(user)
-            db.session.commit()
+        user_id = payload["sub"]        # Supabase user UUID
+        email = payload.get("email")
+        name = payload.get("name") or ""
+        picture = payload.get("picture")
 
-        # JWT session management
-        payload = {
-            'user_id': str(user.id),
-            'email': user.email,
-            'exp': datetime.utcnow() + timedelta(days=7)
+    except Exception as e:
+        return jsonify({"error": f"Token verification failed: {str(e)}"}), 401
+
+    # Sync with local DB
+    from models import User
+    existing_user = User.query.filter_by(email=email).first()
+    if not existing_user:
+        first_name, last_name = (name.split(" ", 1) + [""])[:2] if name else ("", "")
+        new_user = User(
+            id=user_id,  # Store Supabase UUID as primary key
+            email=email,
+            first_name=first_name,
+            last_name=last_name,
+            password_hash=None
+        )
+        db.session.add(new_user)
+        db.session.commit()
+        user_obj = new_user
+    else:
+        user_obj = existing_user
+
+    # Create your own app token
+    payload = {
+        "user_id": str(user_obj.id),
+        "email": user_obj.email,
+        "exp": datetime.utcnow() + timedelta(days=7)
+    }
+    app_token = jwt.encode(payload, os.environ["JWT_SECRET"], algorithm="HS256")
+    if isinstance(app_token, bytes):
+        app_token = app_token.decode("utf-8")
+
+    return jsonify({
+        "message": "Login successful",
+        "token": app_token,
+        "user": {
+            "id": str(user_obj.id),
+            "first_name": user_obj.first_name,
+            "last_name": user_obj.last_name,
+            "email": user_obj.email,
+            "picture": picture
         }
-        jwt_token = jwt.encode(payload, jwt_secret, algorithm='HS256')
-        if isinstance(jwt_token, bytes):
-            jwt_token = jwt_token.decode('utf-8')
+    }), 200
 
-        return jsonify({
-            "message": "Login successful",
-            "token": jwt_token,
-            "user": {
-                "id": str(user.id),
-                "first_name": user.first_name,
-                "last_name": user.last_name,
-                "email": user.email,
-                "picture": picture
-            }
-        }), 200
 
-    except ValueError:
-        return jsonify({"message": "Invalid token"}), 401
+
 
 
 @app.route('/api/auth/signin', methods=['POST'])

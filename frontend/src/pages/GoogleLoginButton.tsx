@@ -1,56 +1,50 @@
-import React, { useEffect, useRef } from 'react';
+import React from 'react';
+import { supabase } from '../lib/supabase'; // make sure you have this client setup
 
-interface GoogleLoginButtonProps {
-  onSuccess: (token: string) => void;
-}
+const GoogleLoginButton: React.FC = () => {
+  const handleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin, // redirect after login
+        queryParams: {
+          access_type: 'offline', // get refresh token
+          prompt: 'consent',       // force consent screen first time
+        },
+      },
+    });
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
-
-console.log('Google Client ID:', GOOGLE_CLIENT_ID);
-
-export const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({ onSuccess }) => {
-  const divRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Load Google Identity script if not already present
-    if (!window.google) {
-      const script = document.createElement('script');
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      script.onload = renderButton;
-      document.body.appendChild(script);
-    } else {
-      renderButton();
+    if (error) {
+      console.error('Google sign-in error:', error.message);
     }
-    function renderButton() {
-      if (window.google && divRef.current) {
-        window.google.accounts.id.initialize({
-          client_id: GOOGLE_CLIENT_ID,
-          callback: (response: any) => {
-            if (response.credential) {
-              onSuccess(response.credential);
-            }
-          },
-        });
-        window.google.accounts.id.renderButton(divRef.current, {
-          theme: 'outline',
-          size: 'large',
-          width: 240,
-        });
-      }
-    }
-    // Clean up
-    return () => {
-      if (window.google && window.google.accounts && window.google.accounts.id) {
-        window.google.accounts.id.cancel();
-      }
-    };
-  }, [onSuccess]);
+  };
 
   return (
-    <div ref={divRef} style={{ width: 240, height: 50, display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+    <button
+      onClick={handleSignIn}
+      style={{
+        backgroundColor: '#fff',
+        border: '1px solid #ccc',
+        borderRadius: 4,
+        padding: '10px 20px',
+        cursor: 'pointer',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+      }}
+    >
+      <img
+        src="https://developers.google.com/identity/images/g-logo.png"
+        alt="Google logo"
+        width={18}
+        height={18}
+      />
+      Continue with Google
+    </button>
   );
 };
 
 export default GoogleLoginButton;
+
+
+

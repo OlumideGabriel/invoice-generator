@@ -1,59 +1,26 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// context/AuthContext.tsx (essentials)
+import { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
 
-export interface User {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  // Add other fields as needed
-}
-
-interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  login: (user: User, token: string) => void;
-  logout: () => void;
-  loading: boolean;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+const Ctx = createContext({ user: null as any, loading: true });
+export const AuthProvider = ({ children }: any) => {
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load user and token from localStorage on mount
-    const stored = localStorage.getItem('user');
-    const storedToken = localStorage.getItem('token');
-    if (stored) setUser(JSON.parse(stored));
-    if (storedToken) setToken(storedToken);
-    setLoading(false);
+    supabase.auth.getSession().then(({ data }) => {
+      setUser(data.session?.user ?? null);
+      setLoading(false);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null);
+    });
+    return () => sub.subscription.unsubscribe();
   }, []);
 
-  const login = (user: User, token: string) => {
-    setUser(user);
-    setToken(token);
-    localStorage.setItem('user', JSON.stringify(user));
-    localStorage.setItem('token', token);
-  };
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, token, login, logout, loading }}>
-      {loading ? null : children}
-    </AuthContext.Provider>
-  );
+  return <Ctx.Provider value={{ user, loading }}>{children}</Ctx.Provider>;
 };
+export const useAuth = () => useContext(Ctx);
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
-};
+
+

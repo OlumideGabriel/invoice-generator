@@ -4,9 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
 import { useLocation } from 'react-router-dom';
-
-import GoogleLoginButton from './GoogleLoginButton';
-// GoogleLoginButton is a custom component for Google Identity Services
+import { supabase } from '../lib/supabase';
 
 
 const AuthPage: React.FC = () => {
@@ -141,28 +139,24 @@ const AuthPage: React.FC = () => {
               <div className="absolute left-0 top-1/2 w-full border-t border-white/10 -z-10" style={{transform: 'translateY(-50%)'}}></div>
             </div>
             <div className="flex gap-4">
-              <GoogleLoginButton onSuccess={async (googleToken) => {
-                setLoading(true);
-                setError(null);
-                try {
-                  const response = await fetch(`${API_BASE_URL}api/auth/google`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ token: googleToken }),
-                  });
-                  const data = await response.json();
-                  if (response.ok && data.user && data.token) {
-                    login(data.user, data.token);
-                    navigate('/');
-                  } else {
-                    setError(data.message || 'Google authentication failed.');
-                  }
-                } catch (err: any) {
-                  setError(err.message || 'An error occurred');
-                } finally {
-                  setLoading(false);
-                }
-              }} />
+              <button
+                   type="button"
+                   className="flex-1 flex items-center justify-center gap-3 px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition"
+                   onClick={async () => {
+                     setLoading(true);
+                     setError(null);
+                     const { error } = await supabase.auth.signInWithOAuth({
+                       provider: 'google',
+                       options: { redirectTo: window.location.origin }
+                     });
+                     if (error) setError(error.message);
+                     setLoading(false);
+                   }}
+                 >
+                   <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-6 h-6" />
+                   Continue with Google
+                </button>
+
               <button type="button" className="flex-1 flex items-center justify-center gap-3 px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition" onClick={() => alert('Apple registration would be implemented here')}>
                 <img src="/apple-logo.png" alt="Apple logo" className="w-6 h-6" />
                 Apple
