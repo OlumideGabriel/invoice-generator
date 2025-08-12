@@ -596,37 +596,49 @@ def google_login():
 @app.route('/api/auth/signin', methods=['POST'])
 def signin():
     data = request.get_json()
-    email = data.get('email', '').strip().lower()
-    password = data.get('password', '')
+    email = data.get('email')
+    password = data.get('password')
 
     if not email or not password:
-        return jsonify({'success': False, 'error': 'Email and password required.'}), 400
+        return jsonify({
+            'success': False,
+            'error': 'Email and password required.'
+        }), 400
 
     from models import User
     user = User.query.filter_by(email=email).first()
 
     if not user:
-        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
+        return jsonify({
+            'success': False,
+            'error': 'Invalid email or password.'
+        }), 401
 
+    # If this account was created with Google login
     if not user.password_hash:
         return jsonify({
             'success': False,
-            'error': 'This account was created with Google login. Please sign in with Google.'
+            'error': 'This account uses Google login. Please sign in with Google.',
+            'loginType': 'google'
         }), 400
 
+    # Check password for native accounts
     if not check_password_hash(user.password_hash, password):
-        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
+        return jsonify({
+            'success': False,
+            'error': 'Invalid email or password.'
+        }), 401
 
     return jsonify({
         'success': True,
+        'loginType': 'native',
         'user': {
             'id': str(user.id),
             'email': user.email,
             'first_name': user.first_name,
             'last_name': user.last_name
         }
-    }), 200
-
+    })
 
 
 # Debug route to check database connection
