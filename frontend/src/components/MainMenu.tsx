@@ -94,7 +94,7 @@ const getInitials = (u: any) => {
                 <hr className="border-gray-200 mt-2 mr-2 ml-2" />
 
                 <a
-                  href="/profile"
+                  href="/settings"
                   className="flex items-center mr-2 ml-2 mt-2 rounded-md px-3 py-3 text-md text-gray-700
                   hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900"
                 >
@@ -102,7 +102,7 @@ const getInitials = (u: any) => {
                   Profile
                 </a>
                 <a
-                  href="#settings"
+                  href="/settings"
                   className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 text-md text-gray-700
                   hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900"
                 >
