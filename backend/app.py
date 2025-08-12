@@ -554,8 +554,6 @@ def google_login():
     except Exception as e:
         return jsonify({"error": f"Token verification failed: {str(e)}"}), 401
 
-    # Sync with local DB
-    from models import User
     existing_user = User.query.filter_by(email=email).first()
     if not existing_user:
         first_name, last_name = (name.split(" ", 1) + [""])[:2] if name else ("", "")

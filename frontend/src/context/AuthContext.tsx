@@ -1,8 +1,8 @@
-// context/AuthContext.tsx
+// context/AuthContext.tsx (add logout)
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 
-const Ctx = createContext({ user: null as any, loading: true });
+const Ctx = createContext({ user: null as any, loading: true, logout: async () => {} });
 
 export const AuthProvider = ({ children }: any) => {
   const [user, setUser] = useState<any>(null);
@@ -12,32 +12,20 @@ export const AuthProvider = ({ children }: any) => {
     supabase.auth.getSession().then(({ data }) => {
       setUser(data.session?.user ?? null);
       setLoading(false);
-
-      // Remove hash fragment from URL if present
-      if (window.location.hash) {
-        window.history.replaceState(
-          null,
-          '',
-          window.location.pathname + window.location.search
-        );
-      }
     });
-
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null);
     });
-
     return () => sub.subscription.unsubscribe();
   }, []);
 
-  return (
-    <Ctx.Provider value={{ user, loading }}>
-      {children}
-    </Ctx.Provider>
-  );
+  // Add logout function
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+  };
+
+  return <Ctx.Provider value={{ user, loading, logout }}>{children}</Ctx.Provider>;
 };
 
 export const useAuth = () => useContext(Ctx);
-
-
-
