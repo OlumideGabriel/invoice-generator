@@ -118,9 +118,9 @@ const AuthPage: React.FC = () => {
                 onClick={() => setShowPassword(v => !v)}
               >
                 {showPassword ? (
-                  <Eye size={22} />
-                ) : (
                   <EyeOff size={22} />
+                ) : (
+                  <Eye size={22} />
                 )}
               </a>
             </div>

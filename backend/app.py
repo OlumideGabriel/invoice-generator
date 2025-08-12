@@ -16,7 +16,7 @@ from sqlalchemy import text
 from clients import Clients
 from invoices import InvoiceOperations
 import jwt
-import time
+import uuid
 from functools import lru_cache
 
 
@@ -558,7 +558,7 @@ def google_login():
     if not existing_user:
         first_name, last_name = (name.split(" ", 1) + [""])[:2] if name else ("", "")
         new_user = User(
-            id=user_id,  # Store Supabase UUID as primary key
+            id=uuid.UUID(user_id),  # Store Supabase UUID as primary key
             email=email,
             first_name=first_name,
             last_name=last_name,
@@ -593,22 +593,40 @@ def google_login():
     }), 200
 
 
-
-
-
 @app.route('/api/auth/signin', methods=['POST'])
 def signin():
     data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+
     if not email or not password:
         return jsonify({'success': False, 'error': 'Email and password required.'}), 400
+
     from models import User
     user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password_hash, password):
+
+    if not user:
         return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
-    return jsonify({'success': True, 'user': {'id': str(user.id), 'email': user.email, 'first_name': user.first_name,
-                                              'last_name': user.last_name}})
+
+    if not user.password_hash:
+        return jsonify({
+            'success': False,
+            'error': 'This account was created with Google login. Please sign in with Google.'
+        }), 400
+
+    if not check_password_hash(user.password_hash, password):
+        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
+
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': str(user.id),
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name
+        }
+    }), 200
+
 
 
 # Debug route to check database connection
