@@ -22,18 +22,25 @@ export const AuthProvider = ({ children }: any) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      // Check Supabase session first
+      // 1. Check Supabase session
       const { data } = await supabase.auth.getSession();
       if (data.session?.user) {
-        setUser(data.session.user);
+        setUser({
+          ...data.session.user,
+          user_id: data.session.user.user_id ?? data.session.user.id,
+        });
         setLoading(false);
         return;
       }
 
-      // Check localStorage for native login
+      // 2. Check localStorage for native login
       const storedUser = localStorage.getItem("nativeUser");
       if (storedUser) {
-        setUser(JSON.parse(storedUser));
+        const parsed = JSON.parse(storedUser);
+        setUser({
+          ...parsed,
+          user_id: parsed.user_id ?? parsed.id,
+        });
       }
 
       setLoading(false);
@@ -44,10 +51,21 @@ export const AuthProvider = ({ children }: any) => {
     // Supabase auth listener
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       if (session?.user) {
-        setUser(session.user);
+        setUser({
+          ...session.user,
+          user_id: session.user.user_id ?? session.user.id,
+        });
       } else {
         const nativeUser = localStorage.getItem("nativeUser");
-        setUser(nativeUser ? JSON.parse(nativeUser) : null);
+        if (nativeUser) {
+          const parsed = JSON.parse(nativeUser);
+          setUser({
+            ...parsed,
+            user_id: parsed.user_id ?? parsed.id,
+          });
+        } else {
+          setUser(null);
+        }
       }
     });
 
@@ -67,8 +85,13 @@ export const AuthProvider = ({ children }: any) => {
       throw new Error(data.error || "Login failed");
     }
 
-    localStorage.setItem("nativeUser", JSON.stringify(data.user));
-    setUser(data.user);
+    const fixedUser = {
+      ...data.user,
+      user_id: data.user.user_id ?? data.user.id,
+    };
+
+    localStorage.setItem("nativeUser", JSON.stringify(fixedUser));
+    setUser(fixedUser);
   };
 
   const logout = async () => {
