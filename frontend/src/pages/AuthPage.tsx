@@ -42,13 +42,11 @@ const AuthPage: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         // If backend returns user object, use it. Otherwise, TODO: update backend to return user data.
-        if (data.user && data.token) {
-          signinNative(data.user, data.token);
-        } else {
-          // TODO: Update backend to return user object and token on success
-          signinNative(email, ''); // Pass email as first param, empty string as password
-        }
-        navigate('/');
+        if (data.user) {
+          signinNative(data.user);
+          navigate('/');
+          }
+
       } else {
         setError(data.error || 'Authentication failed.');
       }
