@@ -1,3 +1,4 @@
+// Pages/AuthPage.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -24,38 +25,39 @@ const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const { signinNative } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const endpoint = mode === 'signup' ? 'api/auth/signup' : 'api/auth/signin';
-      const payload = mode === 'signup'
-        ? { first_name: firstName, last_name: lastName, email, password }
-        : { email, password };
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {  // <- prepend baseUrl
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-      });
+ const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
+  try {
+    const endpoint = mode === 'signup' ? 'api/auth/signup' : 'api/auth/signin';
+    const payload = mode === 'signup'
+      ? { first_name: firstName, last_name: lastName, email, password }
+      : { email, password };
 
-      const data = await response.json();
-      if (data.success) {
-        // If backend returns user object, use it. Otherwise, TODO: update backend to return user data.
-        if (data.user) {
-          signinNative(data.user);
-          navigate('/');
-          }
+    // Use import.meta.env instead of API_BASE_URL
+    const response = await fetch(`${import.meta.env.VITE_API_URL}/${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+    });
 
-      } else {
-        setError(data.error || 'Authentication failed.');
+    const data = await response.json();
+    if (data.success) {
+      // If backend returns user object, use it
+      if (data.user) {
+        signinNative(data.user); // This now works with the updated AuthContext
+        navigate('/');
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
-    } finally {
-      setLoading(false);
+    } else {
+      setError(data.error || 'Authentication failed.');
     }
-  };
+  } catch (err: any) {
+    setError(err.message || 'An error occurred');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen max-h-[100svh] w-full flex flex-row bg-neutral-900 overflow-hidden">
