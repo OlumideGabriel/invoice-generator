@@ -5,14 +5,14 @@ import { supabase } from "../lib/supabase";
 interface AuthContextType {
   user: any;
   loading: boolean;
-  logout: () => Promise<void>;
+  logout: () => Promise<boolean>;
   signinNative: (email: string, password: string) => Promise<void>;
 }
 
 const Ctx = createContext<AuthContextType>({
   user: null,
   loading: true,
-  logout: async () => {},
+  logout: async () => false,
   signinNative: async () => {},
 });
 
@@ -27,7 +27,8 @@ export const AuthProvider = ({ children }: any) => {
       if (data.session?.user) {
         setUser({
           ...data.session.user,
-          user_id: data.session.user.user_id ?? data.session.user.id,
+          id: data.session.user.id,
+          user_id: data.session.user.id,
         });
         setLoading(false);
         return;
@@ -39,7 +40,8 @@ export const AuthProvider = ({ children }: any) => {
         const parsed = JSON.parse(storedUser);
         setUser({
           ...parsed,
-          user_id: parsed.user_id ?? parsed.id,
+          id: parsed.id,
+          user_id: parsed.id,
         });
       }
 
@@ -53,7 +55,8 @@ export const AuthProvider = ({ children }: any) => {
       if (session?.user) {
         setUser({
           ...session.user,
-          user_id: session.user.user_id ?? session.user.id,
+          id: session.user.id,
+          user_id: session.user.id,
         });
       } else {
         const nativeUser = localStorage.getItem("nativeUser");
@@ -61,7 +64,8 @@ export const AuthProvider = ({ children }: any) => {
           const parsed = JSON.parse(nativeUser);
           setUser({
             ...parsed,
-            user_id: parsed.user_id ?? parsed.id,
+            id: parsed.id,
+            user_id: parsed.id,
           });
         } else {
           setUser(null);
@@ -87,7 +91,8 @@ export const AuthProvider = ({ children }: any) => {
 
     const fixedUser = {
       ...data.user,
-      user_id: data.user.user_id ?? data.user.id,
+      id: data.user.id,
+      user_id: data.user.id,
     };
 
     localStorage.setItem("nativeUser", JSON.stringify(fixedUser));
@@ -95,9 +100,24 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
-    localStorage.removeItem("nativeUser");
-    setUser(null);
+    try {
+      // First, clear the user state and local storage
+      setUser(null);
+      localStorage.removeItem("nativeUser");
+      
+      // Then sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      
+      // Clear any remaining session data
+      window.localStorage.removeItem('sb-auth-token');
+      window.localStorage.removeItem('sb-user-data');
+      
+      return true; // Indicate success
+    } catch (error) {
+      console.error('Error during logout:', error);
+      return false; // Indicate failure
+    }
   };
 
   return (

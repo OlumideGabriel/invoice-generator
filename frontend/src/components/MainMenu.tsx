@@ -111,8 +111,19 @@ const getInitials = (u: any) => {
                   Settings
                 </Link>
                 <Link
-                  to="/auth?mode=login"
-                  onClick={() => { logout(); setOpen(false); }}
+                  to="#"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    setOpen(false);
+                    const success = await logout();
+                    if (success) {
+                      // Only navigate after successful logout
+                      navigate('/auth?mode=login', { replace: true });
+                    } else {
+                      // Handle logout failure if needed
+                      console.error('Logout failed');
+                    }
+                  }}
                   className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md text-gray-700
                   hover:bg-gray-100 hover:text-gray-900"
                 >
