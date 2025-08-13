@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Menu, Settings, LogOut, User, Bell, Receipt, Shredder } from 'lucide-react';
 import DarkModeToggle from './DarkModeToggle';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from './Tooltip';
 
@@ -68,66 +68,67 @@ const getInitials = (u: any) => {
               focus:outline-none text-xl font-bold"
             >
               {getInitials(user) || <User className="w-5 h-5 rounded-full" />}
-
             </a>
 
             {open && (
               <div className="absolute right-0 top-10 mt-2 bg-white rounded-md overflow-hidden z-50
                 shadow-lg shadow-gray-400/40 ring-2 ring-gray-300 ring-opacity-40
                 [box-shadow:0_0_16px_4px_rgba(156,163,175,0.18)]">
-              <a
-                href="/profile"
-                className="flex mr-2 ml-2 mt-2 rounded-md text-sm text-gray-700 hover:bg-gray-100"
-              >
-                <span className="flex flex-row items-center text-lg block px-4 py-3 text-md text-gray-900 font-medium  ">
+                <Link
+                  to="/profile"
+                  className="flex mr-2 ml-2 mt-2 rounded-md text-sm text-gray-700 hover:bg-gray-100"
+                  onClick={() => setOpen(false)}
+                >
+                  <span className="flex flex-row items-center text-lg block px-4 py-3 text-md text-gray-900 font-medium">
                     <span className="flex text-xl font-bold mr-2 w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200
                      rounded-full justify-center items-center">
                       {getInitials(user) || <User className="w-6 h-6" />}
                     </span>
-
-                <div className="flex flex-col min-w-0">
-                  {user.first_name ? `${user.first_name} ${user.last_name}` : user.email}
-                    <span className="text-sm text-gray-500">{user.email}</span>
-                </div>
-                </span>
-                </a>
+                    <div className="flex flex-col min-w-0">
+                      {user.first_name ? `${user.first_name} ${user.last_name}` : user.email}
+                      <span className="text-sm text-gray-500">{user.email}</span>
+                    </div>
+                  </span>
+                </Link>
                 <hr className="border-gray-200 mt-2 mr-2 ml-2" />
 
-                <a
-                  href="/settings"
+                <Link
+                  to="/settings"
                   className="flex items-center mr-2 ml-2 mt-2 rounded-md px-3 py-3 text-md text-gray-700
-                  hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900"
+                  hover:bg-gray-100 hover:text-gray-900"
+                  onClick={() => setOpen(false)}
                 >
                   <User className="w-5 h-5 mr-2" />
                   Profile
-                </a>
-                <a
-                  href="/settings"
+                </Link>
+                <Link
+                  to="/settings"
                   className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 text-md text-gray-700
-                  hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900"
+                  hover:bg-gray-100 hover:text-gray-900"
+                  onClick={() => setOpen(false)}
                 >
                   <Settings className="w-5 h-5 mr-2" />
                   Settings
-                </a>
-                <a
-                  type="button"
-                  onClick={() => { logout(); setOpen(false); navigate('/auth?mode=login'); }}
+                </Link>
+                <Link
+                  to="/auth?mode=login"
+                  onClick={() => { logout(); setOpen(false); }}
                   className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md text-gray-700
-                  hover:bg-gray-100  hover:text-gray-700 hover:text-gray-900 cursor-pointer"
+                  hover:bg-gray-100 hover:text-gray-900"
                 >
                   <LogOut className="w-5 h-5 mr-2" />
                   Sign Out
-                </a>
+                </Link>
               </div>
             )}
           </div>
         ) : (
-          <button
+          <Link
+            to="/auth?mode=login"
             className="ml-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow transition-colors duration-150"
-            onClick={() => navigate('/auth?mode=login') }
           >
             Sign In
-          </button>
+          </Link>
 
         )}
       </div>
