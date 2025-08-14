@@ -38,7 +38,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       : { email, password };
 
     // Use import.meta.env instead of API_BASE_URL
-    const response = await fetch(`${import.meta.env.VITE_API_URL}/${endpoint}`, {
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
