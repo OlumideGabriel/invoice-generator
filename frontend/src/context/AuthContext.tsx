@@ -77,24 +77,7 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   // Native login (Flask backend)
-  const signinNative = async (email: string, password: string) => {
-    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signin`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, password }),
-    });
-
-    const data = await res.json();
-    if (!res.ok || !data.success) {
-      throw new Error(data.error || "Login failed");
-    }
-
-    const fixedUser = {
-      ...data.user,
-      id: data.user.id,
-      user_id: data.user.id,
-    };
-
+  const signinNative = user: User) => {
     localStorage.setItem("nativeUser", JSON.stringify(fixedUser));
     setUser(fixedUser);
   };
