@@ -4,7 +4,6 @@ import DarkModeToggle from './DarkModeToggle';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from './Tooltip';
-import { ReactComponent as EnvoyceLogo } from '../assets/envoyce-logo.svg';
 
 
 const MainMenu: React.FC = () => {
@@ -40,11 +39,15 @@ const getInitials = (u: any) => {
         {/* Logo and dark mode toggle */}
         <div className="flex items-center space-x-6">
           <div className="flex items-center gap-2">
-          <EnvoyceLogo className="h-8 w-8 text-teal-800" />
-          <span className="text-2xl font-semibold tracking-tight text-teal-800 font-[rubik]">
-            envoyce
-          </span>
-        </div>
+              <img
+                src="/envoyce-logo.svg"
+                alt="Envoyce Logo"
+                className="h-8 w-8"
+              />
+              <span className="text-2xl font-semibold tracking-tight text-teal-800 font-[rubik]">
+                Envoyce
+              </span>
+            </div>
         </div>
 
         {/* Right side: Sign In or Avatar */}
