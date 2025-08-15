@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   // Native login (Flask backend)
-  const signinNative = user: User) => {
+  const signinNative = (user: User) => {
     localStorage.setItem("nativeUser", JSON.stringify(fixedUser));
     setUser(fixedUser);
   };
