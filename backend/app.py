@@ -18,7 +18,7 @@ from invoices import InvoiceOperations
 import jwt
 import uuid
 from functools import lru_cache
-
+from supabase import create_client, Client
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -27,6 +27,9 @@ load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL'
@@ -666,14 +669,15 @@ def signin():
 
         return jsonify({
             'success': True,
-            'user': response.user,
-            'session': response.session
+            'user': response.user.model_dump() if response.user else None,
+            'session': response.session.model_dump() if response.session else None
         })
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
         }), 401
+
 
 
 @app.route('/api/auth/status', methods=['GET'])
