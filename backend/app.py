@@ -451,7 +451,7 @@ def delete_invoice(invoice_id):
 @app.route('/api/invoices/bulk/delete', methods=['POST'])
 def bulk_delete_invoices():
     """
-    POST /api/invoices/bulk/delete     multiple invoices at once
+    POST /api/invoices/bulk/delete multiple invoices at once
 
     Request body:
     {
@@ -659,32 +659,14 @@ def signin():
     data = request.get_json()
     email = data.get('email')
     password = data.get('password')
-
     if not email or not password:
         return jsonify({'success': False, 'error': 'Email and password required.'}), 400
-
-    # Fetch user from Supabase table
-    response = supabase.table('users').select('*').eq('email', email).single().execute()
-
-    if response.error or not response.data:
+    from models import User
+    user = User.query.filter_by(email=email).first()
+    if not user or not check_password_hash(user.password_hash, password):
         return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
-
-    user = response.data
-
-    # If you store hashed passwords manually
-    if not check_password_hash(user['password_hash'], password):
-        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
-
-    # Return user info (exclude password hash)
-    return jsonify({
-        'success': True,
-        'user': {
-            'id': user['id'],
-            'email': user['email'],
-            'first_name': user.get('first_name'),
-            'last_name': user.get('last_name')
-        }
-    })
+    return jsonify({'success': True, 'user': {'id': str(user.id), 'email': user.email, 'first_name': user.first_name,
+                                              'last_name': user.last_name}})
 
 
 @app.route('/api/auth/status', methods=['GET'])
