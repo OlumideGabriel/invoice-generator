@@ -656,42 +656,35 @@ def google_login():
 
 @app.route('/api/auth/signin', methods=['POST'])
 def signin():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
+    data = request.get_json()
+    email = data.get('email')
+    password = data.get('password')
 
-        # Find user in local DB
-        user = User.query.filter_by(email=email).first()
+    if not email or not password:
+        return jsonify({'success': False, 'error': 'Email and password required.'}), 400
 
-        if not user or not check_password_hash(user.password_hash, password):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email or password'
-            }), 401
+    # Fetch user from Supabase table
+    response = supabase.table('users').select('*').eq('email', email).single().execute()
 
-        # Optionally also check in Supabase if needed
-        # response = supabase.auth.sign_in_with_password({
-        #     "email": email,
-        #     "password": password
-        # })
+    if response.error or not response.data:
+        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
 
-        return jsonify({
-            'success': True,
-            'user': {
-                'user_id': str(user.id),
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name
-            }
-        })
+    user = response.data
 
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 401
+    # If you store hashed passwords manually
+    if not check_password_hash(user['password_hash'], password):
+        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
 
+    # Return user info (exclude password hash)
+    return jsonify({
+        'success': True,
+        'user': {
+            'id': user['id'],
+            'email': user['email'],
+            'first_name': user.get('first_name'),
+            'last_name': user.get('last_name')
+        }
+    })
 
 
 @app.route('/api/auth/status', methods=['GET'])
