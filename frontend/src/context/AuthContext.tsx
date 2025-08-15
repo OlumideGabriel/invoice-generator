@@ -78,7 +78,7 @@ export const AuthProvider = ({ children }: any) => {
 
   // Native login (Flask backend)
   const signinNative = async (email: string, password: string) => {
-    const res = await fetch(`${process.env.VITE_API_BASE_URL}/api/auth/signin`, {
+    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
