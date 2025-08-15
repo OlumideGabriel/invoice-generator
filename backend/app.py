@@ -654,31 +654,6 @@ def google_login():
         }), 500
 
 
-@app.route('/api/auth/signin2', methods=['POST'])
-def signin2():
-    try:
-        data = request.get_json()
-        email = data.get('email')
-        password = data.get('password')
-
-        # Use Supabase auth
-        response = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": password
-        })
-
-        return jsonify({
-            'success': True,
-            'user': response.user.model_dump() if response.user else None,
-            'session': response.session.model_dump() if response.session else None
-        })
-    except Exception as e:
-        return jsonify({
-            'success': False,
-            'error': str(e)
-        }), 401
-
-
 @app.route('/api/auth/signin', methods=['POST'])
 def signin():
     try:
@@ -686,41 +661,36 @@ def signin():
         email = data.get('email')
         password = data.get('password')
 
-        # 1. Authenticate with Supabase Auth
-        auth_res = supabase.auth.sign_in_with_password({
-            "email": email,
-            "password": password
-        })
+        # Find user in local DB
+        user = User.query.filter_by(email=email).first()
 
-        if not auth_res.user:
+        if not user or not check_password_hash(user.password_hash, password):
             return jsonify({
                 'success': False,
                 'error': 'Invalid email or password'
             }), 401
 
-        user_id = auth_res.user.id  # Supabase Auth UUID
-
-        # 2. Check if user exists in your "Users" table
-        db_res = supabase.table("Users").select("*").eq("id", user_id).execute()
-
-        if not db_res.data:  # Empty list → user not found
-            return jsonify({
-                'success': False,
-                'error': 'User authenticated but not found in Users table'
-            }), 404
+        # Optionally also check in Supabase if needed
+        # response = supabase.auth.sign_in_with_password({
+        #     "email": email,
+        #     "password": password
+        # })
 
         return jsonify({
             'success': True,
-            'user': auth_res.user.model_dump(),
-            'session': auth_res.session.model_dump(),
-            'profile': db_res.data[0]  # first matching row from Users table
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name
+            }
         })
 
     except Exception as e:
         return jsonify({
             'success': False,
             'error': str(e)
-        }), 500
+        }), 401
 
 
 
