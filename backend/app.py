@@ -679,7 +679,7 @@ def signin():
         return jsonify({
             'success': True,
             'user': {
-                'id': str(user.id),
+                'user_id': str(user.id),
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name
