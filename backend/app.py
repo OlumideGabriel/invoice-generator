@@ -658,54 +658,22 @@ def signin():
         email = data.get('email')
         password = data.get('password')
 
-        if not email or not password:
-            return jsonify({
-                'success': False,
-                'error': 'Email and password required.'
-            }), 400
-
-        from models import User
-        user = User.query.filter_by(email=email).first()
-
-        if not user:
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email or password.'
-            }), 401
-
-        # If this account was created with Google login
-        if not user.password_hash:
-            return jsonify({
-                'success': False,
-                'error': 'This account uses Google login. Please sign in with Google.',
-                'loginType': 'google'
-            }), 400
-
-        # Check password for native accounts
-        if not check_password_hash(user.password_hash, password):
-            return jsonify({
-                'success': False,
-                'error': 'Invalid email or password.'
-            }), 401
+        # Use Supabase auth
+        response = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
 
         return jsonify({
             'success': True,
-            'loginType': 'native',
-            'user': {
-                'id': str(user.id),  # This is what your frontend expects as 'user_id'
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'auth_method': 'native'
-            }
+            'user': response.user,
+            'session': response.session
         })
-
     except Exception as e:
-        app.logger.error(f"Signin error: {str(e)}", exc_info=True)
         return jsonify({
             'success': False,
-            'error': 'An error occurred during sign in'
-        }), 500
+            'error': str(e)
+        }), 401
 
 
 @app.route('/api/auth/status', methods=['GET'])

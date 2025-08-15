@@ -38,7 +38,7 @@ const handleSubmit = async (e: React.FormEvent) => {
       : { email, password };
 
     // Use import.meta.env instead of API_BASE_URL
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/${endpoint}`, {
+    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -143,7 +143,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="flex gap-4">
               <button
                    type="button"
-                   className="flex-1 flex items-center justify-center gap-3 px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition"
+                   className="flex items-center justify-center px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition"
                    onClick={async () => {
                      setLoading(true);
                      setError(null);
@@ -158,11 +158,6 @@ const handleSubmit = async (e: React.FormEvent) => {
                    <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-6 h-6" />
                    Continue with Google
                 </button>
-
-              <button type="button" className="flex-1 flex items-center justify-center gap-3 px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition" onClick={() => alert('Apple registration would be implemented here')}>
-                <img src="/apple-logo.png" alt="Apple logo" className="w-6 h-6" />
-                Apple
-              </button>
             </div>
           </form>
         </div>
