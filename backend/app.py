@@ -654,8 +654,8 @@ def google_login():
         }), 500
 
 
-@app.route('/api/auth/signin', methods=['POST'])
-def signin():
+@app.route('/api/auth/signin2', methods=['POST'])
+def signin2():
     try:
         data = request.get_json()
         email = data.get('email')
@@ -677,6 +677,50 @@ def signin():
             'success': False,
             'error': str(e)
         }), 401
+
+
+@app.route('/api/auth/signin', methods=['POST'])
+def signin():
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
+
+        # 1. Authenticate with Supabase Auth
+        auth_res = supabase.auth.sign_in_with_password({
+            "email": email,
+            "password": password
+        })
+
+        if not auth_res.user:
+            return jsonify({
+                'success': False,
+                'error': 'Invalid email or password'
+            }), 401
+
+        user_id = auth_res.user.id  # Supabase Auth UUID
+
+        # 2. Check if user exists in your "Users" table
+        db_res = supabase.table("Users").select("*").eq("id", user_id).execute()
+
+        if not db_res.data:  # Empty list → user not found
+            return jsonify({
+                'success': False,
+                'error': 'User authenticated but not found in Users table'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'user': auth_res.user.model_dump(),
+            'session': auth_res.session.model_dump(),
+            'profile': db_res.data[0]  # first matching row from Users table
+        })
+
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 
 
