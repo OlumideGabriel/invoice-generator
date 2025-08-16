@@ -42,7 +42,7 @@ const getInitials = (u: any) => {
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
-                className="h-6 w-6"
+                className="h-8 w-8"
               />
               <span className="text-2xl hidden font-semibold tracking-tight text-gray-800 font-[Open Sauce Sans]">
                 envoyce
