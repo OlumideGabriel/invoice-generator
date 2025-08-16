@@ -55,7 +55,7 @@ const getInitials = (u: any) => {
           <div className="flex relative z-100" ref={menuRef}>
 
 
-          <span className="flex hidden items-center justify-center mr-7"> <!-- Notification Bell -->
+          <span className="flex hidden items-center justify-center mr-7"> {/* Notification bell */}
 
            <span className=" absolute top-0 left-4 bg-red-500 text-white text-sm font-bold px-1 py-1 rounded-full
            min-w-[20px] h-4 flex items-center justify-center">
