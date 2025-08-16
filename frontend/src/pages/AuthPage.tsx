@@ -65,7 +65,11 @@ const handleSubmit = async (e: React.FormEvent) => {
     <div className="min-h-screen max-h-[100svh] w-full flex flex-row bg-neutral-900 overflow-hidden">
       {/* Left Section (Form) */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-20 relative min-h-screen bg-[#fff]">
-
+         <img
+    src="/envoyce.svg"
+    alt="Envoyce Logo"
+    className="h-10 w-10 mb-6"
+  />
         <div className="max-w-md w-full mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-3 leading-tight">
             {mode === 'signup' ? 'Create an account' : 'Sign in to your account'}
