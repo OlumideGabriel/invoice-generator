@@ -40,7 +40,7 @@ const getInitials = (u: any) => {
         <div className="flex items-center space-x-6">
           <div className="flex items-center gap-2">
               <img
-                src="/envoyce-logo.svg"
+                src="/envoyce-logo1.svg"
                 alt="Envoyce Logo"
                 className="h-6 w-6"
               />
