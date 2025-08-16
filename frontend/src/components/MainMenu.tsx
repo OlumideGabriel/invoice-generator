@@ -44,7 +44,7 @@ const getInitials = (u: any) => {
                 alt="Envoyce Logo"
                 className="h-6 w-6"
               />
-              <span className="text-2xl font-semibold tracking-tight text-gray-800 font-[Open Sauce Sans]">
+              <span className="text-2xl hidden font-semibold tracking-tight text-gray-800 font-[Open Sauce Sans]">
                 envoyce
               </span>
             </div>
