@@ -92,8 +92,11 @@ const Dashboard = () => {
 
         const today = new Date();
         const totalRevenue = invoices.reduce((sum, inv) => {
-            const invoiceTotal = calculateInvoiceTotal(inv);
-            return sum + invoiceTotal;
+            if (inv.status === 'paid') {
+                const invoiceTotal = calculateInvoiceTotal(inv);
+                return sum + invoiceTotal;
+            }
+            return sum;
         }, 0);
 
         const draftInvoices = invoices.filter(inv => inv && inv.status === 'draft').length;
