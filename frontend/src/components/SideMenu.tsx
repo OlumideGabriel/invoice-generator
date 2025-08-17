@@ -7,7 +7,8 @@ import {
   Users,
   Settings,
   User,
-  SquarePlus
+  SquarePlus,
+  CirclePlus,
 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import Tooltip from './Tooltip';
@@ -39,14 +40,15 @@ const menuItems: MenuItem[] = [
 {/* Mobile menu items */}
 
 const mobileMenuItems: MenuItem[] = [
-  { path: '/Dashboard', label: 'Dashboard', icon: <LayoutDashboard size={30} /> },
+  { path: '/Dashboard', label: 'Dashboard', icon: <LayoutDashboard size={27} /> },
   {
     path: '/invoices',
     label: 'Invoices',
-    icon: <FileText size={30} />,
+    icon: <FileText size={27} />,
   },
-  { path: '/', label: 'Create', icon: <SquarePlus size={30} /> },
-  { path: '/settings', label: 'SettingsPage', icon: <Settings size={30} /> },
+  { path: '/', icon: <CirclePlus size={40} /> },
+  { path: '/clients', label: 'Clients', icon: <Users size={27} /> },
+  { path: '/settings', label: 'Settings', icon: <Settings size={27} /> },
 ];
 
 const ICON_SIZE = 20;
@@ -165,17 +167,18 @@ const SideMenu: React.FC = () => {
     </div>
 
     {/* Mobile Sidebar */}
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-[#f6e9df] border-gray-200 z-50">
-      <nav className="flex justify-around items-center py-3">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-50">
+      <nav className="flex justify-around items-center mt-1">
         {mobileMenuItems.map(({ path, label, icon }) => (
           <Link
             key={label}
             to={path}
-            className={`flex flex-col py-3 px-6 items-center cursor-pointer rounded-lg text-gray-700 hover:text-black/100 ${
-              location.pathname === path ? 'bg-black/90 text-neutral-100 hover:text-neutral-100' : 'text-gray-800'
+            className={`flex flex-col gap-1 w-1/6 py-2 px-3 text-xs items-center cursor-pointer rounded-lg text-gray-700 hover:text-black/100 ${
+              location.pathname === path ? 'text-green-900 hover:text-green-800' : 'text-gray-800'
             }`}
           >
             {icon}
+            {label}
           </Link>
         ))}
       </nav>

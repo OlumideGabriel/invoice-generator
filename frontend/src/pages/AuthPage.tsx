@@ -63,13 +63,10 @@ const handleSubmit = async (e: React.FormEvent) => {
 
   return (
     <div className="min-h-screen max-h-[100svh] w-full flex flex-row bg-neutral-900 overflow-hidden">
+
       {/* Left Section (Form) */}
       <div className="flex-1 flex flex-col justify-center px-8 md:px-20 relative min-h-screen bg-[#fff]">
-         <img
-    src="/envoyce.svg"
-    alt="Envoyce Logo"
-    className="h-10 w-10 mb-6"
-  />
+
         <div className="max-w-md w-full mx-auto">
           <h1 className="text-3xl md:text-4xl font-bold text-emerald-900 mb-3 leading-tight">
             {mode === 'signup' ? 'Create an account' : 'Sign in to your account'}
@@ -144,10 +141,10 @@ const handleSubmit = async (e: React.FormEvent) => {
               <span className="relative z-10 px-4">or</span>
               <div className="absolute left-0 top-1/2 w-full border-t border-white/10 -z-10" style={{transform: 'translateY(-50%)'}}></div>
             </div>
-            <div className="flex gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <button
                    type="button"
-                   className="flex items-center justify-center px-6 py-3 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition"
+                   className="flex items-center justify-center px-6 py-3 gap-2 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition"
                    onClick={async () => {
                      setLoading(true);
                      setError(null);

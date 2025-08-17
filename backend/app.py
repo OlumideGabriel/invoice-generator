@@ -6,7 +6,6 @@ from flask_cors import CORS
 from weasyprint import HTML
 from dotenv import load_dotenv
 import os
-import psycopg2
 import logging
 from datetime import datetime, timedelta
 from io import BytesIO
@@ -19,7 +18,6 @@ import jwt
 import uuid
 from functools import lru_cache
 from supabase import create_client, Client
-
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)

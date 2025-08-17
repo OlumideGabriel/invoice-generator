@@ -12,6 +12,8 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
 import { useAuth } from '../context/AuthContext';
 import { Calendar } from "@/components/ui/calendar"
+// Import the DatePicker component instead of DatePicker from calendar-22
+import { DatePicker } from "@/components/date-picker"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { API_BASE_URL } from '../config/api';
@@ -38,13 +40,6 @@ const InvoiceGenerator: React.FC = () => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
-
-    // State for date picker
-
-const [date, setDate] = React.useState<Date | undefined>(
-    new Date(2025, 5, 12)
-  )
-
 
   // Use the invoice hook for all invoice-related state and functionality
   const {
@@ -84,6 +79,8 @@ const [date, setDate] = React.useState<Date | undefined>(
     error, setError,
   } = useInvoice();
 
+  // Helper functions are now moved to the DatePicker component
+  // Remove these helper functions as they're handled in the DatePicker
 
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
@@ -163,7 +160,6 @@ const [date, setDate] = React.useState<Date | undefined>(
     handleChange(index, field as keyof InvoiceItem, value);
   };
 
-
   const saveInvoiceToDatabase = async () => {
     setLoading(true);
     setError(null);
@@ -203,6 +199,38 @@ const [date, setDate] = React.useState<Date | undefined>(
         currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
         currency_label: typeof currency === 'string' ? currency : currency.label
       };
+
+    // Helper functions for generating default dates
+    const getTodayString = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const getSevenDaysFromNowString = () => {
+      const today = new Date();
+      const sevenDaysLater = new Date(today);
+      sevenDaysLater.setDate(today.getDate() + 7);
+      const year = sevenDaysLater.getFullYear();
+      const month = String(sevenDaysLater.getMonth() + 1).padStart(2, '0');
+      const day = String(sevenDaysLater.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    const getTodayFormatted = () => {
+      const today = new Date();
+      return today.toLocaleDateString();
+    };
+
+    const getSevenDaysFromNowFormatted = () => {
+      const today = new Date();
+      const sevenDaysLater = new Date(today);
+      sevenDaysLater.setDate(today.getDate() + 7);
+      return sevenDaysLater.toLocaleDateString();
+    };
+
 
       // Only save if user_id and required fields are present
       const hasRequiredFields =
@@ -303,7 +331,7 @@ const [date, setDate] = React.useState<Date | undefined>(
           </div>
         </div>
         {error && <div className="text-red-400 mb-4">{error}</div>}
-        <header className="flex flex-col lg:flex-row items-center md:flex-wrap justify-between gap-6 mb-6">
+        <header className="flex flex-col lg:flex-row items-start md:flex-wrap justify-between gap-6 mb-6">
 
             <div className="flex flex-col lg:flex-row gap-4 mb-6 w-full lg:w-auto">
                 <div className="w-full lg:w-auto">
@@ -314,25 +342,30 @@ const [date, setDate] = React.useState<Date | undefined>(
                 </div>
               </div>
 
-          <div className="flex-1 w-full flex flex-col gap-4 justify-end self-start lg:self-auto">
+          <div className="flex-1 w-full flex flex-col gap-4 justify-end self-start lg:self-auto ">
+            {/* Updated Issued Date with DatePicker */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
-              <label className="text-sm text-neutral-500 sm:min-w-fit">Issued Date</label>
-              <input
-                type="date"
+              <DatePicker
+                label="Issued Date"
+                placeholder="Select issued date"
                 value={issuedDate}
-                onChange={(e) => setIssuedDate(e.target.value)}
-                className="w-full sm:w-40 p-2 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600"
+                onChange={setIssuedDate}
+                id="issued-date"
+                className="w-full sm:w-40 [&_.px-1]:text-neutral-500 [&_.px-1]:text-sm [&_.px-1]:sm:min-w-fit"
+
               />
             </div>
 
-
+            {/* Updated Due Date with DatePicker */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
-              <label className="text-sm text-neutral-500 sm:min-w-fit">Due Date</label>
-              <input
-                type="date"
+              <DatePicker
+                label="Due Date"
+                placeholder="Select due date"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
-                className="w-full sm:w-40 p-2 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600"
+                onChange={setDueDate}
+                id="due-date"
+                className="w-full sm:w-40 [&_.px-1]:text-neutral-500 [&_.px-1]:text-sm [&_.px-1]:sm:min-w-fit"
+
               />
             </div>
           </div>
