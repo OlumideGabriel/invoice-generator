@@ -324,7 +324,7 @@ const InvoiceGenerator: React.FC = () => {
                 value={invoiceNumber}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNumber(e.target.value) }
                 placeholder="#"
-                className="w-full sm:w-32 md:w-40 p-3 rounded-md bg-neutral-700 text-neutral-100 border border-neutral-600 focus:outline-none
+                className="w-full sm:w-32 md:w-40 px-3 py-2.5 rounded-md bg-neutral-700 text-neutral-100 border !border-gray-300 focus:outline-none
                 focus:ring-1 focus:ring-indigo-400"
               />
             </div>

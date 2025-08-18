@@ -125,7 +125,7 @@ const MainMenu: React.FC = () => {
                   shadow-lg shadow-gray-400/40 ring-2 ring-gray-300 ring-opacity-40
                   [box-shadow:0_0_16px_4px_rgba(156,163,175,0.18)]">
                   <Link
-                    to="/profile"
+                    to="/settings"
                     className="flex mr-2 ml-2 mt-2 rounded-md text-sm text-gray-700 hover:bg-gray-100"
                     onClick={() => setOpen(false)}
                   >
@@ -247,7 +247,7 @@ const MainMenu: React.FC = () => {
             {/* Menu Items */}
             <nav className="flex flex-col p-4 space-y-2">
               <Link
-                to="/profile"
+                to="/settings"
                 className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
                 onClick={() => setMobileMenuOpen(false)}
               >

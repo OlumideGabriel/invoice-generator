@@ -39,7 +39,7 @@ const PartyField: React.FC<PartyFieldProps> = ({ label, value, onChange }) => {
           onClick={handleClick}
           rows={3}
           className="flex lg:w-64 w-full min-h-[80px] p-3 rounded-md bg-neutral-700 border
-          border-neutral-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+          !border-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500"
         />
         <button
           className={`absolute bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900
