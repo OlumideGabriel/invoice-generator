@@ -72,7 +72,6 @@ const AppRoutes: React.FC = () => {
             <Route path="/" element={<InvoiceGenerator />} />
             <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
           </Routes>
         </main>

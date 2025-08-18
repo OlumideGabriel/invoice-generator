@@ -125,7 +125,7 @@ const SettingsPage = () => {
 
   // Render different sections based on activeSection
   const renderProfileSection = () => (
-    <div className="space-y-8">
+    <div className="space-y-8 py-20">
       {/* Profile Header Card */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
@@ -538,12 +538,10 @@ const SettingsPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <Settings className="h-6 w-6 text-blue-600" />
-              </div>
+
               <div>
-                <h1 className="text-2xl font-bold text-gray-900">Account Settings</h1>
-                <p className="text-sm text-gray-500">Manage your account preferences and settings</p>
+                <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
+                <p className="mt-2 text-gray-600">Manage your account preferences and settings</p>
               </div>
             </div>
             <button
@@ -565,7 +563,7 @@ const SettingsPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-4">
                 <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Settings</h2>
-                <nav className="space-y-1 flex flex-row lg:flex-col overflow-y-auto max-h-[calc(100vh-200px)]">
+                <nav className="space-y-1 flex flex-row lg:flex-col overflow-y-auto max-h-[calc(100vh-200px)] gap-2">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
                     return (

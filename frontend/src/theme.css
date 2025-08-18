@@ -119,6 +119,7 @@ select {
 .main-container {
     border-color: red;
 }
+
 .dark {
   /* Modern, elegant dark theme */
   --background: #0D1116;
