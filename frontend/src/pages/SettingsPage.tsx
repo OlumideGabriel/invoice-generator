@@ -125,7 +125,7 @@ const SettingsPage = () => {
 
   // Render different sections based on activeSection
   const renderProfileSection = () => (
-    <div className="space-y-8 py-20">
+    <div className="space-y-8 py-8">
       {/* Profile Header Card */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
