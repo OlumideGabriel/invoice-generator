@@ -565,7 +565,7 @@ const SettingsPage = () => {
             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
               <div className="p-4">
                 <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Settings</h2>
-                <nav className="space-y-1">
+                <nav className="space-y-1 flex flex-row lg:flex-col overflow-y-auto max-h-[calc(100vh-200px)]">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
                     return (
