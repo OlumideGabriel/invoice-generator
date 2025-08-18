@@ -558,11 +558,11 @@ const SettingsPage = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar - Mobile Responsive */}
+          {/* Sidebar - Mobile Responsive (settings sidebar) */}
           <div className="w-full lg:w-64 flex-shrink-0">
-            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-4">
-                <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wider mb-4">Settings</h2>
+            <div className="lg:bg-white lg:rounded-xl lg:shadow-sm lg:border border-slate-200 overflow-hidden">
+              <div className="lg:p-4">
+                <h2 className="text-sm hidden lg:flex font-medium text-gray-500 uppercase tracking-wider mb-4">Settings</h2>
                 <nav className="space-y-1 flex flex-row lg:flex-col overflow-y-auto max-h-[calc(100vh-200px)] gap-2">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
@@ -572,10 +572,10 @@ const SettingsPage = () => {
                         onClick={() => setActiveSection(item.id)}
                         className={`w-full flex items-center px-3 py-2.5 text-left rounded-lg transition-colors text-sm ${
                           activeSection === item.id
-                            ? 'bg-blue-50 text-blue-700 font-medium border-r-2 border-blue-600'
+                            ? 'bg-blue-50 text-blue-700 font-medium'
                             : item.danger
-                            ? 'text-red-600 hover:bg-red-50'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            ? 'text-red-600 hover:bg-red-50 bg-red-50'
+                            : 'text-gray-700 hover:bg-neutral-100'
                         }`}
                       >
                         <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
