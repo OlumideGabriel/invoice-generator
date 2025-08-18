@@ -125,7 +125,7 @@ const SettingsPage = () => {
 
   // Render different sections based on activeSection
   const renderProfileSection = () => (
-    <div className="space-y-8 py-8">
+    <div className="space-y-8">
       {/* Profile Header Card */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
@@ -546,10 +546,10 @@ const SettingsPage = () => {
             </div>
             <button
               onClick={() => window.history.back()}
-              className="inline-flex items-center px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors"
+              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
             >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              <ArrowLeft size={20} />
+
             </button>
           </div>
         </div>
@@ -563,23 +563,31 @@ const SettingsPage = () => {
             <div className="lg:bg-white lg:rounded-xl lg:shadow-sm lg:border border-slate-200 overflow-hidden">
               <div className="lg:p-4">
                 <h2 className="text-sm hidden lg:flex font-medium text-gray-500 uppercase tracking-wider mb-4">Settings</h2>
-                <nav className="space-y-1 flex flex-row lg:flex-col overflow-y-auto max-h-[calc(100vh-200px)] gap-2">
+                <nav className="flex flex-row lg:flex-col lg:space-y-1 h-12 lg:h-auto overflow-x-auto lg:overflow-y-auto
+                lg:max-h-[calc(100vh-200px)] gap-2 lg:gap-0">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
+                    const isActive = activeSection === item.id;
+
                     return (
                       <button
                         key={item.id}
                         onClick={() => setActiveSection(item.id)}
-                        className={`w-full flex items-center px-3 py-2.5 text-left rounded-lg transition-colors text-sm ${
-                          activeSection === item.id
-                            ? 'bg-blue-50 text-blue-700 font-medium'
+                        className={`
+                          flex items-center px-3 py-3 rounded-lg transition-colors text-sm
+                          min-w-fit lg:w-full text-left
+                          ${isActive
+                            ? 'bg-gray-900 text-neutral-50 font-medium'
                             : item.danger
-                            ? 'text-red-600 hover:bg-red-50 bg-red-50'
-                            : 'text-gray-700 hover:bg-neutral-100'
-                        }`}
+                              ? 'text-red-600 hover:bg-red-50 bg-red-50 lg:bg-transparent'
+                              : 'text-gray-700 hover:bg-gray-200 bg-gray-200 lg:bg-gray-200 lg:bg-transparent'
+                          }
+                        `}
                       >
                         <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
-                        <span className="truncate">{item.label}</span>
+                        <span className="truncate whitespace-nowrap lg:whitespace-normal">
+                          {item.label}
+                        </span>
                       </button>
                     );
                   })}

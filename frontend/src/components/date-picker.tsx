@@ -47,7 +47,9 @@ export function DatePicker({
   id,
   className = "",
   disabled = false,
-  selectedDateClassName = "[&_.rdp-day_selected]:bg-[#6CDD82] [&_.rdp-day_selected]:text-black [&_.rdp-day_selected]:hover:bg-[#39C454] [&_.rdp-day_selected]:hover:text-black [&_.rdp-day_selected]:focus:bg-[#39C454] [&_.rdp-day_selected]:focus:text-black"
+  selectedDateClassName = "[&_.rdp-day_selected]:bg-[#6CDD82] [&_.rdp-day_selected]:text-black \
+  [&_.rdp-day_selected]:hover:bg-[#39C454] [&_.rdp-day_selected]:hover:text-black \
+  [&_.rdp-day_selected]:focus:bg-[#39C454] [&_.rdp-day_selected]:focus:text-black"
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -62,7 +64,7 @@ export function DatePicker({
   };
 
   return (
-    <div className={`flex1 gap-3 ${className}`}>
+    <div className={`flex1 gap-3 flex-row ${className}`}>
       {label && (
         <Label htmlFor={id} className="px-1">
           {label}
@@ -80,7 +82,7 @@ export function DatePicker({
             <ChevronDown className="h-4 w-4 opacity-50" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto overflow-hidden p-0" align="start">
+        <PopoverContent className="w-auto overflow-hidden p-0" align="end">
           <Calendar
             mode="single"
             selected={dateValue}

@@ -412,7 +412,7 @@ const InvoicesPage = () => {
               </div>
             </div>
             <div className="flex space-x-3">
-              <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+              <button className="inline-flex hidden items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
                 <Upload className="h-4 w-4 mr-2" />
                 Import
               </button>
@@ -420,7 +420,7 @@ const InvoicesPage = () => {
                 onClick={() => {
                   window.location.href = '/';
                 }}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                className="inline-flex items-center px-3 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create Invoice
@@ -486,13 +486,14 @@ const InvoicesPage = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+        <div className="rounded-xl py-2 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
               <select
                 value={statusFilter}
                 onChange={handleStatusFilter}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50
+                transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Statuses</option>
                 <option value="draft">Draft</option>
@@ -501,7 +502,7 @@ const InvoicesPage = () => {
                 <option value="overdue">Overdue</option>
               </select>
 
-              <button className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+              <button className="hidden inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                 <ArrowUpDown className="h-4 w-4 mr-2" />
                 Sort
               </button>

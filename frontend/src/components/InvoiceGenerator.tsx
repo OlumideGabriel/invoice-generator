@@ -342,7 +342,7 @@ const InvoiceGenerator: React.FC = () => {
                 </div>
               </div>
 
-          <div className="flex-1 w-full flex flex-col gap-4 justify-end self-start lg:self-auto ">
+          <div className=" flex flex-col gap-4 justify-end  lg:self-auto">
             {/* Updated Issued Date with DatePicker */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
               <DatePicker

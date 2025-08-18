@@ -238,7 +238,7 @@ const Dashboard = () => {
     const metrics = getDashboardMetrics(invoices);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-28">
+        <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
                 <div className="mb-8">
@@ -250,7 +250,7 @@ const Dashboard = () => {
                         <div className="flex items-center space-x-4">
                             <button
                                 onClick={() => navigate('/')}
-                                className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
+                                className="flex items-center px-3 py-3 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
                             >
                                 <Plus className="h-5 w-5 mr-2" />
                                 <span>New Invoice</span>
