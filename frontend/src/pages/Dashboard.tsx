@@ -117,7 +117,7 @@ const Dashboard = () => {
         const recentInvoices = invoices
             .filter(inv => inv && inv.data && inv.data.issued_date)
             .sort((a, b) => new Date(b.data.issued_date) - new Date(a.data.issued_date))
-            .slice(0, 5);
+            .slice(0, 4);
 
         return {
             totalRevenue,

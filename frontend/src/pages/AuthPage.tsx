@@ -144,7 +144,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             <div className="grid grid-cols-1 gap-4">
               <button
                    type="button"
-                   className="flex items-center justify-center px-6 py-3 gap-2 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-sm hover:shadow-lg transition"
+                   className="flex items-center justify-center px-6 py-3 gap-2 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-2xs hover:shadow-sm transition"
                    onClick={async () => {
                      setLoading(true);
                      setError(null);

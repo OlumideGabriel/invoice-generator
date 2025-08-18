@@ -247,7 +247,7 @@ const ClientsPage = () => {
             </div>
             <button
               onClick={handleCreateClient}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Client
@@ -354,9 +354,13 @@ const ClientsPage = () => {
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
-                            {client.name.charAt(0).toUpperCase()}
-                          </div>
+                          <div className="flex-shrink-0 h-8 w-8">
+                                <div className="h-8 w-8 rounded-full bg-gray-900 flex items-center justify-center">
+                                    <span className="text-white text-sm font-medium">
+                                        {client.name.charAt(0).toUpperCase()}
+                                    </span>
+                                </div>
+                            </div>
                           <div className="ml-4">
                             <div className="text-sm font-medium text-gray-900">{client.name}</div>
                             {client.address && (
@@ -394,36 +398,39 @@ const ClientsPage = () => {
                         {new Date(client.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="relative inline-block text-left">
-                          <button
-                            onClick={() => setDropdownOpen(dropdownOpen === client.id ? null : client.id)}
-                            className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </button>
+                      <div className="relative inline-block text-left">
+                        <button
+                          onClick={() => setDropdownOpen(dropdownOpen === client.id ? null : client.id)}
+                          className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
 
-                          {dropdownOpen === client.id && (
-                            <div className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                              <div className="py-1">
-                                <button
-                                  onClick={() => handleEditClient(client)}
-                                  className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                                >
-                                  <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
-                                  Edit Client
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteClient(client)}
-                                  className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
-                                  Delete Client
-                                </button>
-                              </div>
+                        {dropdownOpen === client.id && (
+                          <div
+                            className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                            style={{ position: 'fixed' }}
+                          >
+                            <div className="py-1">
+                              <button
+                                onClick={() => handleEditClient(client)}
+                                className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                              >
+                                <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
+                                Edit Client
+                              </button>
+                              <button
+                                onClick={() => handleDeleteClient(client)}
+                                className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                              >
+                                <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+                                Delete Client
+                              </button>
                             </div>
-                          )}
-                        </div>
-                      </td>
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     </tr>
                   ))}
                 </tbody>

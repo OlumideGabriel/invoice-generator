@@ -41,7 +41,7 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
         />
         {/* Dropdown Menu */}
         {isOpen && (
-          <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-2xs p-0.5 shadow-lg z-10">
+          <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg p-0.5 shadow-lg z-10">
             <div className="max-h-60 overflow-y-auto">
               {currencyOptions.map((option) => (
                 <button

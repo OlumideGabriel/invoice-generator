@@ -46,7 +46,7 @@ const mobileMenuItems: MenuItem[] = [
     label: 'Invoices',
     icon: <FileText size={27} />,
   },
-  { path: '/', icon: <CirclePlus size={40} /> },
+  { path: '/', icon: <CirclePlus size={32} /> },
   { path: '/clients', label: 'Clients', icon: <Users size={27} /> },
   { path: '/settings', label: 'Settings', icon: <Settings size={27} /> },
 ];
@@ -167,7 +167,7 @@ const SideMenu: React.FC = () => {
     </div>
 
     {/* Mobile Sidebar */}
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-50">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-1000">
       <nav className="flex justify-around items-center mt-1">
         {mobileMenuItems.map(({ path, label, icon }) => (
           <Link

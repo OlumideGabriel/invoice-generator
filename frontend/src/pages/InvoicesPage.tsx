@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, ArrowUpDown, Filter, Upload, Plus, MoreHorizontal, Check, Trash2 } from 'lucide-react';
+import {
+  Search,
+  ArrowUpDown,
+  Filter,
+  Upload,
+  Plus,
+  MoreVertical,
+  Check,
+  Trash2,
+  FileText,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  CheckCircle2,
+  X
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { API_BASE_URL } from '../config/api';
@@ -56,6 +71,14 @@ interface Invoice {
 interface InvoiceApiResponse {
   invoices: Invoice[];
   success: boolean;
+  pagination?: {
+    page: number;
+    pages: number;
+    per_page: number;
+    total: number;
+    has_next: boolean;
+    has_prev: boolean;
+  };
 }
 
 // Status options for the dropdown
@@ -122,9 +145,11 @@ const InvoicesPage = () => {
   const [selectedInvoices, setSelectedInvoices] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
   const [invoicesData, setInvoicesData] = useState<InvoiceApiResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
@@ -149,31 +174,60 @@ const InvoicesPage = () => {
   }, [activeDropdown]);
 
   useEffect(() => {
+    fetchInvoices();
+  }, [currentPage, searchTerm, statusFilter]);
+
+  const fetchInvoices = () => {
     if (!user?.id) return;
 
     setLoading(true);
-    fetch(`${API_BASE_URL}api/invoices?user_id=${user.id}`)
+    const params = new URLSearchParams({
+      user_id: user.id,
+      page: currentPage.toString(),
+      per_page: '10',
+      ...(searchTerm && { search: searchTerm }),
+      ...(statusFilter && { status: statusFilter })
+    });
+
+    fetch(`${API_BASE_URL}/api/invoices?${params}`)
       .then(res => res.json())
       .then((data: InvoiceApiResponse) => {
         if (data.success) {
           setInvoicesData(data);
         } else {
           setError('Failed to load invoices');
+          showNotification('Failed to load invoices', 'error');
         }
         setLoading(false);
       })
       .catch(err => {
         console.error('Error loading invoices:', err);
         setError('Failed to load invoices');
+        showNotification('Failed to load invoices', 'error');
         setLoading(false);
       });
-  }, [user?.id]);
+  };
+
+  const showNotification = (message: string, type: 'success' | 'error' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3000);
+  };
+
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setStatusFilter(e.target.value);
+    setCurrentPage(1);
+  };
 
   const deleteInvoice = async (invoiceId: string) => {
     setDeletingInvoice(invoiceId);
 
     try {
-      const response = await fetch(`${API_BASE_URL}api/invoices/${invoiceId}?user_id=${user?.id}`, {
+      const response = await fetch(`${API_BASE_URL}/api/invoices/${invoiceId}?user_id=${user?.id}`, {
         method: 'DELETE',
       });
 
@@ -187,14 +241,17 @@ const InvoicesPage = () => {
           };
         });
 
+        showNotification('Invoice deleted successfully');
         setActiveDropdown(null);
         setShowDeleteConfirm(null);
       } else {
         const errorData = await response.json();
+        showNotification('Failed to delete invoice', 'error');
         console.error('Failed to delete invoice:', errorData.error);
       }
     } catch (error) {
       console.error('Error deleting invoice:', error);
+      showNotification('Network error occurred', 'error');
     } finally {
       setDeletingInvoice(null);
     }
@@ -213,7 +270,7 @@ const InvoicesPage = () => {
     setUpdatingStatus(invoiceId);
 
     try {
-      const response = await fetch(`${API_BASE_URL}api/invoices/${invoiceId}/status`, {
+      const response = await fetch(`${API_BASE_URL}/api/invoices/${invoiceId}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -238,12 +295,15 @@ const InvoicesPage = () => {
           };
         });
 
+        showNotification(`Invoice status updated to ${newStatus}`);
         setActiveDropdown(null);
       } else {
+        showNotification('Failed to update invoice status', 'error');
         console.error('Failed to update invoice status');
       }
     } catch (error) {
       console.error('Error updating invoice status:', error);
+      showNotification('Network error occurred', 'error');
     } finally {
       setUpdatingStatus(null);
     }
@@ -334,268 +394,376 @@ const InvoicesPage = () => {
     setActiveDropdown(activeDropdown === invoiceId ? null : invoiceId);
   };
 
-  if (loading && !invoicesData) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error && !invoicesData) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="text-red-600 text-center">
-          <p className="text-xl font-semibold mb-2">Error</p>
-          <p>{error}</p>
-        </div>
-      </div>
-    );
-  }
+  const pagination = invoicesData?.pagination;
 
   return (
-  <div className="bg-gray-50 min-h-screen">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <div className="mb-8">
-        <div className="flex justify-between items-start mb-2">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
-            <p className="text-gray-600 mt-1">
-              Manage your invoices ({filteredInvoices.length} total)
-            </p>
-          </div>
-          <div className="flex space-x-3">
-            <button className="flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-              <Upload className="w-4 h-4 mr-2" />
-              Import
-            </button>
-            <button
-              onClick={() => {
-                window.location.href = '/';
-              }}
-              className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Create Invoice
-            </button>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      {/* Header */}
+      <div className="bg-white shadow-sm border-b border-slate-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <FileText className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Invoices</h1>
+                <p className="text-sm text-gray-500">
+                  Manage your invoices ({filteredInvoices.length} total)
+                </p>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
+                <Upload className="h-4 w-4 mr-2" />
+                Import
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = '/';
+                }}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create Invoice
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-        <div className="flex items-center space-x-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            <option value="">All Statuses</option>
-            <option value="draft">Draft</option>
-            <option value="sent">Sent</option>
-            <option value="paid">Paid</option>
-            <option value="overdue">Overdue</option>
-          </select>
+      {/* Dropdown Portals - Rendered outside table to avoid clipping */}
+      {activeDropdown && (
+        <div className="fixed inset-0 z-40" onClick={() => setActiveDropdown(null)}>
+          {(() => {
+            const buttonElement = document.querySelector(`[data-dropdown-button="${activeDropdown}"]`);
+            if (!buttonElement) return null;
+
+            const rect = buttonElement.getBoundingClientRect();
+
+            return (
+              <div
+                ref={(el) => {
+                  dropdownRefs.current[activeDropdown] = el;
+                }}
+                className="absolute w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                style={{
+                  top: rect.bottom + window.scrollY + 8,
+                  left: rect.right + window.scrollX - 192, // 192px = w-48
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="py-1">
+                  <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                    Change Status
+                  </div>
+                  {STATUS_OPTIONS.map((status) => (
+                    <button
+                      key={status.value}
+                      onClick={() => updateInvoiceStatus(activeDropdown, status.value)}
+                      className="group flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                    >
+                      <span>{status.label}</span>
+                      {invoicesData?.invoices.find(inv => inv.id === activeDropdown)?.status === status.value && (
+                        <Check className="h-4 w-4 text-green-600" />
+                      )}
+                    </button>
+                  ))}
+                  <div className="border-t border-gray-100 mt-1 pt-1">
+                    <button
+                      onClick={() => confirmDelete(activeDropdown)}
+                      className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                    >
+                      <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+                      Delete Invoice
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Search and Filters */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <select
+                value={statusFilter}
+                onChange={handleStatusFilter}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">All Statuses</option>
+                <option value="draft">Draft</option>
+                <option value="sent">Sent</option>
+                <option value="paid">Paid</option>
+                <option value="overdue">Overdue</option>
+              </select>
+
+              <button className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                <ArrowUpDown className="h-4 w-4 mr-2" />
+                Sort
+              </button>
+            </div>
+
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search customers, invoice numbers..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                value={searchTerm}
+                onChange={handleSearch}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="flex items-center space-x-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search customers, invoice numbers..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
-            />
-          </div>
-          <button className="flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-            <ArrowUpDown className="w-4 h-4 mr-2" />
-            Sort order
-          </button>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        {filteredInvoices.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-gray-500 text-lg">
-              {searchTerm || statusFilter ? 'No invoices match your criteria' : 'No invoices found'}
-            </p>
-            <p className="text-gray-400 mt-2">
-              {!searchTerm && !statusFilter && 'Create your first invoice to get started'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              {/* Table headers and rows go here */}
-              <thead className="bg-gray-50">
+        {/* Invoices Table */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <span className="ml-3 text-gray-500">Loading invoices...</span>
+            </div>
+          ) : filteredInvoices.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices found</h3>
+              <p className="text-gray-500 mb-4">
+                {searchTerm || statusFilter ? 'No invoices match your criteria.' : 'Get started by creating your first invoice.'}
+              </p>
+              <button
+                onClick={() => window.location.href = '/'}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Create First Invoice
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th scope="col" className="w-12 px-6 py-3">
+                    <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
+                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                         checked={selectedInvoices.size === filteredInvoices.length && filteredInvoices.length > 0}
                         onChange={(e) => handleSelectAll(e.target.checked)}
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       />
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Customer
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Client
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Amount
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Currency
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Invoice #
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Billing period
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Issued
                     </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Sent
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Due Date
                     </th>
-                    <th scope="col" className="w-12 px-6 py-3">
-                      <span className="sr-only">Actions</span>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
-
-
                 </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredInvoices.map((invoice) => {
+                    const statusConfig = getStatusConfig(invoice.status);
+                    const totalAmount = calculateInvoiceTotal(invoice);
+                    const customerName = invoice.data?.to || 'Unknown Customer';
+                    const customerInitials = getCustomerInitials(customerName);
+                    const isDropdownActive = activeDropdown === invoice.id;
+                    const isUpdating = updatingStatus === invoice.id;
 
-                 {/* Ivoices table body */}
-                 <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredInvoices.map((invoice) => {
-                      const statusConfig = getStatusConfig(invoice.status);
-                      const totalAmount = calculateInvoiceTotal(invoice);
-                      const customerName = invoice.data.to || 'Unknown Customer';
-                      const customerInitials = getCustomerInitials(customerName);
-                      const isDropdownActive = activeDropdown === invoice.id;
-                      const isUpdating = updatingStatus === invoice.id;
-
-                      return (
-                        <tr key={invoice.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">
-                            <input
-                              type="checkbox"
-                              checked={selectedInvoices.has(invoice.id)}
-                              onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
-                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            />
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="flex-shrink-0 h-8 w-8">
+                    return (
+                      <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <input
+                            type="checkbox"
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            checked={selectedInvoices.has(invoice.id)}
+                            onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
+                          />
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 h-8 w-8">
                                 <div className="h-8 w-8 rounded-full bg-gray-900 flex items-center justify-center">
-                                  <span className="text-white text-sm font-medium">
-                                    {customerInitials}
-                                  </span>
+                                    <span className="text-white text-sm font-medium">
+                                        {customerInitials}
+                                    </span>
                                 </div>
-                              </div>
-                              <div className="ml-3">
-                                <div className="text-sm font-medium text-gray-900">
-                                  {customerName}
-                                </div>
-                              </div>
                             </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <div className="ml-4">
+                              <div className="text-sm font-medium text-gray-900">{customerName}</div>
+                              <div className="text-sm text-gray-500">{invoice.data?.from || 'N/A'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="text-sm font-medium text-gray-900">
                             {formatAmount(totalAmount, invoice.data?.currency_symbol || invoice.currency?.symbol || '£')}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {invoice.data?.currency || invoice.currency?.currency || 'GBP'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>
-                              {statusConfig.label}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {invoice.data?.invoice_number || '-'}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {getBillingPeriod(invoice.data?.issued_date, invoice.data?.due_date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(invoice.data?.issued_date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {formatDate(invoice.data?.due_date)}
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium relative">
-                            <div
-                              ref={(el) => {
-                                dropdownRefs.current[invoice.id] = el;
-                              }}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {invoice.data?.currency || invoice.currency?.code || 'GBP'}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>
+                            {statusConfig.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {invoice.data?.invoice_number || '-'}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {formatDate(invoice.data?.issued_date)}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {formatDate(invoice.data?.due_date)}
+                        </td>
+                        <td className="px-6 py-4 text-right relative">
+                          <div className="relative inline-block text-left">
+                            <button
+                              onClick={() => toggleDropdown(invoice.id)}
+                              disabled={isUpdating}
+                              data-dropdown-button={invoice.id}
+                              className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
                             >
-                              <button
-                                onClick={() => toggleDropdown(invoice.id)}
-                                disabled={isUpdating}
-                                className="text-gray-400 hover:text-gray-600 disabled:opacity-50"
-                              >
-                                {isUpdating ? (
-                                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-                                ) : (
-                                  <MoreHorizontal className="w-4 h-4" />
-                                )}
-                              </button>
+                              {isUpdating ? (
+                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                              ) : (
+                                <MoreVertical className="h-4 w-4" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-                                {isDropdownActive && (
-                                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 ">
-                                  <div className="py-1">
-                                    <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b z-50 border-gray-100">
-                                      Change Status
-                                    </div>
-                                    {STATUS_OPTIONS.map((status) => (
-                                      <button
-                                        key={status.value}
-                                        onClick={() => updateInvoiceStatus(invoice.id, status.value)}
-                                        className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center justify-between"
-                                      >
-                                        <span>{status.label}</span>
-                                        {invoice.status === status.value && (
-                                          <Check className="w-4 h-4 text-green-600" />
-                                        )}
-                                      </button>
-                                    ))}
-                                    <div className="border-t border-gray-100 mt-1 pt-1">
-                                      <button
-                                        onClick={() => deleteInvoice(invoice.id)}
-                                        className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center"
-                                      >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Delete Invoice
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                                    )}
-
-
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                 </tbody>
-            </table>
-
-
-          </div>
-        )}
+          {/* Pagination */}
+          {pagination && pagination.pages > 1 && (
+            <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} invoices
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  disabled={!pagination.has_prev}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" />
+                  Previous
+                </button>
+                <span className="text-sm text-gray-500">
+                  Page {currentPage} of {pagination.pages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(prev => Math.min(pagination.pages, prev + 1))}
+                  disabled={!pagination.has_next}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  </div>
-);
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                  <AlertCircle className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Confirm Deletion
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-500 mb-6">
+                Are you sure you want to delete this invoice? This action cannot be undone.
+              </p>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={cancelDelete}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => deleteInvoice(showDeleteConfirm)}
+                  disabled={deletingInvoice === showDeleteConfirm}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {deletingInvoice === showDeleteConfirm ? (
+                    <>
+                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Notification */}
+      {notification && (
+        <div className="fixed bottom-4 right-4 z-50">
+          <div className={`flex items-center p-4 rounded-lg shadow-lg ${
+            notification.type === 'success'
+              ? 'bg-green-100 border border-green-200 text-green-800'
+              : 'bg-red-100 border border-red-200 text-red-800'
+          }`}>
+            {notification.type === 'success' ? (
+              <CheckCircle2 className="h-5 w-5 mr-3 text-green-600" />
+            ) : (
+              <AlertCircle className="h-5 w-5 mr-3 text-red-600" />
+            )}
+            <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-3 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 export default InvoicesPage;
