@@ -204,12 +204,12 @@ const MainMenu: React.FC = () => {
           {/* Off-canvas menu */}
           <div
             ref={mobileMenuRef}
-            className={`fixed top-0 right-0 h-full w-80 max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
+            className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
               mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
             {/* Header with Logo */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <div className="flex items-center justify-between py-4 px-7 border-b border-gray-200">
               <div className="flex items-center gap-2">
                 <img
                   src="/envoyce.svg"
@@ -231,7 +231,7 @@ const MainMenu: React.FC = () => {
             </div>
 
             {/* User Profile Section */}
-            <div className="flex items-center gap-3 p-4 bg-gray-50 border-b border-gray-200">
+            <div className="flex absolute bottom-0 w-full items-center gap-6 py-7 px-7 bg-gray-50 border-t border-gray-200">
               <div className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200
                rounded-full justify-center items-center">
                 {getInitials(user) || <User className="w-6 h-6" />}
