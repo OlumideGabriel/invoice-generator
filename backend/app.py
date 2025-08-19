@@ -4,6 +4,7 @@ import json
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
+import base64
 from dotenv import load_dotenv
 import os
 import logging
@@ -213,20 +214,23 @@ def generate_invoice():
 
         template_data = parse_invoice_data(data)
 
-        # Convert logo_url to local file path if provided
-        if template_data.get('logo_url'):
-            logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), template_data['logo_url'].lstrip('/'))
+        # Convert logo to Base64 if provided
+        logo_url = template_data.get('logo_url')
+        if logo_url:
+            logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), logo_url.lstrip('/'))
             if os.path.exists(logo_path):
-                # Use file:// URL so WeasyPrint can load from disk
-                template_data['logo_url'] = f'file://{logo_path}'
+                with open(logo_path, "rb") as f:
+                    encoded_logo = base64.b64encode(f.read()).decode("utf-8")
+                template_data['logo_base64'] = f"data:image/png;base64,{encoded_logo}"
             else:
-                # If file doesn't exist, remove logo to avoid broken image
-                template_data['logo_url'] = None
+                template_data['logo_base64'] = None
+        else:
+            template_data['logo_base64'] = None
 
         # Render the HTML template with invoice data
         html = render_template('invoice_template3.html', **template_data)
 
-        # Generate PDF with WeasyPrint, using project directory as base_url
+        # Generate PDF with WeasyPrint
         pdf = HTML(
             string=html,
             base_url=os.path.dirname(os.path.abspath(__file__))
