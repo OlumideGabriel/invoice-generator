@@ -96,7 +96,7 @@ const SideMenu: React.FC = () => {
           collapsed ? 'w-55' : 'w-60'
         } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
       >
-        <nav className="flex flex-col gap-2">
+        <nav className="flex flex-col gap-1.5">
 
           {menuItems.map(({ path, label, icon, submenu }) =>
             submenu ? (
@@ -126,9 +126,9 @@ const SideMenu: React.FC = () => {
                     setExpandedItem(null);
                   }
                 }}
-                className={`flex menu-item items-center gap-3 h-[3.2rem] max-h-[3.2rem] px-4 py-3 font-medium
+                className={`flex menu-item items-center gap-3 h-[3 rem] max-h-[3.2rem] px-4 py-3 font-medium
                     transition-colors duration-150 text-xl  ${
-                  location.pathname === path ? 'active ' : 'text-gray-800'
+                  location.pathname === path ? 'active ' : 'text-gray-700'
                 }`}
               >
                 {icon}

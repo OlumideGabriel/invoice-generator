@@ -18,7 +18,8 @@ import {
   Save,
   AlertCircle,
   CheckCircle2,
-  Users
+  Users,
+  ArrowLeft
 } from 'lucide-react';
 
 const ClientsPage = () => {
@@ -236,11 +237,18 @@ const ClientsPage = () => {
       <div className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-3">
+            {/* Back button */}
+            <div className="flex items-center space-x-3 gap-6">
+                <button
+              onClick={() => window.history.back()}
+              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
 
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Clients</h1>
-                <p className="mt-2 text-gray-600">Manage your client database</p>
+                <p className="mt-2 hidden text-gray-600">Manage your client database</p>
               </div>
             </div>
             <button

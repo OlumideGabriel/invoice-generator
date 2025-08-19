@@ -210,14 +210,24 @@ def generate_invoice():
     try:
         data = request.get_json()
         app.logger.debug(f"[GENERATE] Received data: {data}")
-        template_data = parse_invoice_data(data)
-        html = render_template('invoice_template3.html', **template_data)
-        pdf = HTML(string=html).write_pdf()
 
+        template_data = parse_invoice_data(data)
+
+        # Render the HTML template with invoice data
+        html = render_template('invoice_template3.html', **template_data)
+
+        # Pass base_url so WeasyPrint can resolve static files (logo, CSS, etc.)
+        pdf = HTML(
+            string=html,
+            base_url=os.path.dirname(os.path.abspath(__file__))  # points to your project dir
+        ).write_pdf()
+
+        # Send PDF as response
         response = make_response(pdf)
-        print(template_data)
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = f'attachment; filename=invoice_{template_data["invoice_number"]}.pdf'
+        response.headers['Content-Disposition'] = (
+            f'attachment; filename=invoice_{template_data["invoice_number"]}.pdf'
+        )
         return response
 
     except Exception as e:

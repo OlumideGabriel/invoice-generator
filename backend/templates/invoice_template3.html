@@ -396,7 +396,7 @@
 
       <div class="company-logo">
         {% if logo_url %}
-        <img src="{{ logo_url }}" alt="Logo" />
+          <img src="{{ logo_url }}" alt="Company Logo" style="max-height:80px;">
         {% endif %}
       </div>
 
@@ -417,21 +417,21 @@
       </div>
 
       <div class="footer-column">
+        {% if payment_details %}
         <h3>Payment Instructions</h3>
         <p>
-          {% if payment_details %}
             {{ payment_details|replace('\n', '<br/>')|safe }}
-          {% endif %}
         </p>
+        {% endif %}
       </div>
 
       <div class="footer-column">
+        {% if terms %}
         <h3>Terms</h3>
         <p>
-          {% if terms %}
             {{ terms|replace('\n', '<br/>')|safe }}
-          {% endif %}
         </p>
+        {% endif %}
       </div>
     </div>
   </div>

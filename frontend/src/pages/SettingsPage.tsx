@@ -536,7 +536,15 @@ const SettingsPage = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
+          <div className="flex justify-start gap-6 items-center py-6">
+
+            <button
+              onClick={() => window.history.back()}
+              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
+
             <div className="flex items-center space-x-3">
 
               <div>
@@ -544,13 +552,7 @@ const SettingsPage = () => {
                 <p className="mt-2 hidden text-gray-600">Manage your account preferences and settings</p>
               </div>
             </div>
-            <button
-              onClick={() => window.history.back()}
-              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeft size={20} />
 
-            </button>
           </div>
         </div>
       </div>

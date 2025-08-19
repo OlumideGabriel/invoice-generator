@@ -13,7 +13,8 @@ import {
   ChevronRight,
   AlertCircle,
   CheckCircle2,
-  X
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -402,11 +403,20 @@ const InvoicesPage = () => {
       <div className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
-            <div className="flex items-center space-x-3">
 
+            <div className="flex items-center space-x-3 gap-6">
+            {/* Back button */}
+           <div className="flex items-center space-x-3 gap-6">
+                <button
+              onClick={() => window.history.back()}
+              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
+            >
+              <ArrowLeft size={20} />
+            </button>
+            </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
-                <p className="mt-2 text-gray-600">
+                <p className="mt-2 text-gray-600 hidden">
                   Manage your invoices ({filteredInvoices.length} total)
                 </p>
               </div>
@@ -487,12 +497,12 @@ const InvoicesPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
         <div className="rounded-xl py-2 mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+          <div className="flex flex-row-reverse sm:flex-row-reverse flex-row sm:flex-row justify-between items-center gap-2">
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
               <select
                 value={statusFilter}
                 onChange={handleStatusFilter}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50
+                className="px-3 py-2.5 border !border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50
                 transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="">All Statuses</option>
