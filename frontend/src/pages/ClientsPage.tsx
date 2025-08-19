@@ -245,10 +245,18 @@ const ClientsPage = () => {
             </div>
             <button
               onClick={handleCreateClient}
-              className="inline-flex items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+              className="lg:inline-flex hidden items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Client
+            </button>
+
+            <button
+              onClick={handleCreateClient}
+              className="inline-flex absolute bottom-20 right-5 lg:hidden items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+            >
+              <Plus size={25} />
+                Add Client
             </button>
           </div>
         </div>
@@ -258,13 +266,13 @@ const ClientsPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Actions */}
         <div className="rounded-xl py-3 mb-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <div className="flex flex-col  sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+            <div className="relative flex-1 max-w-md w-full">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <input
                 type="text"
                 placeholder="Search clients by name, email, or phone..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-3 border-2 !bg-gray-150 !border-neutral-200 !rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={handleSearch}
               />
