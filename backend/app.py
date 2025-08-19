@@ -213,13 +213,23 @@ def generate_invoice():
 
         template_data = parse_invoice_data(data)
 
+        # Convert logo_url to local file path if provided
+        if template_data.get('logo_url'):
+            logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), template_data['logo_url'].lstrip('/'))
+            if os.path.exists(logo_path):
+                # Use file:// URL so WeasyPrint can load from disk
+                template_data['logo_url'] = f'file://{logo_path}'
+            else:
+                # If file doesn't exist, remove logo to avoid broken image
+                template_data['logo_url'] = None
+
         # Render the HTML template with invoice data
         html = render_template('invoice_template3.html', **template_data)
 
-        # Pass base_url so WeasyPrint can resolve static files (logo, CSS, etc.)
+        # Generate PDF with WeasyPrint, using project directory as base_url
         pdf = HTML(
             string=html,
-            base_url=os.path.dirname(os.path.abspath(__file__))  # points to your project dir
+            base_url=os.path.dirname(os.path.abspath(__file__))
         ).write_pdf()
 
         # Send PDF as response
