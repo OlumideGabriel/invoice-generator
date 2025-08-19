@@ -324,3 +324,12 @@ h1 {
   }
 
 }
+
+nav {
+  overflow-x: scroll;
+  scrollbar-width: none; /* Firefox */
+}
+
+nav::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Edge */
+}

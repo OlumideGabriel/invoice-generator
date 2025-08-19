@@ -541,7 +541,7 @@ const SettingsPage = () => {
 
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Account Settings</h1>
-                <p className="mt-2 text-gray-600">Manage your account preferences and settings</p>
+                <p className="mt-2 hidden text-gray-600">Manage your account preferences and settings</p>
               </div>
             </div>
             <button
@@ -556,15 +556,15 @@ const SettingsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sidebar">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Mobile Responsive (settings sidebar) */}
           <div className="w-full lg:w-64 flex-shrink-0">
             <div className="lg:bg-white lg:rounded-xl lg:shadow-sm lg:border border-slate-200 overflow-hidden">
               <div className="lg:p-4">
                 <h2 className="text-sm hidden lg:flex font-medium text-gray-500 uppercase tracking-wider mb-4">Settings</h2>
-                <nav className="flex flex-row lg:flex-col lg:space-y-1 h-12 lg:h-auto overflow-x-auto lg:overflow-y-auto
-                lg:max-h-[calc(100vh-200px)] gap-2 lg:gap-0">
+                <nav className="flex flex-row lg:flex-col lg:space-y-1 h-9 lg:h-auto overflow-x-auto lg:overflow-y-auto
+                lg:max-h-[calc(100vh-200px)] gap-2.5 lg:gap-0">
                   {sidebarItems.map((item) => {
                     const Icon = item.icon;
                     const isActive = activeSection === item.id;
@@ -574,7 +574,7 @@ const SettingsPage = () => {
                         key={item.id}
                         onClick={() => setActiveSection(item.id)}
                         className={`
-                          flex items-center px-3 py-3 rounded-lg transition-colors text-sm
+                          flex items-center px-3 py-2.5 rounded-lg transition-colors text-sm
                           min-w-fit lg:w-full text-left
                           ${isActive
                             ? 'bg-gray-900 text-neutral-50 font-medium'
