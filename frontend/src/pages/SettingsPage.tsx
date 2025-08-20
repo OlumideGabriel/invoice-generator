@@ -469,11 +469,11 @@ const SettingsPage = () => {
               <div>
                 <h4 className="font-semibold text-gray-900 mb-1">Current Plan</h4>
                 <p className="text-2xl font-bold text-blue-600">Free Plan</p>
-                <p className="text-sm text-gray-600 mt-1">5 invoices per month</p>
+                <p className="hidden text-sm text-gray-600 mt-1">5 invoices per month</p>
               </div>
               <CreditCard className="h-12 w-12 text-blue-500" />
             </div>
-            <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="hidden mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               Upgrade Plan
             </button>
           </div>
