@@ -295,7 +295,7 @@ const PrivacyPolicyPage = () => {
 
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-2 text-sm">
-              <p><strong>Email:</strong> privacy@envoyce.xyz</p>
+              <p><strong>Email:</strong> contact@envoyce.xyz</p>
               <p><strong>Address:</strong> Liverpool, UK</p>
               <p><strong>Response Time:</strong> We will respond to your inquiry within 48 hours</p>
             </div>

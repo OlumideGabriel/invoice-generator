@@ -15,6 +15,7 @@ import SettingsPage from './pages/SettingsPage';
 import InvoicesPage from './pages/InvoicesPage';
 import ClientsPage from './pages/ClientsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
+import TermsOfServicePage from './pages/TermsOfServicePage'
 
 
 function Clients() {
@@ -75,6 +76,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>
         </main>
       </div>

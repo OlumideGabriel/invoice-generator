@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Settings, LogOut, User, Bell, Receipt, Shredder, X, Shield } from 'lucide-react';
+import { Menu, Settings, LogOut, User, Bell, Receipt, Shredder, X, Shield, Scale } from 'lucide-react';
 import DarkModeToggle from './DarkModeToggle';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -170,6 +170,15 @@ const MainMenu: React.FC = () => {
                     Privacy Policy
                   </Link>
                   <Link
+                    to="/terms-of-service"
+                    className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 text-md text-gray-700
+                    hover:bg-gray-100 hover:text-gray-900"
+                    onClick={() => setOpen(false)}
+                  >
+                    <Scale className="w-5 h-5 mr-2" />
+                    Terms of Service
+                  </Link>
+                  <Link
                     to="#"
                     onClick={async (e) => {
                       e.preventDefault();
@@ -280,6 +289,15 @@ const MainMenu: React.FC = () => {
               >
                 <Shield className="w-5 h-5 mr-3" />
                 Privacy Policy
+              </Link>
+
+              <Link
+                to="/terms-of-service"
+                className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <Scale className="w-5 h-5 mr-3" />
+                Terms of Service
               </Link>
 
               <button
