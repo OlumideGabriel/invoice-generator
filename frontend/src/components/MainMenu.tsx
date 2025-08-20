@@ -74,7 +74,7 @@ const MainMenu: React.FC = () => {
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
           {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
-            <div className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-2">
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
@@ -83,7 +83,7 @@ const MainMenu: React.FC = () => {
               <span className="text-2xl hidden font-semibold tracking-tight text-gray-800 font-[Open Sauce Sans]">
                 envoyce
               </span>
-            </div>
+            </a>
           </div>
 
           {/* Mobile hamburger menu - only show when user is logged in */}
