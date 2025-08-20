@@ -395,8 +395,10 @@
     <!-- Footer -->
 
       <div class="company-logo">
-        {% if logo_base64 %}
-          <img src="{{ logo_base64 }}" alt="Logo" style="max-height:80px;">
+        {% if logo_url %}
+          <img src="{{ logo_url }}" alt="Logo" style="max-height:80px;">
+        {% else company_logo %}
+          <img src="{{ company_logo }}" alt="Logo" style="max-height:80px;">
         {% endif %}
       </div>
 

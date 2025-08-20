@@ -456,6 +456,39 @@ const SettingsPage = () => {
     </div>
   );
 
+const renderBusinessSection = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Businesses</h3>
+          <p className="text-sm text-gray-500 mt-1">Choose your preferred invoice template design</p>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="p-4 border-2 border-blue-200 bg-blue-50 rounded-lg">
+              <FileText className="h-8 w-8 text-blue-600 mb-3" />
+              <h4 className="font-medium text-gray-900">Modern Template</h4>
+              <p className="text-sm text-gray-600 mt-1">Clean and professional design</p>
+              <button className="mt-3 px-3 py-1 bg-blue-600 text-white rounded text-sm">Current</button>
+            </div>
+            <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-gray-50 transition-colors">
+              <FileText className="h-8 w-8 text-gray-400 mb-3" />
+              <h4 className="font-medium text-gray-900">Classic Template</h4>
+              <p className="text-sm text-gray-600 mt-1">Traditional business style</p>
+              <button className="mt-3 px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors">Select</button>
+            </div>
+            <div className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-gray-50 transition-colors">
+              <FileText className="h-8 w-8 text-gray-400 mb-3" />
+              <h4 className="font-medium text-gray-900">Minimal Template</h4>
+              <p className="text-sm text-gray-600 mt-1">Simple and elegant</p>
+              <button className="mt-3 px-3 py-1 bg-gray-200 text-gray-700 rounded text-sm hover:bg-gray-300 transition-colors">Select</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
   const renderBillingSection = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -522,6 +555,8 @@ const SettingsPage = () => {
         return renderNotificationsSection();
       case 'templates':
         return renderTemplatesSection();
+      case 'business':
+        return renderBusinessSection();
       case 'billing':
         return renderBillingSection();
       case 'delete':
