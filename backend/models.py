@@ -18,6 +18,7 @@ class User(db.Model):
 
     clients = db.relationship('Client', backref='user', lazy=True, cascade="all, delete-orphan")
     invoices = db.relationship('Invoice', backref='user', lazy=True, cascade="all, delete-orphan")
+    businesses = db.relationship('Business', backref='user', lazy=True, cascade="all, delete-orphan")
 
 
 class Client(db.Model):
@@ -55,6 +56,7 @@ class Invoice(db.Model):
     id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     client_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('clients.id', ondelete='SET NULL'), nullable=True)
+    business_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('businesses.id', ondelete='SET NULL'), nullable=True)  # <-- Add this
     data = db.Column(db.JSON, nullable=False)  # already present
     issued_date = db.Column(db.Date)
     due_date = db.Column(db.Date)
