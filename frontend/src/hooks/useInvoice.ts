@@ -53,8 +53,28 @@ function useInvoice(options: UseInvoiceOptions = {}) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
-  const [issuedDate, setIssuedDate] = useState('');
-  const [dueDate, setDueDate] = useState('');
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper function to get 7 days from today in YYYY-MM-DD format
+  const getSevenDaysFromNowString = () => {
+    const today = new Date();
+    const sevenDaysLater = new Date(today);
+    sevenDaysLater.setDate(today.getDate() + 7);
+    const year = sevenDaysLater.getFullYear();
+    const month = String(sevenDaysLater.getMonth() + 1).padStart(2, '0');
+    const day = String(sevenDaysLater.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [issuedDate, setIssuedDate] = useState(getTodayString());
+  const [dueDate, setDueDate] = useState(getSevenDaysFromNowString());
   const [taxType, setTaxType] = useState<'percent' | 'fixed'>('percent');
   const [discountType, setDiscountType] = useState<'percent' | 'fixed'>('percent');
 

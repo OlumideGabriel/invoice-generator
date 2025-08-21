@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useBusiness } from '../context/BusinessContext';
+import BusinessLogoUpload from '../components/BusinessLogoUpload';
+import { API_BASE_URL } from '../config/api';
 import {
   User,
   Mail,
@@ -19,7 +22,9 @@ import {
   Settings,
   CheckCircle2,
   AlertCircle,
-  BriefcaseBusiness
+  BriefcaseBusiness,
+  Plus,
+  Building2
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -46,6 +51,26 @@ const SettingsPage = () => {
     new: '',
     confirm: ''
   });
+  
+  // Business management state
+  const [showCreateBusinessModal, setShowCreateBusinessModal] = useState(false);
+  const [showEditBusinessModal, setShowEditBusinessModal] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<any>(null);
+  const [businessFormData, setBusinessFormData] = useState({
+    name: '',
+    email: '',
+    address: '',
+    phone: '',
+    website: '',
+    logo_url: '',
+    tax_id: '',
+    payment_info: ''
+  });
+  const [businessLogoFile, setBusinessLogoFile] = useState<File | null>(null);
+  const [businessLogoUrl, setBusinessLogoUrl] = useState('');
+  
+  // Use business context instead of local state
+  const { businesses, createBusiness, updateBusiness, deleteBusiness, loading: businessLoading } = useBusiness();
 
   // Sidebar navigation items
   const sidebarItems = [
@@ -121,6 +146,176 @@ const SettingsPage = () => {
     setPasswords({ current: '', new: '', confirm: '' });
     setShowPasswordForm(false);
     showNotification('Password updated successfully');
+  };
+
+  // Business management functions
+  const handleBusinessInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setBusinessFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBusinessLogoChange = (file: File | null, url: string) => {
+    setBusinessLogoFile(file);
+    setBusinessLogoUrl(url);
+  };
+
+  const handleCreateBusiness = async () => {
+    if (!businessFormData.name.trim()) {
+      showNotification('Business name is required', 'error');
+      return;
+    }
+
+    try {
+      let logoUrl = businessFormData.logo_url;
+
+      // Upload logo file if one is selected
+      if (businessLogoFile) {
+        const formData = new FormData();
+        formData.append('logo', businessLogoFile);
+
+        const uploadResponse = await fetch(`${API_BASE_URL}upload-logo`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          logoUrl = uploadResult.logo_url;
+        } else {
+          showNotification('Failed to upload logo', 'error');
+          return;
+        }
+      }
+
+      const businessData = {
+        ...businessFormData,
+        logo_url: logoUrl
+      };
+
+      const success = await createBusiness(businessData);
+      
+      if (success) {
+        // Reset form
+        setBusinessFormData({
+          name: '',
+          email: '',
+          address: '',
+          phone: '',
+          website: '',
+          logo_url: '',
+          tax_id: '',
+          payment_info: ''
+        });
+        setBusinessLogoFile(null);
+        setBusinessLogoUrl('');
+        setShowCreateBusinessModal(false);
+        showNotification('Business created successfully');
+      } else {
+        showNotification('Failed to create business', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to create business', 'error');
+    }
+  };
+
+  const handleDeleteBusiness = async (businessId: string) => {
+    if (confirm('Are you sure you want to delete this business?')) {
+      try {
+        const success = await deleteBusiness(businessId);
+        if (success) {
+          showNotification('Business deleted successfully');
+        } else {
+          showNotification('Failed to delete business', 'error');
+        }
+      } catch (error) {
+        showNotification('Failed to delete business', 'error');
+      }
+    }
+  };
+
+  const handleEditBusiness = (business: any) => {
+    setEditingBusiness(business);
+    setBusinessFormData({
+      name: business.name || '',
+      email: business.email || '',
+      address: business.address || '',
+      phone: business.phone || '',
+      website: business.website || '',
+      logo_url: business.logo_url || '',
+      tax_id: business.tax_id || '',
+      payment_info: business.payment_info || ''
+    });
+    setBusinessLogoUrl(business.logo_url || '');
+    setBusinessLogoFile(null);
+    setShowEditBusinessModal(true);
+  };
+
+  const handleUpdateBusiness = async () => {
+    if (!businessFormData.name.trim()) {
+      showNotification('Business name is required', 'error');
+      return;
+    }
+
+    if (!editingBusiness) {
+      showNotification('No business selected for editing', 'error');
+      return;
+    }
+
+    try {
+      let logoUrl = businessFormData.logo_url;
+
+      // Upload logo file if one is selected
+      if (businessLogoFile) {
+        const formData = new FormData();
+        formData.append('logo', businessLogoFile);
+
+        const uploadResponse = await fetch(`${API_BASE_URL}upload-logo`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          logoUrl = uploadResult.logo_url;
+        } else {
+          showNotification('Failed to upload logo', 'error');
+          return;
+        }
+      }
+
+      const businessData = {
+        ...businessFormData,
+        logo_url: logoUrl
+      };
+
+      const success = await updateBusiness(editingBusiness.id, businessData);
+      
+      if (success) {
+        // Reset form
+        setBusinessFormData({
+          name: '',
+          email: '',
+          address: '',
+          phone: '',
+          website: '',
+          logo_url: '',
+          tax_id: '',
+          payment_info: ''
+        });
+        setBusinessLogoFile(null);
+        setBusinessLogoUrl('');
+        setEditingBusiness(null);
+        setShowEditBusinessModal(false);
+        showNotification('Business updated successfully');
+      } else {
+        showNotification('Failed to update business', 'error');
+      }
+    } catch (error) {
+      showNotification('Failed to update business', 'error');
+    }
   };
 
   // Render different sections based on activeSection
@@ -489,6 +684,372 @@ const SettingsPage = () => {
     </div>
   );
 
+  const renderBusinessSection = () => (
+    <div className="space-y-6">
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Business Profiles</h3>
+          <p className="text-sm text-gray-500 mt-1">Manage your business profiles and information</p>
+        </div>
+        <div className="p-6 space-y-6">
+          {/* Create Business Button */}
+          <div className="flex justify-end">
+            <button 
+              onClick={() => setShowCreateBusinessModal(true)}
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Business
+            </button>
+          </div>
+
+          {/* Business List */}
+          <div className="space-y-4">
+            {businesses.length === 0 ? (
+              /* Empty State */
+              <div className="text-center py-12">
+                <Building2 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No businesses yet</h3>
+                <p className="text-gray-600 mb-4">Create your first business profile to get started with invoicing</p>
+                <button 
+                  onClick={() => setShowCreateBusinessModal(true)}
+                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Your First Business
+                </button>
+              </div>
+            ) : (
+              /* Business Cards */
+              businesses.map((business) => (
+                <div key={business.id} className="border rounded-lg p-6 hover:shadow-md transition-shadow">
+                  <div className="flex items-start justify-between">
+                                       <div className="flex items-center space-x-4">
+                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center overflow-hidden">
+                       {business.logo_url ? (
+                         <img
+                           src={business.logo_url}
+                           alt={`${business.name} logo`}
+                           className="w-full h-full object-cover"
+                         />
+                       ) : (
+                         <Building2 className="w-6 h-6 text-blue-600" />
+                       )}
+                     </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{business.name}</h4>
+                        {business.email && (
+                          <p className="text-sm text-gray-600">{business.email}</p>
+                        )}
+                        {business.address && (
+                          <p className="text-sm text-gray-500">{business.address}</p>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex space-x-2">
+                      <button 
+                        onClick={() => handleEditBusiness(business)}
+                        className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleDeleteBusiness(business.id)}
+                        className="p-2 text-red-400 hover:text-red-600 transition-colors"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Create Business Modal */}
+      {showCreateBusinessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Create New Business</h3>
+              <button 
+                onClick={() => setShowCreateBusinessModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={businessFormData.name}
+                  onChange={handleBusinessInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter business name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={businessFormData.email}
+                  onChange={handleBusinessInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="business@example.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={businessFormData.address}
+                  onChange={handleBusinessInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter business address"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={businessFormData.phone}
+                    onChange={handleBusinessInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={businessFormData.website}
+                    onChange={handleBusinessInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <BusinessLogoUpload
+                    logoFile={businessLogoFile}
+                    logoUrl={businessLogoUrl}
+                    onLogoChange={handleBusinessLogoChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID</label>
+                  <input
+                    type="text"
+                    name="tax_id"
+                    value={businessFormData.tax_id}
+                    onChange={handleBusinessInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter tax ID"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Information</label>
+                  <textarea
+                    name="payment_info"
+                    value={businessFormData.payment_info}
+                    onChange={handleBusinessInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter payment details (bank account, PayPal, etc.)"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => setShowCreateBusinessModal(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreateBusiness}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create Business
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Business Modal */}
+      {showEditBusinessModal && editingBusiness && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">Edit Business</h3>
+              <button 
+                onClick={() => {
+                  setShowEditBusinessModal(false);
+                  setEditingBusiness(null);
+                  setBusinessFormData({
+                    name: '',
+                    email: '',
+                    address: '',
+                    phone: '',
+                    website: '',
+                    logo_url: '',
+                    tax_id: '',
+                    payment_info: ''
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={businessFormData.name}
+                  onChange={handleBusinessInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter business name"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={businessFormData.email}
+                  onChange={handleBusinessInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="business@example.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <input
+                  type="text"
+                  name="address"
+                  value={businessFormData.address}
+                  onChange={handleBusinessInputChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter business address"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={businessFormData.phone}
+                    onChange={handleBusinessInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
+                  <input
+                    type="url"
+                    name="website"
+                    value={businessFormData.website}
+                    onChange={handleBusinessInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://example.com"
+                  />
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <BusinessLogoUpload
+                    logoFile={businessLogoFile}
+                    logoUrl={businessLogoUrl}
+                    onLogoChange={handleBusinessLogoChange}
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID</label>
+                  <input
+                    type="text"
+                    name="tax_id"
+                    value={businessFormData.tax_id}
+                    onChange={handleBusinessInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter tax ID"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Payment Information</label>
+                  <textarea
+                    name="payment_info"
+                    value={businessFormData.payment_info}
+                    onChange={handleBusinessInputChange}
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="Enter payment details (bank account, PayPal, etc.)"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex justify-end space-x-3 mt-6 pt-4 border-t border-gray-200">
+              <button
+                onClick={() => {
+                  setShowEditBusinessModal(false);
+                  setEditingBusiness(null);
+                  setBusinessFormData({
+                    name: '',
+                    email: '',
+                    address: '',
+                    phone: '',
+                    website: '',
+                    logo_url: '',
+                    tax_id: '',
+                    payment_info: ''
+                  });
+                }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateBusiness}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Update Business
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   const renderDeleteSection = () => (
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow-sm border border-red-200 overflow-hidden">
@@ -522,6 +1083,8 @@ const SettingsPage = () => {
         return renderNotificationsSection();
       case 'templates':
         return renderTemplatesSection();
+      case 'business':
+        return renderBusinessSection();
       case 'billing':
         return renderBillingSection();
       case 'delete':

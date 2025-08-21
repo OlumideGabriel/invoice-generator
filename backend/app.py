@@ -22,13 +22,20 @@ from supabase import create_client, Client
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-load_dotenv()
+
+# Load environment-specific .env file
+env_file = os.getenv('ENV_FILE', '.env')
+load_dotenv(env_file)
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+# Only create Supabase client if URL and key are provided
+if SUPABASE_URL and SUPABASE_KEY:
+    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+else:
+    supabase = None
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL'
@@ -37,7 +44,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-from models import User, Client, Invoice
+from models import User, Client, Invoice, Business
 
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
@@ -574,6 +581,8 @@ def signup():
 @lru_cache(maxsize=1)
 def get_supabase_jwks():
     """Fetch and cache Supabase JWKS keys."""
+    if not SUPABASE_URL:
+        raise ValueError("SUPABASE_URL not configured")
     jwks_url = f"{SUPABASE_URL}/auth/v1/keys"
     res = requests.get(jwks_url, timeout=5)
     res.raise_for_status()
@@ -583,6 +592,10 @@ def get_supabase_jwks():
 @app.route("/api/auth/google", methods=["POST"])
 def google_login():
     """Handle Google OAuth login and sync with a local database"""
+    # Check if Supabase is configured
+    if not SUPABASE_URL:
+        return jsonify({"success": False, "error": "Google OAuth not configured for local development"}), 501
+    
     # Get token from frontend
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
@@ -863,6 +876,209 @@ def get_client_invoices(client_id):
 def bulk_delete_clients():
     """Delete multiple clients at once"""
     return Clients.bulk_delete_clients()
+
+
+# Business Management Routes
+@app.route('/api/businesses', methods=['POST'])
+def create_business():
+    """Create a new business"""
+    try:
+        data = request.get_json()
+        user_id = data.get('user_id')
+        name = data.get('name')
+        email = data.get('email')
+        address = data.get('address')
+        phone = data.get('phone')
+        website = data.get('website')
+        logo_url = data.get('logo_url')
+        tax_id = data.get('tax_id')
+        payment_info = data.get('payment_info')
+
+        if not user_id or not name:
+            return jsonify({'success': False, 'error': 'user_id and name are required'}), 400
+
+        # Validate UUID format
+        try:
+            uuid.UUID(user_id)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
+
+        business = Business(
+            user_id=user_id,
+            name=name,
+            email=email,
+            address=address,
+            phone=phone,
+            website=website,
+            logo_url=logo_url,
+            tax_id=tax_id,
+            payment_info=payment_info
+        )
+        db.session.add(business)
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'business': {
+                'id': str(business.id),
+                'user_id': str(business.user_id),
+                'name': business.name,
+                'email': business.email,
+                'address': business.address,
+                'phone': business.phone,
+                'website': business.website,
+                'logo_url': business.logo_url,
+                'tax_id': business.tax_id,
+                'payment_info': business.payment_info,
+                'created_at': business.created_at.isoformat() if business.created_at else None
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Create business error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to create business'}), 500
+
+
+@app.route('/api/businesses', methods=['GET'])
+def get_businesses():
+    """Get all businesses for a user"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'user_id required'}), 400
+
+        # Validate UUID format
+        try:
+            uuid.UUID(user_id)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid UUID format for user_id'}), 400
+
+        businesses = Business.query.filter_by(user_id=user_id).all()
+        result = [
+            {
+                'id': str(business.id),
+                'user_id': str(business.user_id),
+                'name': business.name,
+                'email': business.email,
+                'address': business.address,
+                'phone': business.phone,
+                'website': business.website,
+                'logo_url': business.logo_url,
+                'tax_id': business.tax_id,
+                'payment_info': business.payment_info,
+                'created_at': business.created_at.isoformat() if business.created_at else None,
+                'updated_at': business.updated_at.isoformat() if business.updated_at else None
+            }
+            for business in businesses
+        ]
+        return jsonify({'success': True, 'businesses': result})
+
+    except Exception as e:
+        app.logger.error(f"Get businesses error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to fetch businesses'}), 500
+
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['GET'])
+def get_business(business_id):
+    """Get a specific business by ID"""
+    try:
+        business = Business.query.filter_by(id=business_id).first()
+        if not business:
+            return jsonify({'success': False, 'error': 'Business not found'}), 404
+
+        return jsonify({
+            'success': True,
+            'business': {
+                'id': str(business.id),
+                'user_id': str(business.user_id),
+                'name': business.name,
+                'email': business.email,
+                'address': business.address,
+                'phone': business.phone,
+                'website': business.website,
+                'logo_url': business.logo_url,
+                'tax_id': business.tax_id,
+                'created_at': business.created_at.isoformat() if business.created_at else None,
+                'updated_at': business.updated_at.isoformat() if business.updated_at else None
+            }
+        })
+
+    except Exception as e:
+        app.logger.error(f"Get business error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to get business'}), 500
+
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['PUT'])
+def update_business(business_id):
+    """Update a business"""
+    try:
+        data = request.get_json()
+        business = Business.query.filter_by(id=business_id).first()
+        
+        if not business:
+            return jsonify({'success': False, 'error': 'Business not found'}), 404
+
+        # Update fields if provided
+        if 'name' in data:
+            business.name = data['name']
+        if 'email' in data:
+            business.email = data['email']
+        if 'address' in data:
+            business.address = data['address']
+        if 'phone' in data:
+            business.phone = data['phone']
+        if 'website' in data:
+            business.website = data['website']
+        if 'logo_url' in data:
+            business.logo_url = data['logo_url']
+        if 'tax_id' in data:
+            business.tax_id = data['tax_id']
+        if 'payment_info' in data:
+            business.payment_info = data['payment_info']
+
+        business.updated_at = datetime.utcnow()
+        db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'business': {
+                'id': str(business.id),
+                'user_id': str(business.user_id),
+                'name': business.name,
+                'email': business.email,
+                'address': business.address,
+                'phone': business.phone,
+                'website': business.website,
+                'logo_url': business.logo_url,
+                'tax_id': business.tax_id,
+                'updated_at': business.updated_at.isoformat()
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Update business error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to update business'}), 500
+
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['DELETE'])
+def delete_business(business_id):
+    """Delete a business"""
+    try:
+        business = Business.query.filter_by(id=business_id).first()
+        if not business:
+            return jsonify({'success': False, 'error': 'Business not found'}), 404
+
+        db.session.delete(business)
+        db.session.commit()
+
+        return jsonify({'success': True, 'message': 'Business deleted successfully'})
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Delete business error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to delete business'}), 500
 
 
 @app.route('/', methods=['GET'])

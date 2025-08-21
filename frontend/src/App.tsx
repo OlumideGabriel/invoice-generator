@@ -3,6 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import SideMenu from './components/SideMenu';
 import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider } from './context/AuthContext';
+import { BusinessProvider } from './context/BusinessContext';
+import { ClientProvider } from './context/ClientContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import InvoiceGenerator from './components/InvoiceGenerator';
 import PartyField from './components/PartyField';
@@ -33,9 +35,13 @@ const App: React.FC = () => {
   return (
     <CurrencyProvider>
       <AuthProvider>
-        <Router>
-          <AppRoutes />
-        </Router>
+        <BusinessProvider>
+          <ClientProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </ClientProvider>
+        </BusinessProvider>
       </AuthProvider>
     </CurrencyProvider>
   );

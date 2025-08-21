@@ -87,9 +87,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
           disabled={isUploading}
         />
       </div>
-      {logoStatus && (
-        <div className="mt-2 text-xs text-gray-500">{logoStatus}</div>
-      )}
+
     </div>
   );
 };

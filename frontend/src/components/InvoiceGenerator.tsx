@@ -11,6 +11,7 @@ import { useCurrency } from '../context/CurrencyContext';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
 import { useAuth } from '../context/AuthContext';
+import InvoicePreview from './InvoicePreview';
 import { Calendar } from "@/components/ui/calendar"
 // Import the DatePicker component instead of DatePicker from calendar-22
 import { DatePicker } from "@/components/date-picker"
@@ -93,6 +94,40 @@ const InvoiceGenerator: React.FC = () => {
     } catch (e) { /* ignore for now */ }
   };
   useEffect(() => { fetchInvoices(); }, [userId]);
+
+  // Listen for business selection to populate logo and set currency
+  useEffect(() => {
+    const handleBusinessSelected = (event: CustomEvent) => {
+      const business = event.detail;
+      if (business) {
+        // Set the logo URL when a business with a logo is selected
+        if (business.logo_url) {
+          setLogoUrl(business.logo_url);
+          setLogoStatus('success');
+        }
+        
+        // Set currency based on business address (simplified logic)
+        if (business.address) {
+          const address = business.address.toLowerCase();
+          if (address.includes('uk') || address.includes('united kingdom')) {
+            // You would need to update the currency context here
+            // For now, we'll just log it
+            console.log('Setting currency to GBP for UK business');
+          } else if (address.includes('eu') || address.includes('europe')) {
+            console.log('Setting currency to EUR for EU business');
+          } else if (address.includes('us') || address.includes('united states')) {
+            console.log('Setting currency to USD for US business');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('businessSelected', handleBusinessSelected as EventListener);
+    
+    return () => {
+      window.removeEventListener('businessSelected', handleBusinessSelected as EventListener);
+    };
+  }, [setLogoUrl, setLogoStatus]);
 
   // --- LOAD SELECTED INVOICE INTO FORM ---
     const loadInvoice = (invoice: any) => {
@@ -238,7 +273,9 @@ const InvoiceGenerator: React.FC = () => {
         invoiceNumber &&
         Array.isArray(items) && items.length > 0 &&
         from &&
-        to;
+        to &&
+        issuedDate &&
+        dueDate;
 
       if (hasRequiredFields) {
         const response = await fetch(`${API_BASE_URL}api/invoices`, {
@@ -255,8 +292,20 @@ const InvoiceGenerator: React.FC = () => {
           setError(result.error || "Failed to save invoice.");
           return false;
         }
+      } else {
+        // Provide specific feedback about missing fields
+        const missingFields = [];
+        if (!userId) missingFields.push("User ID");
+        if (!invoiceNumber) missingFields.push("Invoice Number");
+        if (!Array.isArray(items) || items.length === 0) missingFields.push("At least one item");
+        if (!from) missingFields.push("From field");
+        if (!to) missingFields.push("To field");
+        if (!issuedDate) missingFields.push("Issued Date");
+        if (!dueDate) missingFields.push("Due Date");
+        
+        setError(`Missing required fields: ${missingFields.join(", ")}`);
+        return false;
       }
-      return false;
     } catch (err: any) {
       setError(err.message || "An error occurred while saving the invoice.");
       return false;
@@ -276,7 +325,8 @@ const InvoiceGenerator: React.FC = () => {
     if (saved) {
       alert("Invoice saved and downloaded successfully!");
     } else {
-      alert("Invoice downloaded (not saved to database). Please check required fields and try again to save.");
+      const errorMessage = error || "Missing required fields";
+      alert(`Invoice downloaded (not saved to database). ${errorMessage}. Please fill in all required fields and try again.`);
     }
   };
 
@@ -456,17 +506,39 @@ const InvoiceGenerator: React.FC = () => {
           </div>
         </div>
       </div>
-      {/* Right Sidebar */}
-      <div className="w-full xl:w-auto xl:flex-shrink-0">
-        <InvoiceSidebar
-          loading={loading}
-          onSubmit={handleInvoiceSubmit}
-          onPreview={handlePreview}
-          previewPdfUrl={previewPdfUrl}
-          setPreviewPdfUrl={setPreviewPdfUrl}
-          previewInvoiceImage={previewInvoiceImage}
-        />
-      </div>
+             {/* Right Sidebar */}
+       <div className="w-full xl:w-auto xl:flex-shrink-0">
+         <div className="bg-gray-50 p-4 rounded-lg">
+           <InvoiceSidebar
+             loading={loading}
+             onSubmit={handleInvoiceSubmit}
+             onPreview={handlePreview}
+             previewPdfUrl={previewPdfUrl}
+             setPreviewPdfUrl={setPreviewPdfUrl}
+             previewInvoiceImage={previewInvoiceImage}
+           />
+           
+           {/* Invoice Preview */}
+           <div className="mt-6">
+             <h3 className="text-lg font-semibold text-gray-900 mb-4">Preview</h3>
+             <InvoicePreview
+               from={from}
+               to={to}
+               invoiceNumber={invoiceNumber}
+               issuedDate={issuedDate}
+               dueDate={dueDate}
+               items={items}
+               subtotal={getSubtotal()}
+               taxAmount={getTaxAmount()}
+               discountAmount={getDiscountAmount()}
+               shippingAmount={getShippingAmount()}
+               total={getTotal()}
+               currency={currency}
+               logoUrl={logoUrl}
+             />
+           </div>
+         </div>
+       </div>
     </div>
   );
 };

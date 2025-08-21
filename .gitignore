@@ -195,3 +195,7 @@ cython_debug/
 # Node Modules
 node_modules/
 
+# WSL Setup Files
+lETUP_WSL.md
+setup_wsl.sh
+
