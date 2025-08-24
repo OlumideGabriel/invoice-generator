@@ -86,8 +86,8 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
 
       
       {/* Main content area */}
-      <div className="flex-1 p-2 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-xl md:rounded-r-xl">
-        <div className="flex w-full flex-wrap md:flex-nowrap gap-2">
+      <div className="flex-1 p-1.5 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-xl md:rounded-r-xl">
+        <div className="flex w-full flex-wrap lg:flex-nowrap gap-1.5">
           {/* Item name and description section */}
           <div className="relative flex-2 w-full">
             <div className="relative w-full group">
@@ -115,7 +115,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
 
             {/* Description textarea */}
             {item.showDesc && (
-              <div className="mt-3 animate-in slide-in-from-top-2 duration-200">
+              <div className="mt-1.5 animate-in slide-in-from-top-2 duration-200">
                 <textarea
                   placeholder="Add item description or notes..."
                   value={item.description || ''}
@@ -131,13 +131,20 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
           {/* Quantity input */}
           <div className="flex flex-col">
             <input
-              type="number"
-              placeholder="1"
-              value={item.quantity}
-              min={1}
-              onChange={(e) => onChange(index, 'quantity', Number(e.target.value))}
-              className="w-20 px-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-center text-md font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
+              type="text"
+              value={item.quantity ?? "1"}
+              onChange={(e) => {
+                const val = e.target.value;
+
+                // Allow empty string, but only digits (no decimals for qty)
+                if (val === "" || /^[0-9]+$/.test(val)) {
+                  onChange(index, "quantity", val);
+                }
+              }}
+              className="w-20 px-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-center text-md font-medium
+              focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
             />
+
           </div>
           {/* Unit cost and amount section */}
           <div className="md:flex flex-1 flex-col md:flex-row items-start gap-4">
@@ -148,15 +155,21 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   {currency.symbol}
                 </span>
                 <input
-                  type="number"
+                  type="text"
                   placeholder="0.00"
                   value={item.unit_cost}
-                  min={0}
-                  step={0.01}
-                  onChange={(e) => onChange(index, 'unit_cost', Number(e.target.value))}
+                  onChange={(e) => {
+                    const val = e.target.value;
+
+                    // Allow empty string, but validate number
+                    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+                      onChange(index, "unit_cost", val);
+                    }
+                  }}
                   className="md:w-32 w-full pl-8 pr-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-md font-medium
                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                 />
+
               </div>
             </div>
             {/* Amount display */}
@@ -175,9 +188,9 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       </div>
 
       {/* Remove button */}
-      <div className={`flex hidden flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-600
-          self-stretch cursor-pointer
-      ml-1 p-2 rounded-lg cursor-pointer ${itemsLength > 1 ? ' transition-colors' : 'hidden'}`}
+      <div className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
+           cursor-pointer
+      ml-2 p-1 rounded-lg cursor-pointer ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
 
         onClick={() => onRemove(index)}
         aria-label="Remove item"
@@ -186,15 +199,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
 
 
       </div>
-      <button
-          onClick={() => onRemove(index)}
-          className={`p-1 md:flex  rounded-lg transition-all duration-200 ease-in-out ml-2 focus:outline-none focus:ring-2
-              focus:ring-red-500 focus:ring-offset-1 ${itemsLength > 1 ? 'small-icon transition-colors' : 'md:hidden'}`}
-          aria-label="Remove item"
-        >
-          <X size={18} />
 
-        </button>
     </div>
     </div>
   );

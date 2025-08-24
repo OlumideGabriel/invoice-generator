@@ -18,15 +18,15 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
   };
 
   return (
-    <div className="mt-8 relative">
-      <label className="block text-md text-gray-600 mb-5">Change currency</label>
-      <div className="relative label-3">
+    <div className="lg:mt-8 mt-0 relative">
+      <label className="lg:block hidden text-md text-gray-600 mb-5">Change currency</label>
+      <div className="lg:relative label-3 ">
         {/* Trigger Button */}
         <div
           role="button"
           tabIndex={0}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full py-3 px-6 pr-16"
+          className="w-full lg:py-3 py-2 px-6 pr-16"
           aria-haspopup="listbox"
           aria-expanded={isOpen}
         >
@@ -35,7 +35,7 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
         {/* Chevron Icon */}
         <ChevronDown 
           size={24} 
-          className={`absolute right-4 top-1/2 transform -translate-y-1/2 text-black pointer-events-none transition-transform duration-200 ${
+          className={`absolute right-4 top-1/2 transform -translate-y-1/2 lg:text-black pointer-events-none transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
           }`}
         />
@@ -48,7 +48,7 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
                   key={option.code}
                   type="button"
                   onClick={() => handleSelect(option)}
-                  className={`label-1 w-full px-6 py-2 text-left text-lg hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg transition-colors ${
+                  className={`label-3 w-full px-6 py-2 text-left text-lg hover:bg-gray-50 first:rounded-t-lg last:rounded-b-lg transition-colors ${
                     currency.code === option.code ? 'bg-gray-100 font-medium label-2' : ''
                   }`}
                 >
@@ -59,6 +59,7 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
           </div>
         )}
       </div>
+
       {/* Overlay to close dropdown when clicking outside */}
       {isOpen && (
         <div

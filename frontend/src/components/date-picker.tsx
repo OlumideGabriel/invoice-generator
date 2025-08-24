@@ -64,7 +64,7 @@ export function DatePicker({
   };
 
   return (
-    <div className={`flex1 gap-3 flex-row ${className}`}>
+    <div className={`flex-1 gap-3 flex-row ${className}`}>
       {label && (
         <Label htmlFor={id} className="px-1">
           {label}

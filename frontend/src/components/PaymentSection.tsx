@@ -11,7 +11,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({ paymentDetails, setPaym
   return (
     <>
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Payment Details</label>
+        <label className="block text-neutral-500 text-sm font-medium">Payment Details</label>
         <textarea
           value={paymentDetails}
           onChange={(e) => setPaymentDetails(e.target.value)}
@@ -20,7 +20,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({ paymentDetails, setPaym
         />
       </div>
       <div className="mb-6">
-        <label className="block text-sm font-medium mb-2">Terms</label>
+        <label className="block text-neutral-500 text-sm font-medium">Terms</label>
         <textarea
           value={terms}
           onChange={(e) => setTerms(e.target.value)}

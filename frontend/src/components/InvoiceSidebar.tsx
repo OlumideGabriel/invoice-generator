@@ -81,9 +81,28 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         </div>
       )}
     </div>
-    <div className="md:hidden mb-20">
+
+    {/* Mobile Action Buttons */}
+<div className="md:hidden flex items-center justify-between gap-3 mb-20">
+  {/* Mobile download Button */}
+  <div className="w-5/6">
     <InvoiceButton loading={loading} onClick={onSubmit} />
-    </div>
+  </div>
+
+  {/* Mobile Send Button */}
+  <button
+    type="button"
+    disabled={loading}
+    onClick={() => {
+    window.location.href = `mailto:talktoolumide@gmail.com?subject=Invoice Preview&body=Hello, here is your invoice preview.`;
+  }}
+    className="w-1/6 px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
+    flex items-center justify-center gap-2 text-black transition"
+  >
+    <Send size={20} />
+  </button>
+</div>
+
 
     </>
   );

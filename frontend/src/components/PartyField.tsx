@@ -26,7 +26,7 @@ const PartyField: React.FC<PartyFieldProps> = ({ label, value, onChange }) => {
 
   return (
     <div className="mb-6 w-full">
-    <span className="block text-sm font-medium mb-2">{label}</span>
+    <span className="block text-sm text-neutral-500 font-medium">{label}</span>
       <div
         className="relative group"
         onMouseEnter={handleMouseEnter}

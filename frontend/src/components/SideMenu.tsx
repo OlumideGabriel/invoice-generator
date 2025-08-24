@@ -128,7 +128,7 @@ const SideMenu: React.FC = () => {
                 }}
                 className={`flex menu-item items-center gap-3 h-[3 rem] max-h-[3.2rem] px-4 py-3 font-medium
                     transition-colors duration-150 text-xl  ${
-                  location.pathname === path ? 'active ' : 'text-gray-700'
+                  location.pathname === path ? 'active' : 'text-gray-700'
                 }`}
               >
                 {icon}

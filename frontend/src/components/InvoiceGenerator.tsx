@@ -17,6 +17,7 @@ import { DatePicker } from "@/components/date-picker"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { API_BASE_URL } from '../config/api';
+import CurrencySelector from './CurrencySelector';
 
 import {
   Popover,
@@ -303,7 +304,7 @@ const InvoiceGenerator: React.FC = () => {
   };
 
   return (
-    <div className="py-6 flex flex-col xl:flex-row w-full m-auto justify-center gap-4 lg:gap-8  p-2 sm:p-8 mb-20">
+    <div className="py-6 flex flex-col md:flex-row w-full m-auto justify-center gap-4 lg:gap-8  p-2 sm:p-8 mb-20">
       {/* Left Panel (Main Invoice Form) */}
       <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border !border-gray-200 w-full bg-neutral-900 rounded-2xl p-4 sm:p-6 lg:p-8">
         <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
@@ -317,17 +318,27 @@ const InvoiceGenerator: React.FC = () => {
           </div>
           <div className="mb-6 w-full sm:w-auto flex flex-col sm:items-end gap-4">
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl">Invoice</h1>
-            <div className="flex items-center gap-2">
+            <div className="flex sm:flex-col items-end justify-between gap-2">
               <input
                 id="invoice-number"
                 type="text"
                 value={invoiceNumber}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInvoiceNumber(e.target.value) }
                 placeholder="#"
-                className="w-full sm:w-32 md:w-40 px-3 py-2.5 rounded-md bg-neutral-700 text-neutral-100 border !border-gray-300 focus:outline-none
+                className="w-full sm:w-36 md:w-40 px-3 py-2.5 rounded-md bg-neutral-700 text-neutral-100 border !border-gray-300 focus:outline-none
                 focus:ring-1 focus:ring-indigo-400"
               />
+
+              {/* Currency Selector beside invoice number */}
+              <div className="mt-0 md:hidden flex-1">
+                {(() => {
+                  const { currency, setCurrency, currencyOptions } = useCurrency();
+                  return <CurrencySelector currency={currency} setCurrency={setCurrency} currencyOptions={currencyOptions} />;
+                })()}
+              </div>
             </div>
+
+
           </div>
         </div>
         {error && <div className="text-red-400 mb-4">{error}</div>}
@@ -370,7 +381,24 @@ const InvoiceGenerator: React.FC = () => {
             </div>
           </div>
         </header>
-        <h2 className="text-xl font-semibold mb-4 text-gray-900">Items</h2>
+
+<div className="bg-gray-900 text-white px-4 py-2.5 rounded-lg mb-4">
+  <div className="grid grid-cols-12 gap-4 items-center">
+    <div className="col-span-6">
+      <span className="text-md lg:ml-5 font-medium">Item</span>
+    </div>
+    <div className="col-span-2 text-center">
+      <span className="text-md hidden lg:ml-10 lg:inline font-medium">Qty</span>
+    </div>
+    <div className="col-span-2 text-center">
+      <span className="text-md hidden lg:inline lg:mr-10 font-medium">Rate</span>
+    </div>
+    <div className="col-span-2 text-right">
+      <span className="text-md hidden lg:inline lg:mr-6 font-medium">Amount</span>
+    </div>
+  </div>
+</div>
+
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="invoice-lines-droppable" type="CARD">
             {(provided: any) => {
@@ -457,7 +485,7 @@ const InvoiceGenerator: React.FC = () => {
         </div>
       </div>
       {/* Right Sidebar */}
-      <div className="w-full xl:w-auto xl:flex-shrink-0">
+      <div className="w-full sm:w-auto md:flex-shrink-0">
         <InvoiceSidebar
           loading={loading}
           onSubmit={handleInvoiceSubmit}

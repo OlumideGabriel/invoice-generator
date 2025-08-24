@@ -496,7 +496,7 @@ const InvoicesPage = () => {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
-        <div className="rounded-xl py-2 mb-6">
+        <div className="rounded-xl py-3 mb-6">
           <div className="flex flex-row-reverse sm:flex-row-reverse flex-row sm:flex-row justify-between items-center gap-2">
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
               <select
@@ -523,7 +523,7 @@ const InvoicesPage = () => {
               <input
                 type="text"
                 placeholder="Search"
-                className="w-full !bg-gray-150 pl-10 pr-4 py-3 !rounded-xl border !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full !bg-gray-150 pl-10 pr-4 py-3 !rounded-xl border-2 !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={searchTerm}
                 onChange={handleSearch}
               />
