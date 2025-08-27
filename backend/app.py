@@ -1,18 +1,16 @@
-from flask import Flask, render_template, request, jsonify, make_response, send_from_directory, send_file
+from flask import Flask, render_template, request, jsonify, make_response, send_file
 import requests
 import json
 from flask_migrate import Migrate
 from flask_cors import CORS
-from weasyprint import HTML, CSS
+from weasyprint import HTML
 import tempfile
 import ssl
-from urllib.request import urlopen
 import certifi
-import base64
 from dotenv import load_dotenv
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
@@ -73,23 +71,6 @@ def add_permissions_policy_header(response):
     response.headers['Permissions-Policy'] = 'payment=*'
     return response
 
-
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(UPLOAD_FOLDER, filename)
-
-
-# @app.route('/upload-logo', methods=['POST'])
-# def upload_logo():
-#     if 'logo' not in request.files or request.files['logo'].filename == '':
-#         return jsonify({'error': 'No logo file provided'}), 400
-#
-#     logo = request.files['logo']
-#     logo_path = os.path.join(UPLOAD_FOLDER, logo.filename)
-#     logo.save(logo_path)
-#
-#     logo_url = f"{request.host_url}uploads/{logo.filename}"
-#     return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
 @app.route('/upload-logo', methods=['POST'])
 def upload_logo():

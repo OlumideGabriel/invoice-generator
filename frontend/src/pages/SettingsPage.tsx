@@ -611,13 +611,13 @@ const renderBusinessSection = () => (
                         key={item.id}
                         onClick={() => setActiveSection(item.id)}
                         className={`
-                          flex items-center px-3 py-2.5 rounded-lg transition-colors text-sm
+                          flex items-center px-4 lg:px-3 py-2.5 lg:rounded-lg rounded-full transition-colors text-sm
                           min-w-fit lg:w-full text-left
                           ${isActive
                             ? 'bg-gray-900 text-neutral-50 font-medium'
                             : item.danger
                               ? 'text-red-600 hover:bg-red-50 bg-red-50 lg:bg-transparent'
-                              : 'text-gray-700 hover:bg-[#f2f2f2] bg-[#f2f2f2] lg:bg-gray-200 lg:bg-transparent'
+                              : 'text-gray-700 hover:bg-white bg-transparent border lg:border-none lg:bg-gray-200 lg:bg-transparent'
                           }
                         `}
                       >
