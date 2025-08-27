@@ -245,8 +245,7 @@ def generate_invoice():
         template_data = parse_invoice_data(data)
 
         # Convert logo to Base64 if provided
-        # logo_url = template_data.get('logo_url')
-        logo_url = 'https://invoice-generator-iisl.onrender.com/uploads/envoyce (1).png'
+        logo_url = template_data.get('logo_url')
         if logo_url:
             logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), logo_url.lstrip('/'))
             if os.path.exists(logo_path):
