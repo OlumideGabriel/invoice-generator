@@ -28,9 +28,8 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
-supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
-BUCKET_NAME = "logos"
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL'
@@ -94,26 +93,17 @@ def upload_logo():
         return jsonify({'error': 'No logo file provided'}), 400
 
     logo = request.files['logo']
-    file_name = f"{uuid.uuid4()}-{logo.filename}"
+    filename = logo.filename
 
-    try:
-        # Upload to Supabase Storage
-        res = supabase.storage.from_(os.environ['SUPABASE_BUCKET']).upload(
-            file_name, logo.read(), {"content-type": logo.content_type}
-        )
+    # Upload to Supabase storage bucket
+    res = supabase.storage.from_('logos').upload(filename, logo)
+    if res.get('error'):
+        return jsonify({'error': res['error']}), 400
 
-        if res.get("error"):
-            print("Supabase error:", res["error"])
-            return jsonify({'error': str(res["error"])}), 500
+    # Get public URL
+    logo_url = supabase.storage.from_('logos').get_public_url(filename)['public_url']
 
-        # Public URL
-        logo_url = f"{os.environ['SUPABASE_URL']}/storage/v1/object/public/{os.environ['SUPABASE_BUCKET']}/{file_name}"
-
-        return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
-
-    except Exception as e:
-        print("Exception:", e)  # 👈 logs to server
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
 
 
