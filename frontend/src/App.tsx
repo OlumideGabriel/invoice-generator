@@ -19,14 +19,6 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfServicePage from './pages/TermsOfServicePage'
 
 
-function Clients() {
-  return <div className="p-6">Clients Page</div>;
-}
-
-function Settings() {
-  return <div className="p-6">Settings Page</div>;
-}
-
 import { useLocation } from 'react-router-dom';
 
 const App: React.FC = () => {
@@ -58,7 +50,6 @@ const AppRoutes: React.FC = () => {
     return (
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
       </Routes>
     );
   }
@@ -73,6 +64,7 @@ const AppRoutes: React.FC = () => {
         <main className="flex-1 overflow-y-auto">
           <Routes>
             <Route path="/Dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/auth/callback" element={<ProtectedRoute><AuthCallback /></ProtectedRoute>} />
             <Route path="/" element={<InvoiceGenerator />} />
             <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
