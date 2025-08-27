@@ -3,7 +3,11 @@ import requests
 import json
 from flask_migrate import Migrate
 from flask_cors import CORS
-from weasyprint import HTML
+from weasyprint import HTML, CSS
+import tempfile
+import ssl
+from urllib.request import urlopen
+import certifi
 import base64
 from dotenv import load_dotenv
 import os
@@ -96,22 +100,18 @@ def upload_logo():
     file_name = f"{uuid.uuid4()}-{logo.filename}"
 
     try:
-        # Upload to Supabase Storage
-        res = supabase.storage.from_(os.environ['SUPABASE_BUCKET']).upload(
+        # Upload the file - this will raise an exception if it fails
+        supabase.storage.from_(os.environ['SUPABASE_BUCKET']).upload(
             file_name, logo.read(), {"content-type": logo.content_type}
         )
 
-        if res.get("error"):
-            print("Supabase error:", res["error"])
-            return jsonify({'error': str(res["error"])}), 500
-
-        # Public URL
+        # If upload succeeds, generate the public URL
         logo_url = f"{os.environ['SUPABASE_URL']}/storage/v1/object/public/{os.environ['SUPABASE_BUCKET']}/{file_name}"
 
         return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
     except Exception as e:
-        print("Exception:", e)  # 👈 logs to server
+        print("Exception:", e)
         return jsonify({'error': str(e)}), 500
 
 
@@ -235,35 +235,74 @@ def preview_invoice():
         return jsonify({'error': str(e)}), 500
 
 
+# @app.route('/generate-invoice', methods=['POST'])
+# def generate_invoice():
+#     try:
+#         data = request.get_json()
+#         app.logger.debug(f"[GENERATE] Received data: {data}")
+#
+#         template_data = parse_invoice_data(data)
+#
+#         # Render the HTML template with invoice data
+#         html = render_template('invoice_template3.html', **template_data)
+#
+#         # Generate PDF with WeasyPrint
+#         pdf = HTML(
+#             string=html,
+#             base_url=os.path.dirname(os.path.abspath(__file__))
+#         ).write_pdf()
+#
+#         # Send PDF as response
+#         response = make_response(pdf)
+#         response.headers['Content-Type'] = 'application/pdf'
+#         response.headers['Content-Disposition'] = (
+#             f'attachment; filename=invoice_{template_data["invoice_number"]}.pdf'
+#         )
+#         return response
+#
+#     except Exception as e:
+#         logging.exception("Error in generate_invoice")
+#         return jsonify({'error': str(e)}), 500
+
 @app.route('/generate-invoice', methods=['POST'])
 def generate_invoice():
+    temp_files = []  # Store temporary files to clean up later
+
     try:
         data = request.get_json()
         app.logger.debug(f"[GENERATE] Received data: {data}")
 
         template_data = parse_invoice_data(data)
 
-        # Convert logo to Base64 if provided
-        logo_url = template_data.get('logo_url')
-        if logo_url:
-            logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), logo_url.lstrip('/'))
-            if os.path.exists(logo_path):
-                with open(logo_path, "rb") as f:
-                    encoded_logo = base64.b64encode(f.read()).decode("utf-8")
-                template_data['logo_base64'] = f"data:image/png;base64,{encoded_logo}"
-            else:
-                template_data['logo_base64'] = None
-        else:
-            template_data['logo_base64'] = None
+        # Download and replace external image URLs with local file paths
+        if 'logo_url' in template_data and template_data['logo_url']:
+            try:
+                logo_path = download_image_for_weasyprint(template_data['logo_url'])
+                temp_files.append(logo_path)
+                template_data['logo_url'] = logo_path
+                app.logger.debug(f"Downloaded logo to: {logo_path}")
+            except Exception as e:
+                app.logger.warning(f"Failed to download logo: {e}")
+                # Keep original URL as fallback
 
         # Render the HTML template with invoice data
         html = render_template('invoice_template3.html', **template_data)
 
-        # Generate PDF with WeasyPrint
+        # Create SSL context for WeasyPrint
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+        # Generate PDF with WeasyPrint using SSL context
         pdf = HTML(
             string=html,
             base_url=os.path.dirname(os.path.abspath(__file__))
-        ).write_pdf()
+        ).write_pdf(ssl_context=ssl_context)
+
+        # Clean up temporary files
+        for temp_file in temp_files:
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
 
         # Send PDF as response
         response = make_response(pdf)
@@ -274,8 +313,38 @@ def generate_invoice():
         return response
 
     except Exception as e:
+        # Clean up temporary files even if error occurs
+        for temp_file in temp_files:
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
         logging.exception("Error in generate_invoice")
         return jsonify({'error': str(e)}), 500
+
+
+def download_image_for_weasyprint(image_url):
+    """Download image from URL and return local file path"""
+    try:
+        # First try with proper SSL verification
+        response = requests.get(image_url, verify=True, timeout=30)
+        response.raise_for_status()
+
+    except requests.exceptions.SSLError:
+        # If SSL verification fails, try with certifi's certificates
+        response = requests.get(image_url, verify=certifi.where(), timeout=30)
+        response.raise_for_status()
+
+    except Exception:
+        # Final fallback: try without verification (use with caution)
+        response = requests.get(image_url, verify=False, timeout=30)
+        response.raise_for_status()
+
+    # Create temporary file
+    file_extension = os.path.splitext(image_url)[1] or '.png'
+    with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as tmp_file:
+        tmp_file.write(response.content)
+        return tmp_file.name
 
 
 @app.route('/api/invoices', methods=['GET'])
