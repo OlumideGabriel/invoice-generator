@@ -17,7 +17,6 @@ from clients import Clients
 from invoices import InvoiceOperations
 import jwt
 import uuid
-import traceback
 from functools import lru_cache
 from supabase import create_client, Client
 logging.basicConfig(level=logging.DEBUG)
@@ -90,25 +89,21 @@ def uploaded_file(filename):
 
 @app.route('/upload-logo', methods=['POST'])
 def upload_logo():
-    try:
-        if 'logo' not in request.files or request.files['logo'].filename == '':
-            return jsonify({'error': 'No logo file provided'}), 400
+    if 'logo' not in request.files or request.files['logo'].filename == '':
+        return jsonify({'error': 'No logo file provided'}), 400
 
-        logo = request.files['logo']
-        # Optional: print filename to debug
-        print("Uploading:", logo.filename)
+    logo = request.files['logo']
+    filename = logo.filename
 
-        # Your Supabase upload code here
-        # Example:
-        # supabase.storage.from_('logos').upload(logo.filename, logo)
+    # Upload to Supabase storage bucket
+    res = supabase.storage.from_('logos').upload(filename, logo)
+    if res.get('error'):
+        return jsonify({'error': res['error']}), 400
 
-        logo_url = f"{request.host_url}uploads/{logo.filename}"
-        return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
+    # Get public URL
+    logo_url = supabase.storage.from_('logos').get_public_url(filename)['public_url']
 
-    except Exception as e:
-        print("Error uploading logo:", e)
-        traceback.print_exc()
-        return jsonify({'error': str(e)}), 500
+    return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
 
 
