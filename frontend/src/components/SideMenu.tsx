@@ -183,7 +183,39 @@ const SideMenu: React.FC = () => {
         ))}
       </nav>
       </div>
+
+{/* Lightweight Upgrade to Pro Card */}
+<div className="absolute bottom-10 left-4 z-10 hidden lg:block">
+  <div className="bg-white border-2 border-dotted border-green-400 rounded-lg shadow-lg p-4 w-48 hover:shadow-xl transition-shadow">
+    {/* Header with icon */}
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+        <svg className="w-3 h-3 text-green-600" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+      </div>
+      <h3 className="font-semibold text-gray-900">Upgrade to Pro</h3>
     </div>
+
+    {/* Single benefit */}
+    <p className="text-sm text-gray-600 text-center mb-4">
+      Unlock all features and get priority support
+    </p>
+
+    {/* CTA Button */}
+    <button className="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white text-sm font-medium py-2 px-3 rounded-md transition-all duration-200 shadow-lg hover:shadow-green-500/25 ring-1 ring-green-400/20">
+      Get Pro
+    </button>
+
+    {/* Price */}
+    <p className="text-center text-xs text-gray-500 mt-2">
+      From $2.99/mo
+    </p>
+  </div>
+</div>
+
+    </div>
+
 
   );
 };
