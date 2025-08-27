@@ -94,27 +94,27 @@ def upload_logo():
         return jsonify({'error': 'No logo file provided'}), 400
 
     logo = request.files['logo']
+    file_name = f"{uuid.uuid4()}-{logo.filename}"
 
-    # generate a unique name to avoid overwrites
-    file_ext = logo.filename.rsplit('.', 1)[-1].lower()
-    unique_filename = f"{uuid.uuid4()}.{file_ext}"
-
-    # upload to Supabase storage
     try:
-        res = supabase.storage.from_(BUCKET_NAME).upload(unique_filename, logo)
-        if res is None:
-            return jsonify({'error': 'Failed to upload logo'}), 500
+        # Upload to Supabase Storage
+        res = supabase.storage.from_(os.environ['SUPABASE_BUCKET']).upload(
+            file_name, logo.read(), {"content-type": logo.content_type}
+        )
 
-        # get a public URL
-        logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+        if res.get("error"):
+            print("Supabase error:", res["error"])
+            return jsonify({'error': str(res["error"])}), 500
 
-        return jsonify({
-            'message': 'Logo uploaded successfully',
-            'logo_url': logo_url
-        }), 200
+        # Public URL
+        logo_url = f"{os.environ['SUPABASE_URL']}/storage/v1/object/public/{os.environ['SUPABASE_BUCKET']}/{file_name}"
+
+        return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
 
     except Exception as e:
+        print("Exception:", e)  # 👈 logs to server
         return jsonify({'error': str(e)}), 500
+
 
 
 def parse_invoice_data(data):
