@@ -383,7 +383,10 @@ const InvoiceGenerator: React.FC = () => {
         </header>
 
 <div className="bg-gray-900 text-white px-4 py-2.5 rounded-lg mb-4">
-  <div className="grid grid-cols-12 gap-4 items-center">
+    <div className="col-span-6">
+      <span className="text-md lg:hidden lg:ml-5 font-medium">Items & Description</span>
+    </div>
+  <div className="lg:grid hidden grid-cols-12 gap-4 items-center">
     <div className="col-span-6">
       <span className="text-md lg:ml-5 font-medium">Item</span>
     </div>

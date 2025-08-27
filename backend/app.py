@@ -30,6 +30,8 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+BUCKET_NAME = "logos"
+
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
     'DATABASE_URL'
 )
@@ -74,17 +76,45 @@ def uploaded_file(filename):
     return send_from_directory(UPLOAD_FOLDER, filename)
 
 
+# @app.route('/upload-logo', methods=['POST'])
+# def upload_logo():
+#     if 'logo' not in request.files or request.files['logo'].filename == '':
+#         return jsonify({'error': 'No logo file provided'}), 400
+#
+#     logo = request.files['logo']
+#     logo_path = os.path.join(UPLOAD_FOLDER, logo.filename)
+#     logo.save(logo_path)
+#
+#     logo_url = f"{request.host_url}uploads/{logo.filename}"
+#     return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
+
 @app.route('/upload-logo', methods=['POST'])
 def upload_logo():
     if 'logo' not in request.files or request.files['logo'].filename == '':
         return jsonify({'error': 'No logo file provided'}), 400
 
     logo = request.files['logo']
-    logo_path = os.path.join(UPLOAD_FOLDER, logo.filename)
-    logo.save(logo_path)
 
-    logo_url = f"{request.host_url}uploads/{logo.filename}"
-    return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
+    # generate a unique name to avoid overwrites
+    file_ext = logo.filename.rsplit('.', 1)[-1].lower()
+    unique_filename = f"{uuid.uuid4()}.{file_ext}"
+
+    # upload to Supabase storage
+    try:
+        res = supabase.storage.from_(BUCKET_NAME).upload(unique_filename, logo)
+        if res is None:
+            return jsonify({'error': 'Failed to upload logo'}), 500
+
+        # get a public URL
+        logo_url = supabase.storage.from_(BUCKET_NAME).get_public_url(unique_filename)
+
+        return jsonify({
+            'message': 'Logo uploaded successfully',
+            'logo_url': logo_url
+        }), 200
+
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 def parse_invoice_data(data):
