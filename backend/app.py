@@ -93,17 +93,26 @@ def upload_logo():
         return jsonify({'error': 'No logo file provided'}), 400
 
     logo = request.files['logo']
-    filename = logo.filename
+    file_name = f"{uuid.uuid4()}-{logo.filename}"
 
-    # Upload to Supabase storage bucket
-    res = supabase.storage.from_('logos').upload(filename, logo)
-    if res.get('error'):
-        return jsonify({'error': res['error']}), 400
+    try:
+        # Upload to Supabase Storage
+        res = supabase.storage.from_(os.environ['SUPABASE_BUCKET']).upload(
+            file_name, logo.read(), {"content-type": logo.content_type}
+        )
 
-    # Get public URL
-    logo_url = supabase.storage.from_('logos').get_public_url(filename)['public_url']
+        if res.get("error"):
+            print("Supabase error:", res["error"])
+            return jsonify({'error': str(res["error"])}), 500
 
-    return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
+        # Public URL
+        logo_url = f"{os.environ['SUPABASE_URL']}/storage/v1/object/public/{os.environ['SUPABASE_BUCKET']}/{file_name}"
+
+        return jsonify({'message': 'Logo uploaded successfully', 'logo_url': logo_url}), 200
+
+    except Exception as e:
+        print("Exception:", e)  # 👈 logs to server
+        return jsonify({'error': str(e)}), 500
 
 
 
