@@ -681,17 +681,27 @@ def google_login():
         public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
         payload = jwt.decode(token, public_key, algorithms=["RS256"], options={"verify_aud": False})
 
-        user_id = payload["sub"]  # Supabase user UUID
+        # Extract user data from token
+        user_id = payload.get("sub")  # Supabase user UUID
         email = payload.get("email")
         name = payload.get("name") or ""
         picture = payload.get("picture")
+        email_verified = payload.get("email_verified", True)  # Google emails are typically verified
+
+        # Validate required fields
+        if not user_id or not email:
+            return jsonify({"success": False, "error": "Missing required user information"}), 400
 
         # Extract first and last names
         first_name, last_name = (name.split(" ", 1) + [""])[:2] if name else ("", "")
 
+    except jwt.ExpiredSignatureError:
+        return jsonify({"success": False, "error": "Token has expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"success": False, "error": "Invalid token"}), 401
     except Exception as e:
         app.logger.error(f"Token verification failed: {str(e)}")
-        return jsonify({"success": False, "error": f"Token verification failed: {str(e)}"}), 401
+        return jsonify({"success": False, "error": "Token verification failed"}), 401
 
     try:
         # First check if user exists by Google ID
@@ -708,7 +718,10 @@ def google_login():
                 first_name=first_name,
                 last_name=last_name,
                 google_id=user_id,  # Store Supabase user ID in google_id field
-                password_hash=None  # No password for OAuth users
+                password_hash=None,  # No password for OAuth users
+                profile_picture_url=picture,
+                auth_provider="google",
+                email_verified=email_verified
             )
             db.session.add(new_user)
             db.session.commit()
@@ -718,12 +731,21 @@ def google_login():
             # Update existing user with Google ID if it's missing
             if not existing_user.google_id:
                 existing_user.google_id = user_id
+                existing_user.auth_provider = "google"
 
             # Update name if it's missing or empty
             if not existing_user.first_name and first_name:
                 existing_user.first_name = first_name
             if not existing_user.last_name and last_name:
                 existing_user.last_name = last_name
+
+            # Update profile picture if missing
+            if not existing_user.profile_picture_url and picture:
+                existing_user.profile_picture_url = picture
+
+            # Update email verification status
+            if not existing_user.email_verified and email_verified:
+                existing_user.email_verified = email_verified
 
             # Update timestamp
             existing_user.updated_at = datetime.utcnow()
@@ -741,8 +763,10 @@ def google_login():
                 "last_name": user_obj.last_name,
                 "email": user_obj.email,
                 "google_id": user_obj.google_id,  # Include google_id for reference
-                "picture": picture,
-                "auth_method": "google"
+                "profile_picture_url": user_obj.profile_picture_url,
+                "auth_provider": user_obj.auth_provider,
+                "email_verified": user_obj.email_verified,
+                "auth_method": "google"  # For backwards compatibility
             }
         }), 200
 

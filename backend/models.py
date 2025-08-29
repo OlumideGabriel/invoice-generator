@@ -9,10 +9,13 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False)
     first_name = db.Column(db.String(255), nullable=True)
     last_name = db.Column(db.String(255), nullable=True)
-    password_hash = db.Column(db.String(255))
-    google_id = db.Column(db.String(255), unique=True)
+    password_hash = db.Column(db.String(255), nullable=True)  # Made nullable for OAuth users
+    google_id = db.Column(db.String(255), unique=True, nullable=True)
+    profile_picture_url = db.Column(db.String(500), nullable=True)
+    auth_provider = db.Column(db.String(50), nullable=True)  # 'google', 'email', etc.
+    email_verified = db.Column(db.Boolean, default=False)
     is_guest = db.Column(db.Boolean, default=False)
-    data = db.Column(db.JSON, nullable=True)  # <-- Added JSON field
+    data = db.Column(db.JSON, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
