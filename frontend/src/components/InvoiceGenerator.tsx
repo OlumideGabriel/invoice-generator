@@ -478,7 +478,7 @@ const InvoiceGenerator: React.FC = () => {
             />
           </div>
         </div>
-        {/* Total Display at bottom right - styled to match screenshot */}
+        {/* Total Display at bottom right */}
         <div className="flex justify-end flex-wrap w-full">
           <div className="bg-neutral-950 rounded-md px-6 sm:px-10 lg:px-20 py-5 flex justify-end items-center gap-2 w-full sm:w-auto">
             <span className="text-lg font-medium text-gray-200 pr-3 sm:pr-7">Total</span>
@@ -490,13 +490,27 @@ const InvoiceGenerator: React.FC = () => {
       {/* Right Sidebar */}
       <div className="w-full sm:w-auto md:flex-shrink-0">
         <InvoiceSidebar
-          loading={loading}
-          onSubmit={handleInvoiceSubmit}
-          onPreview={handlePreview}
-          previewPdfUrl={previewPdfUrl}
-          setPreviewPdfUrl={setPreviewPdfUrl}
-          previewInvoiceImage={previewInvoiceImage}
-        />
+  loading={loading}
+  onSubmit={handleInvoiceSubmit}
+  onPreview={handlePreview}
+  previewPdfUrl={previewPdfUrl}
+  setPreviewPdfUrl={setPreviewPdfUrl}
+  previewInvoiceImage={previewInvoiceImage}
+  getTotal={getTotal}
+  getSubtotal={getSubtotal}
+  getTaxAmount={getTaxAmount}
+  getDiscountAmount={getDiscountAmount}
+  getShippingAmount={getShippingAmount}
+  dueDate={dueDate}
+  showTax={showTax}
+  showDiscount={showDiscount}
+  showShipping={showShipping}
+  taxPercent={taxPercent}
+  discountPercent={discountPercent}
+  shippingAmount={shippingAmount}
+  taxType={taxType}
+  discountType={discountType}
+/>
       </div>
     </div>
   );

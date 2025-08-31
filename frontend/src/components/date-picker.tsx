@@ -48,7 +48,7 @@ export function DatePicker({
   className = "",
   disabled = false,
   selectedDateClassName = "[&_.rdp-day_selected]:bg-[#6CDD82] [&_.rdp-day_selected]:text-black \
-  [&_.rdp-day_selected]:hover:bg-[#39C454] [&_.rdp-day_selected]:hover:text-black \
+  [&_.rdp-day_selected]:hover:bg-[#6CDD82] [&_.rdp-day_selected]:hover:text-black \
   [&_.rdp-day_selected]:focus:bg-[#39C454] [&_.rdp-day_selected]:focus:text-black"
 }: DatePickerProps) {
   const [open, setOpen] = React.useState(false)
@@ -88,7 +88,7 @@ export function DatePicker({
             selected={dateValue}
             captionLayout="dropdown"
             onSelect={handleDateSelect}
-            className="[&_.rdp-day_selected]:bg-primary [&_.rdp-day_selected]:text-primary-foreground [&_.rdp-day_selected]:hover:bg-primary [&_.rdp-day_selected]:hover:text-primary-foreground [&_.rdp-day_selected]:focus:bg-primary [&_.rdp-day_selected]:focus:text-primary-foreground"
+            className="[&_.rdp-day_selected]:bg-[#6CDD82] [&_.rdp-day_selected]:text-primary-foreground [&_.rdp-day_selected]:hover:bg-primary [&_.rdp-day_selected]:hover:text-primary-foreground [&_.rdp-day_selected]:focus:bg-primary [&_.rdp-day_selected]:focus:text-primary-foreground"
           />
         </PopoverContent>
       </Popover>

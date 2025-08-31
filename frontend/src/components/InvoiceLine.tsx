@@ -77,11 +77,11 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
         {...provided?.dragHandleProps}
         style={{ touchAction: 'none' }}
       >
-        <GripVertical 
+        <GripVertical
           size={25}
           className={`transition-colors ${
             snapshot?.isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
-          }`} 
+          }`}
         />
 
       
@@ -173,6 +173,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               </div>
             </div>
             {/* Amount display */}
+
             <div className="flex flex-col w-full">
               <div className="flex md:items-center justify-end md:justify-start min-w-40 mt-1 md:mt-0 py-2.5 rounded-lg">
                   <div className="text-md  font-semibold text-emerald-900">

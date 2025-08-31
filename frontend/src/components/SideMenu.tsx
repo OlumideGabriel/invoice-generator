@@ -185,7 +185,7 @@ const SideMenu: React.FC = () => {
       </div>
 
 {/* Lightweight Upgrade to Pro Card */}
-<div className="absolute bottom-10 left-4 z-10 hidden lg:block">
+<div className="absolute bottom-10 left-4 z-10 hidden">
   <div className="bg-white border-2 border-dotted border-green-400 rounded-lg shadow-lg p-4 w-48 hover:shadow-xl transition-shadow">
     {/* Header with icon */}
     <div className="flex items-center gap-2 mb-3">
