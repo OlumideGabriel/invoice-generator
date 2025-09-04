@@ -113,11 +113,24 @@ const MainMenu: React.FC = () => {
 
               <a
                 onClick={() => setOpen(!open)}
-                className="flex items-center justify-center w-5 h-5 px-5 py-5 rounded-full bg-blue-300 hover:bg-blue-200
+                className="flex items-center justify-center  rounded-full bg-blue-300 hover:bg-blue-200
                 text-gray-900 cursor-pointer transition-colors duration-150
                 focus:outline-none text-xl font-bold"
               >
-                {getInitials(user) || <User className="w-5 h-5 hidden rounded-full" />}
+                <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
+                      {/* Avatar if available, otherwise show initials/fallback */}
+                      {user?.user_metadata?.avatar_url ? (
+                        <img
+                          src={user.user_metadata.avatar_url}
+                          alt="User Avatar"
+                          className="h-12 w-12 rounded-full"
+                        />
+                      ) : (
+                        <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
+                          {getInitials(user) || <User className="w-6 h-6" />}
+                        </span>
+                      )}
+                  </span>
 
 
               </a>
@@ -132,15 +145,21 @@ const MainMenu: React.FC = () => {
                     onClick={() => setOpen(false)}
                   >
                     <span className="flex flex-row items-center text-lg block px-4 py-3 text-md text-gray-900 font-medium">
-                      <span className="flex text-xl font-bold mr-2 w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200
-                       rounded-full justify-center items-center">
-                        {getInitials(user) || <User className="w-6 h-6" />}
-                      </span>
+                      {/* Avatar if available, otherwise show initials/fallback */}
+                      {user?.user_metadata?.avatar_url ? (
+                        <img
+                          src={user.user_metadata.avatar_url}
+                          alt="User Avatar"
+                          className="h-12 w-12 mr-2 rounded-full"
+                        />
+                      ) : (
+                        <span className="flex text-xl font-bold mr-2 w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
+                          {getInitials(user) || <User className="w-6 h-6" />}
+                        </span>
+                      )}
 
-                      {/* Avatar if available */}
-                        {user?.user_metadata?.avatar_url && (
-                          <img src={user.user_metadata.avatar_url} alt="User Avatar" />
-                        )}
+
+
                       <div className="flex flex-col min-w-0">
                         {user.first_name ? `${user.first_name} ${user.last_name}` : user.email}
                         <span className="text-sm text-gray-500">{user.email}</span>
@@ -256,15 +275,21 @@ const MainMenu: React.FC = () => {
             </div>
 
             {/* User Profile Section */}
-            <div className="flex absolute bottom-0 w-full items-center gap-6 py-7 px-7 bg-gray-50 border-t border-gray-200">
-              <div className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200
-               rounded-full justify-center items-center">
-                {getInitials(user) || <User className="w-6 h-6" />}
-              </div>
-                {/* Avatar if available */}
-                {user?.user_metadata?.avatar_url && (
-                  <img src={user.user_metadata.avatar_url} alt="User Avatar" />
-                )}
+            <div className="flex absolute bottom-0 w-full items-center py-7 px-7 bg-gray-50 border-t border-gray-200">
+              <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
+                      {/* Avatar if available, otherwise show initials/fallback */}
+                      {user?.user_metadata?.avatar_url ? (
+                        <img
+                          src={user.user_metadata.avatar_url}
+                          alt="User Avatar"
+                          className="h-12 w-12 mr-4 rounded-full"
+                        />
+                      ) : (
+                        <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
+                          {getInitials(user) || <User className="w-6 h-6" />}
+                        </span>
+                      )}
+                  </span>
 
               <div className="flex flex-col min-w-0">
                 <span className="font-medium text-gray-900">

@@ -195,7 +195,21 @@ const AuthPage: React.FC = () => {
               </button>
             </div>
 
-
+            {mode === 'signup' && (
+              <div className="flex items-center gap-3 mb-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  className="w-4 h-4 p-6 accent-emerald-700"
+                  checked={terms}
+                  onChange={e => setTerms(e.target.checked)}
+                  required
+                />
+                <label htmlFor="terms" className="text-gray-500 text-sm">
+                  I agree to the <a href="/terms" className="text-gray-500 hover:text-gray-700 underline">Terms & Conditions</a>
+                </label>
+              </div>
+            )}
 
             {error && (
               <div className="text-red-400 text-sm mb-2 p-3 bg-red-50 rounded-lg">
@@ -217,10 +231,19 @@ const AuthPage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 gap-4">
+
+            <button
+          onClick={() => navigate('/')}
+          className="flex items-center hidden justify-center px-6 py-4 gap-2 border border-neutral-200 rounded-xl bg-neutral-50 hover:bg-neutral-100
+          text-emerald-900 font-medium shadow-2xs hover:shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          Continue as Guest
+        </button>
               <button
                 type="button"
                 disabled={loading || googleLoading}
-                className="flex items-center justify-center px-6 py-3 gap-2 border border-neutral-200 rounded-xl bg-white text-emerald-900 font-medium shadow-2xs hover:shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
+                className="flex items-center justify-center px-6 py-3 gap-2 border border-neutral-200 rounded-xl
+                text-emerald-900 font-medium shadow-2xs hover:shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
                 onClick={handleGoogleLogin}
               >
                 <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-6 h-6" />
