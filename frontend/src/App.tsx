@@ -73,6 +73,7 @@ const AppRoutes: React.FC = () => {
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>
         </main>
+
       </div>
 
     </div>

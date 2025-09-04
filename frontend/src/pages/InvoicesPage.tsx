@@ -82,8 +82,9 @@ interface InvoiceApiResponse {
   };
 }
 
-// Status options for the dropdown
+// Status options for the filter buttons
 const STATUS_OPTIONS = [
+  { value: '', label: 'All Statuses', color: 'gray' },
   { value: 'draft', label: 'Draft', color: 'gray' },
   { value: 'sent', label: 'Sent', color: 'blue' },
   { value: 'paid', label: 'Paid', color: 'green' },
@@ -219,8 +220,8 @@ const InvoicesPage = () => {
     setCurrentPage(1);
   };
 
-  const handleStatusFilter = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setStatusFilter(e.target.value);
+  const handleStatusFilter = (status: string) => {
+    setStatusFilter(status);
     setCurrentPage(1);
   };
 
@@ -465,7 +466,7 @@ const InvoicesPage = () => {
                   <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
                     Change Status
                   </div>
-                  {STATUS_OPTIONS.map((status) => (
+                  {STATUS_OPTIONS.filter(status => status.value !== '').map((status) => (
                     <button
                       key={status.value}
                       onClick={() => updateInvoiceStatus(activeDropdown, status.value)}
@@ -497,28 +498,32 @@ const InvoicesPage = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
         <div className="rounded-xl py-3 mb-6">
-          <div className="flex flex-row-reverse sm:flex-row-reverse flex-row sm:flex-row justify-between items-center gap-2">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
-              <select
-                value={statusFilter}
-                onChange={handleStatusFilter}
-                className="px-3 py-2.5 border !border-gray-300 rounded-xl text-gray-700 bg-white hover:bg-gray-50
-                transition-colors focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Statuses</option>
-                <option value="draft">Draft</option>
-                <option value="sent">Sent</option>
-                <option value="paid">Paid</option>
-                <option value="overdue">Overdue</option>
-              </select>
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+            {/* Status Filter Buttons */}
+            <div className="w-full">
+              <nav className="flex flex-row h-9 overflow-x-auto gap-2.5">
+                {STATUS_OPTIONS.map((status) => {
+                  const isActive = statusFilter === status.value;
 
-              <button className="hidden inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors">
-                <ArrowUpDown className="h-4 w-4 mr-2" />
-                Sort
-              </button>
+                  return (
+                    <button
+                      key={status.value}
+                      onClick={() => handleStatusFilter(status.value)}
+                      className={`flex items-center px-4 py-2.5 rounded-full transition-colors text-sm min-w-fit ${
+                        isActive
+                          ? 'bg-gray-900 text-neutral-50 font-medium'
+                          : 'text-gray-700 hover:bg-white bg-transparent border'
+                      }`}
+                    >
+                      <span className="truncate whitespace-nowrap">{status.label}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
 
-            <div className="relative w-full flex-1 max-w-md">
+            {/* Search Bar */}
+            <div className="relative w-full lg:w-auto lg:min-w-80">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
               <input
                 type="text"

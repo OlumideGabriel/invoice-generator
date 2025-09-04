@@ -217,15 +217,18 @@ const Dashboard = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-20 w-20 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+                <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                    <span className="ml-3 text-gray-500">Loading dashboard...</span>
+                </div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen">
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center">
                 <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
                 <p className="text-gray-600">{error}</p>
@@ -238,30 +241,53 @@ const Dashboard = () => {
     const metrics = getDashboardMetrics(invoices);
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8 mb-20">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                            <p className="mt-2 text-gray-600">Welcome back, {user?.first_name || 'User'}!</p>
-                        </div>
-                        <div className="flex items-center space-x-4">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            {/* Header */}
+            <div className="bg-white shadow-sm border-b border-slate-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex justify-between items-center py-6">
+                        {/* Back button and title */}
+                        <div className="flex items-center space-x-3 gap-6">
                             <button
-                                onClick={() => navigate('/')}
-                                className="flex items-center px-3 py-3 bg-black text-white rounded-lg hover:bg-gray-900 transition-colors"
+                                onClick={() => window.history.back()}
+                                className="inline-flex hidden items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg
+                                text-gray-400 hover:text-gray-800 transition-colors"
                             >
-                                <Plus className="h-5 w-5 mr-2" />
-                                <span>New Invoice</span>
+                                <ArrowLeft size={20} />
                             </button>
+
+                            <div>
+                                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+                                <p className="mt-2 text-gray-600">Welcome back, {user?.first_name || 'Guest'}!</p>
+                            </div>
                         </div>
+
+                        {/* New Invoice Button */}
+                        <button
+                            onClick={() => navigate('/')}
+                            className="lg:inline-flex hidden items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            New Invoice
+                        </button>
+
+                        {/* Mobile floating button */}
+                        <button
+                            onClick={() => navigate('/')}
+                            className="inline-flex absolute bottom-20 right-5 lg:hidden items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                        >
+                            <Plus size={25} />
+                            New Invoice
+                        </button>
                     </div>
                 </div>
+            </div>
 
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
@@ -275,7 +301,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Invoices</p>
@@ -287,7 +313,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Unique Clients</p>
@@ -299,7 +325,7 @@ const Dashboard = () => {
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-lg shadow-sm p-6">
+                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
@@ -317,7 +343,7 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Recent Invoices */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-lg shadow-sm">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                             <div className="px-6 py-4 border-b border-gray-200">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-medium text-gray-900">Recent Invoices</h3>
@@ -338,7 +364,7 @@ const Dashboard = () => {
                                         const customerInitials = getCustomerInitials(customerName);
 
                                         return (
-                                            <div key={invoice.id} className="px-6 py-4 hover:bg-gray-50">
+                                            <div key={invoice.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center space-x-3">
                                                         <div className="flex-shrink-0 h-8 w-8">
@@ -381,13 +407,15 @@ const Dashboard = () => {
                                     })
                                 ) : (
                                     <div className="px-6 py-8 text-center">
-                                        <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                                        <p className="text-gray-500">No invoices yet</p>
+                                        <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                        <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices yet</h3>
+                                        <p className="text-gray-500 mb-4">Get started by creating your first invoice.</p>
                                         <button
                                             onClick={() => navigate('/')}
-                                            className="mt-2 text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                                         >
-                                            Create your first invoice
+                                            <Plus className="h-4 w-4 mr-2" />
+                                            Create First Invoice
                                         </button>
                                     </div>
                                 )}
@@ -398,7 +426,7 @@ const Dashboard = () => {
                     {/* Quick Stats & Actions */}
                     <div className="space-y-6">
                         {/* Status Summary */}
-                        <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Status</h3>
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
@@ -419,26 +447,26 @@ const Dashboard = () => {
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="bg-white rounded-lg shadow-sm p-6">
+                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                             <div className="space-y-3">
                                 <button
                                     onClick={() => navigate('/')}
-                                    className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg"
+                                    className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
                                 >
                                     <FileText className="h-5 w-5 text-blue-600" />
                                     <span className="text-sm font-medium">Create Invoice</span>
                                 </button>
                                 <button
                                     onClick={() => navigate('/clients')}
-                                    className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg"
+                                    className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
                                 >
                                     <Users className="h-5 w-5 text-green-600" />
                                     <span className="text-sm font-medium">Manage Clients</span>
                                 </button>
                                 <button
                                     onClick={() => navigate('/settings')}
-                                    className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg"
+                                    className="w-full flex items-center space-x-3 px-4 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
                                 >
                                     <User className="h-5 w-5 text-purple-600" />
                                     <span className="text-sm font-medium">Settings</span>

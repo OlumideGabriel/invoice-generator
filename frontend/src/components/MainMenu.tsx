@@ -117,11 +117,13 @@ const MainMenu: React.FC = () => {
                 text-gray-900 cursor-pointer transition-colors duration-150
                 focus:outline-none text-xl font-bold"
               >
-                {getInitials(user) || <User className="w-5 h-5 rounded-full" />}
+                {getInitials(user) || <User className="w-5 h-5 hidden rounded-full" />}
+
+
               </a>
 
               {open && (
-                <div className="absolute right-0 top-10 mt-2 bg-white rounded-md overflow-hidden z-50
+                <div className="absolute min-w-80 right-0 top-10 mt-2 bg-white rounded-md overflow-hidden z-50
                   shadow-lg shadow-gray-400/40 ring-2 ring-gray-300 ring-opacity-40
                   [box-shadow:0_0_16px_4px_rgba(156,163,175,0.18)]">
                   <Link
@@ -134,6 +136,11 @@ const MainMenu: React.FC = () => {
                        rounded-full justify-center items-center">
                         {getInitials(user) || <User className="w-6 h-6" />}
                       </span>
+
+                      {/* Avatar if available */}
+                        {user?.user_metadata?.avatar_url && (
+                          <img src={user.user_metadata.avatar_url} alt="User Avatar" />
+                        )}
                       <div className="flex flex-col min-w-0">
                         {user.first_name ? `${user.first_name} ${user.last_name}` : user.email}
                         <span className="text-sm text-gray-500">{user.email}</span>
@@ -254,6 +261,11 @@ const MainMenu: React.FC = () => {
                rounded-full justify-center items-center">
                 {getInitials(user) || <User className="w-6 h-6" />}
               </div>
+                {/* Avatar if available */}
+                {user?.user_metadata?.avatar_url && (
+                  <img src={user.user_metadata.avatar_url} alt="User Avatar" />
+                )}
+
               <div className="flex flex-col min-w-0">
                 <span className="font-medium text-gray-900">
                   {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}

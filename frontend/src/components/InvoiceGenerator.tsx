@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { API_BASE_URL } from '../config/api';
 import CurrencySelector from './CurrencySelector';
+import Footer from './Footer';
 
 import {
   Popover,
@@ -477,6 +478,7 @@ const InvoiceGenerator: React.FC = () => {
               setDiscountType={setDiscountType as (val: 'percent' | 'fixed') => void}
             />
           </div>
+
         </div>
         {/* Total Display at bottom right */}
         <div className="flex justify-end flex-wrap w-full">
@@ -511,7 +513,9 @@ const InvoiceGenerator: React.FC = () => {
   taxType={taxType}
   discountType={discountType}
 />
+
       </div>
+
     </div>
   );
 };

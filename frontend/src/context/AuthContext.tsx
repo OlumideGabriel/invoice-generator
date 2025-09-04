@@ -87,15 +87,15 @@ export const AuthProvider = ({ children }: any) => {
       // First, clear the user state and local storage
       setUser(null);
       localStorage.removeItem("nativeUser");
-      
+
       // Then sign out from Supabase
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      
+
       // Clear any remaining session data
       window.localStorage.removeItem('sb-auth-token');
       window.localStorage.removeItem('sb-user-data');
-      
+
       return true; // Indicate success
     } catch (error) {
       console.error('Error during logout:', error);
