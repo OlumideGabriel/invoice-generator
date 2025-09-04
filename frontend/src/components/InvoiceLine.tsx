@@ -1,25 +1,8 @@
 import React from 'react';
-import { ChevronDown, ChevronUp, X, GripVertical, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronUp, X, GripVertical } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useCurrency } from '../context/CurrencyContext';
-
-type DraggableProvided = any;
-type DraggableStateSnapshot = any;
-
-// Drag styles for react-beautiful-dnd
-const dragStyles = {
-  base: {
-    transition: 'box-shadow 0.2s cubic-bezier(.08,.52,.52,1)',
-    boxShadow: 'none',
-  },
-  dragging: {
-    boxShadow: '0 8px 24px rgba(0,0,0,0.13)',
-    zIndex: 2,
-  },
-  static: {
-    boxShadow: 'none',
-    zIndex: 1,
-  },
-};
 
 export interface InvoiceItem {
   id: string;
@@ -34,15 +17,11 @@ export interface InvoiceItem {
 export interface InvoiceLineProps {
   item: InvoiceItem;
   index: number;
-  draggableId: string;
-  provided: DraggableProvided;
-  snapshot: DraggableStateSnapshot;
   onChange: (index: number, field: string, value: string | number) => void;
   onRemove: (index: number) => void;
   onToggleDescription: (index: number) => void;
   itemsLength: number;
 }
-
 
 const InvoiceLine: React.FC<InvoiceLineProps> = ({
   item,
@@ -51,39 +30,57 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
   onRemove,
   onToggleDescription,
   itemsLength,
-  provided,
-  snapshot,
-  draggableId
 }) => {
   const { currency } = useCurrency();
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+    setActivatorNodeRef,
+  } = useSortable({
+    id: item.id,
+    data: {
+      type: 'invoice-item',
+      item,
+      index,
+    },
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 2 : 1,
+  };
+
   return (
     <div
-      ref={provided.innerRef}
-      {...provided.draggableProps}
-      style={{
-        ...provided.draggableProps.style,
-        marginBottom: '5px',
-      }}
+      ref={setNodeRef}
+      style={style}
       className={`flex-2 group rounded-xl transition-all duration-200 items-start border-none ${
-        snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-white'
+        isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-white'
       }`}
     >
       {/* Drag handle icon */}
-
       <div
+        ref={setActivatorNodeRef}
         className="flex items-center justify-center self-center rounded-xs cursor-grab
         active:cursor-grabbing border-gray-200"
-        {...provided?.dragHandleProps}
+        {...attributes}
+        {...listeners}
         style={{ touchAction: 'none' }}
       >
         <GripVertical
           size={25}
           className={`transition-colors ${
-            snapshot?.isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
+            isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
           }`}
         />
-
+      </div>
 
       {/* Main content area */}
       <div className="flex-1 p-1.5 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-xl md:rounded-r-xl">
@@ -112,7 +109,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               </button>
             </div>
 
-
             {/* Description textarea */}
             {item.showDesc && (
               <div className="mt-1.5 animate-in slide-in-from-top-2 duration-200">
@@ -128,6 +124,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               </div>
             )}
           </div>
+
           {/* Quantity input */}
           <div className="flex flex-col">
             <input
@@ -135,8 +132,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               value={item.quantity ?? "1"}
               onChange={(e) => {
                 const val = e.target.value;
-
-                // Allow empty string, but only digits (no decimals for qty)
                 if (val === "" || /^[0-9]+$/.test(val)) {
                   onChange(index, "quantity", val);
                 }
@@ -144,8 +139,8 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               className="w-20 px-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-center text-md font-medium
               focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
             />
-
           </div>
+
           {/* Unit cost and amount section */}
           <div className="md:flex flex-1 flex-col md:flex-row items-start gap-4">
             {/* Unit cost input */}
@@ -160,8 +155,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   value={item.unit_cost}
                   onChange={(e) => {
                     const val = e.target.value;
-
-                    // Allow empty string, but validate number
                     if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
                       onChange(index, "unit_cost", val);
                     }
@@ -169,19 +162,18 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   className="md:w-32 w-full pl-8 pr-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-md font-medium
                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                 />
-
               </div>
             </div>
-            {/* Amount display */}
 
+            {/* Amount display */}
             <div className="flex flex-col w-full">
               <div className="flex md:items-center justify-end md:justify-start min-w-40 mt-1 md:mt-0 py-2.5 rounded-lg">
-                  <div className="text-md  font-semibold text-emerald-900">
-                    <span className="text-sm mr-2 text-gray-600 font-medium">
-                      {currency.code}
-                    </span>
-                    {(item.quantity * item.unit_cost).toFixed(2)}
-                  </div>
+                <div className="text-md font-semibold text-emerald-900">
+                  <span className="text-sm mr-2 text-gray-600 font-medium">
+                    {currency.code}
+                  </span>
+                  {(item.quantity * item.unit_cost).toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
@@ -189,19 +181,14 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       </div>
 
       {/* Remove button */}
-      <div className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
-           cursor-pointer
-      ml-2 p-1 rounded-lg cursor-pointer ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
-
+      <div
+        className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
+        cursor-pointer ml-2 p-1 rounded-lg ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
         onClick={() => onRemove(index)}
         aria-label="Remove item"
       >
-      <X size={18} />
-
-
+        <X size={18} />
       </div>
-
-    </div>
     </div>
   );
 };
