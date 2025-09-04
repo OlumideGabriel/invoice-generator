@@ -43,6 +43,23 @@ export interface InvoiceLineProps {
   itemsLength: number;
 }
 
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
 
 const InvoiceLine: React.FC<InvoiceLineProps> = ({
   item,
@@ -56,34 +73,41 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
   draggableId
 }) => {
   const { currency } = useCurrency();
+  const isMobile = useIsMobile();
+
+  // Create conditional drag props - disable on mobile
+  const dragProps = isMobile ? {} : provided.draggableProps;
+  const dragHandleProps = isMobile ? {} : provided?.dragHandleProps;
 
   return (
     <div
       ref={provided.innerRef}
-      {...provided.draggableProps}
+      {...dragProps}
       style={{
-        ...provided.draggableProps.style,
+        ...dragProps.style,
         marginBottom: '5px',
       }}
       className={`flex-2 group rounded-xl transition-all duration-200 items-start border-none ${
         snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-white'
       }`}
     >
-      {/* Drag handle icon */}
-
+      {/* Drag handle icon - hidden on mobile */}
       <div
-        className="flex items-center justify-center self-center rounded-xs cursor-grab
-        active:cursor-grabbing border-gray-200"
-        {...provided?.dragHandleProps}
-        style={{ touchAction: 'none' }}
+        className={`flex items-center justify-center self-center rounded-xs
+        active:cursor-grabbing border-gray-200 ${
+          isMobile ? 'cursor-default' : 'cursor-grab'
+        }`}
+        {...dragHandleProps}
+        style={{ touchAction: isMobile ? 'auto' : 'none' }}
       >
         <GripVertical
           size={25}
           className={`transition-colors ${
-            snapshot?.isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
+            snapshot?.isDragging ? 'text-emerald-600' :
+            isMobile ? 'hidden' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
           }`}
         />
-
+      </div>
 
       {/* Main content area */}
       <div className="flex-1 p-1.5 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-xl md:rounded-r-xl">
@@ -111,7 +135,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                 {item.showDesc ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
               </button>
             </div>
-
 
             {/* Description textarea */}
             {item.showDesc && (
@@ -144,7 +167,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               className="w-20 px-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-center text-md font-medium
               focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
             />
-
           </div>
           {/* Unit cost and amount section */}
           <div className="md:flex flex-1 flex-col md:flex-row items-start gap-4">
@@ -169,11 +191,9 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   className="md:w-32 w-full pl-8 pr-3 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg text-gray-900 text-md font-medium
                   focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                 />
-
               </div>
             </div>
             {/* Amount display */}
-
             <div className="flex flex-col w-full">
               <div className="flex md:items-center justify-end md:justify-start min-w-40 mt-1 md:mt-0 py-2.5 rounded-lg">
                   <div className="text-md  font-semibold text-emerald-900">
@@ -192,16 +212,11 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       <div className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
            cursor-pointer
       ml-2 p-1 rounded-lg cursor-pointer ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
-
         onClick={() => onRemove(index)}
         aria-label="Remove item"
       >
-      <X size={18} />
-
-
+        <X size={18} />
       </div>
-
-    </div>
     </div>
   );
 };
