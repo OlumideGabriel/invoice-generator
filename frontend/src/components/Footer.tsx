@@ -2,14 +2,28 @@ import React from 'react';
 
 const Footer: React.FC = () => {
   return (
-    <footer className="w-full bg-neutral-900 text-gray-300 py-6 px-4 flex flex-col md:flex-row items-center justify-between border-t border-neutral-800">
-      <div className="flex items-center gap-2">
-        <span className="font-semibold text-green-400">InvoiceGen</span>
-        <span className="text-xs">&copy; {new Date().getFullYear()} All rights reserved.</span>
-      </div>
-      <div className="flex gap-4 mt-2 md:mt-0 text-sm">
-        <a href="https://github.com/OlumideGabriel/invoice-generator" className="hover:text-green-400 transition-colors" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <a href="mailto:support@invoicegen.com" className="hover:text-green-400 transition-colors">Contact</a>
+    <footer className="w-full text-neutral-400 py-8 px-4 border-neutral-800">
+      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-left gap-4">
+        {/* Copyright and company info */}
+        <div className="flex items-center gap-2 text-sm">
+          <span>&copy;{new Date().getFullYear()} envoyce.xyz. All rights reserved.</span>
+        </div>
+
+        {/* Links */}
+        <div className="flex items-center gap-2 text-sm">
+          <a
+            href="/terms-of-service"
+            className="hover:text-neutral-500 text-neutral-400 transition-colors bg-neutral-800 px-2 py-0.5 rounded-sm duration-200"
+          >
+            Terms
+          </a>
+          <a
+            href="/privacy-policy"
+            className="hover:text-neutral-500 text-neutral-400 transition-colors bg-neutral-800 px-2 py-0.5 rounded-sm duration-200"
+          >
+            Privacy
+          </a>
+        </div>
       </div>
     </footer>
   );

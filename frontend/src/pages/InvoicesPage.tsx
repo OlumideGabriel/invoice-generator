@@ -84,7 +84,7 @@ interface InvoiceApiResponse {
 
 // Status options for the filter buttons
 const STATUS_OPTIONS = [
-  { value: '', label: 'All Statuses', color: 'gray' },
+  { value: '', label: 'All', color: 'gray' },
   { value: 'draft', label: 'Draft', color: 'gray' },
   { value: 'sent', label: 'Sent', color: 'blue' },
   { value: 'paid', label: 'Paid', color: 'green' },

@@ -17,6 +17,7 @@ import InvoicesPage from './pages/InvoicesPage';
 import ClientsPage from './pages/ClientsPage';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage'
 import TermsOfServicePage from './pages/TermsOfServicePage'
+import { Droppable, Draggable } from 'react-beautiful-dnd';
 
 
 import { useLocation } from 'react-router-dom';
@@ -71,11 +72,13 @@ const AppRoutes: React.FC = () => {
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+
           </Routes>
+          <Footer />
         </main>
 
-      </div>
 
+      </div>
     </div>
   );
 };

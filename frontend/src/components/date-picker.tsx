@@ -64,9 +64,9 @@ export function DatePicker({
   };
 
   return (
-    <div className={`flex-1 gap-3 flex-row ${className}`}>
+    <div className={`flex flex-col lg:flex-row items-start lg:items-center gap-1 ${className}`}>
       {label && (
-        <Label htmlFor={id} className="px-1">
+        <Label htmlFor={id} className="px-1 text-sm text-neutral-500 whitespace-nowrap">
           {label}
         </Label>
       )}
@@ -76,13 +76,18 @@ export function DatePicker({
             variant="outline"
             id={id}
             disabled={disabled}
-            className="w-full justify-between font-normal"
+            className="w-full md:w-32  justify-between font-normal min-w-40"
           >
             {dateValue ? dateValue.toLocaleDateString() : placeholder}
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto overflow-hidden p-0" align="end">
+        <PopoverContent
+          className="w-auto md:w-auto w-full max-w-sm overflow-hidden p-0"
+          align="start"
+          side="bottom"
+          sideOffset={4}
+        >
           <Calendar
             mode="single"
             selected={dateValue}

@@ -195,21 +195,7 @@ const AuthPage: React.FC = () => {
               </button>
             </div>
 
-            {mode === 'signup' && (
-              <div className="flex items-center gap-3 mb-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  className="w-4 h-4 p-6 accent-emerald-700"
-                  checked={terms}
-                  onChange={e => setTerms(e.target.checked)}
-                  required
-                />
-                <label htmlFor="terms" className="text-gray-500 text-sm">
-                  I agree to the <a href="/terms" className="text-gray-500 hover:text-gray-700 underline">Terms & Conditions</a>
-                </label>
-              </div>
-            )}
+
 
             {error && (
               <div className="text-red-400 text-sm mb-2 p-3 bg-red-50 rounded-lg">
@@ -242,7 +228,18 @@ const AuthPage: React.FC = () => {
               </button>
             </div>
           </form>
+          <div className="self-center mt-6">
+          <label htmlFor="terms" className="text-neutral-400 text-sm">
+            By creating an account, you are agree to our {" "}
+            <a href="/terms-of-service" className="text-gray-400 hover:underline" >
+             Terms of Service</a>{" "} and {" "}
+            <a href="/privacy-policy" className="text-gray-400 hover:underline"> Privacy Policy</a>
+          </label>
         </div>
+
+        </div>
+
+
       </div>
 
       {/* Right Section (Carousel/Marketing) */}

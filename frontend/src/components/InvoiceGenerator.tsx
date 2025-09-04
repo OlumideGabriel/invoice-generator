@@ -12,7 +12,6 @@ import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautif
 import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
 import { useAuth } from '../context/AuthContext';
 import { Calendar } from "@/components/ui/calendar"
-// Import the DatePicker component instead of DatePicker from calendar-22
 import { DatePicker } from "@/components/date-picker"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -81,8 +80,6 @@ const InvoiceGenerator: React.FC = () => {
     error, setError,
   } = useInvoice();
 
-  // Helper functions are now moved to the DatePicker component
-  // Remove these helper functions as they're handled in the DatePicker
 
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
@@ -343,9 +340,9 @@ const InvoiceGenerator: React.FC = () => {
           </div>
         </div>
         {error && <div className="text-red-400 mb-4">{error}</div>}
-        <header className="flex flex-col lg:flex-row items-start md:flex-wrap justify-between gap-6 mb-6">
+        <header className="flex flex-col lg:flex-row items-end md:flex-nowrap justify-between gap-6 mb-10">
 
-            <div className="flex flex-col lg:flex-row gap-4 mb-6 w-full lg:w-auto">
+            <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-auto">
                 <div className="w-full lg:w-auto">
                   <PartyField label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
                 </div>
@@ -354,29 +351,29 @@ const InvoiceGenerator: React.FC = () => {
                 </div>
               </div>
 
-          <div className=" flex flex-col gap-4 justify-end  lg:self-auto">
+          <div className=" lg:items-end w-full rounded-lg flex flex-col md:flex-row lg:flex-col gap-4">
             {/* Updated Issued Date with DatePicker */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+            <div className="">
               <DatePicker
                 label="Issued Date"
                 placeholder="Select issued date"
                 value={issuedDate}
                 onChange={setIssuedDate}
                 id="issued-date"
-                className="w-full sm:w-40 [&_.px-1]:text-neutral-500 [&_.px-1]:text-sm [&_.px-1]:sm:min-w-fit"
+                className="w-full"
 
               />
             </div>
 
             {/* Updated Due Date with DatePicker */}
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+            <div className="">
               <DatePicker
                 label="Due Date"
                 placeholder="Select due date"
                 value={dueDate}
                 onChange={setDueDate}
                 id="due-date"
-                className="w-full sm:w-40 [&_.px-1]:text-neutral-500 [&_.px-1]:text-sm [&_.px-1]:sm:min-w-fit"
+                className="w-full"
 
               />
             </div>
@@ -478,7 +475,6 @@ const InvoiceGenerator: React.FC = () => {
               setDiscountType={setDiscountType as (val: 'percent' | 'fixed') => void}
             />
           </div>
-
         </div>
         {/* Total Display at bottom right */}
         <div className="flex justify-end flex-wrap w-full">
@@ -515,7 +511,6 @@ const InvoiceGenerator: React.FC = () => {
 />
 
       </div>
-
     </div>
   );
 };

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import { ChevronDown, ChevronUp, X, GripVertical, Trash2 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 
@@ -43,6 +43,24 @@ export interface InvoiceLineProps {
   itemsLength: number;
 }
 
+// Hook to detect mobile devices
+const useIsMobile = () => {
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  return isMobile;
+};
+
 const InvoiceLine: React.FC<InvoiceLineProps> = ({
   item,
   index,
@@ -55,113 +73,36 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
   draggableId
 }) => {
   const { currency } = useCurrency();
-  const [isSwiping, setIsSwiping] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [currentX, setCurrentX] = useState(0);
-  const [showDelete, setShowDelete] = useState(false);
-  const touchAreaRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
-  const handleTouchStart = (e: React.TouchEvent) => {
-    // Don't allow swipe if this is the last item
-    if (itemsLength <= 1) return;
-
-    setStartX(e.touches[0].clientX);
-    setIsSwiping(true);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    // Don't allow swipe if this is the last item
-    if (itemsLength <= 1 || !isSwiping) return;
-
-    const currentX = e.touches[0].clientX;
-    const diff = startX - currentX;
-
-    // Only allow right-to-left swipe
-    if (diff > 0) {
-      setCurrentX(-Math.min(diff, 100)); // Limit swipe distance
-
-      // Show delete if swiped more than 60% of the threshold
-      if (diff > 60) {
-        setShowDelete(true);
-      } else {
-        setShowDelete(false);
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (!isSwiping) return;
-
-    setIsSwiping(false);
-
-    // If swiped beyond threshold and not the last item, trigger delete
-    if (showDelete && itemsLength > 1) {
-      onRemove(index);
-    }
-
-    // Reset position
-    setCurrentX(0);
-    setShowDelete(false);
-  };
-
-  // Reset swipe if the user starts interacting with form elements
-  useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (isSwiping) {
-        setCurrentX(0);
-        setShowDelete(false);
-        setIsSwiping(false);
-      }
-    };
-
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, [isSwiping]);
+  // Create conditional drag props - disable on mobile
+  const dragProps = isMobile ? {} : provided.draggableProps;
+  const dragHandleProps = isMobile ? {} : provided?.dragHandleProps;
 
   return (
     <div
       ref={provided.innerRef}
-      {...provided.draggableProps}
+      {...dragProps}
       style={{
         ...provided.draggableProps.style,
         marginBottom: '5px',
-        transform: `translateX(${currentX}px)`,
-        transition: isSwiping ? 'none' : 'transform 0.3s ease',
       }}
-      className={`flex group rounded-xl transition-all duration-200 items-start border-none relative ${
+      className={`flex group rounded-xl transition-all duration-200 items-start border-none ${
         snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-white'
       }`}
     >
-      {/* Swipe to delete hint for mobile - only show if not the last item */}
-      {itemsLength > 1 && (
-        <div className="md:hidden absolute inset-y-0 right-0 flex items-center justify-end pr-2 bg-red-50 text-red-500 rounded-xl w-20">
-          <Trash2 size={20} />
-        </div>
-      )}
+      {/* Drag handle icon */}
 
-      {/* Touch area for swipe gestures on mobile - only enable if not the last item */}
-      {itemsLength > 1 && (
-        <div
-          ref={touchAreaRef}
-          className="md:hidden absolute inset-0 z-10"
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
-          onTouchEnd={handleTouchEnd}
-          onTouchCancel={handleTouchEnd}
-        />
-      )}
-
-      {/* Drag handle icon - hidden on mobile */}
       <div
-        className="hidden md:flex items-center justify-center self-center rounded-xs cursor-grab
+        className="flex items-center justify-center self-center rounded-xs cursor-grab
         active:cursor-grabbing border-gray-200"
-        {...provided?.dragHandleProps}
-        style={{ touchAction: 'none' }}
+        {...dragHandleProps}
+        style={{ touchAction: isMobile ? 'auto' : 'none' }}
       >
         <GripVertical
           size={25}
           className={`transition-colors ${
-            snapshot?.isDragging ? 'text-emerald-600' : 'text-neutral-400 hover:text-emerald-500'
+            snapshot?.isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
           }`}
         />
       </div>
@@ -265,24 +206,15 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
         </div>
       </div>
 
-      {/* Remove button - visible on desktop, hidden on mobile (we use swipe instead) */}
-      <div className={`hidden md:flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
-           cursor-pointer ml-2 p-1 rounded-lg ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
-        onClick={() => itemsLength > 1 && onRemove(index)}
+      {/* Remove button */}
+      <div className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
+           cursor-pointer
+      ml-2 p-1 rounded-lg cursor-pointer ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
+        onClick={() => onRemove(index)}
         aria-label="Remove item"
       >
         <X size={18} />
       </div>
-
-      {/* Swipe delete indicator for mobile - only show if not the last item */}
-      {showDelete && itemsLength > 1 && (
-        <div className="md:hidden absolute inset-0 bg-red-100 flex items-center justify-end pr-4 rounded-xl">
-          <div className="text-red-600 font-medium flex items-center">
-            <Trash2 size={18} className="mr-2" />
-            Remove
-          </div>
-        </div>
-      )}
     </div>
   );
 };
