@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { useNavigate } from "react-router-dom";
 
 export default function UpgradeProCard() {
   const [isVisible, setIsVisible] = useState(true);
+  const navigate = useNavigate();
 
   if (!isVisible) {
     return null;
@@ -31,7 +33,7 @@ export default function UpgradeProCard() {
         </p>
 
         {/* CTA Button */}
-        <button className="w-full hover:from-green-600 hover:to-emerald-700 border border-[#0e423e] hover:bg-[#8eda91] text-[#0e423e]
+        <button onClick={() => navigate("/settings?section=billing")} className="w-full hover:from-green-600 hover:to-emerald-700 border border-[#0e423e] hover:bg-[#8eda91] text-[#0e423e]
          text-sm font-medium rounded-sm px-2 py-0.5 transition-all duration-200 hover:shadow-green-500/25 ring-1 ring-green-400/20">
           Get Pro
         </button>

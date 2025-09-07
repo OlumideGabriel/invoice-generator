@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import BusinessSection from '../components/BusinessSection'; // Renamed import
 import {
@@ -22,10 +23,19 @@ import {
 
 const SettingsPage = () => {
   const { user } = useAuth();
-  const [activeSection, setActiveSection] = useState('profile');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const sectionFromUrl = searchParams.get("section") || "profile";
+
+  const [activeSection, setActiveSection] = useState(sectionFromUrl);
   const [isEditing, setIsEditing] = useState(false);
   const [notification, setNotification] = useState(null);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+
+  // Keep URL in sync with state
+  const handleSetSection = (id) => {
+    setActiveSection(id);
+    setSearchParams({ section: id });
+  };
 
   const [formData, setFormData] = useState({
     first_name: user?.first_name || '',
@@ -507,28 +517,27 @@ const SettingsPage = () => {
           <div className="w-full">
             <div className="rounded-xl py-3 mb-6">
               <nav className="flex flex-row h-9 overflow-x-auto gap-2.5">
-                {sidebarItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveSection(item.id)}
-                      className={`flex items-center px-4 py-2.5 rounded-full text-sm min-w-fit ${
-                        isActive
-                          ? 'bg-gray-900 text-neutral-50 font-medium'
-                          : item.danger
-                            ? 'text-red-600 hover:bg-red-50 bg-red-50 border border-red-600'
-                            : 'text-gray-700 hover:bg-white bg-transparent border'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
-                      <span className="truncate whitespace-nowrap">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
+      {sidebarItems.map((item) => {
+        const Icon = item.icon;
+        const isActive = activeSection === item.id;
+        return (
+          <button
+            key={item.id}
+            onClick={() => handleSetSection(item.id)}
+            className={`flex items-center px-4 py-2.5 rounded-full text-sm min-w-fit ${
+              isActive
+                ? "bg-gray-900 text-neutral-50 font-medium"
+                : item.danger
+                  ? "text-red-600 hover:bg-red-50 bg-red-50 border border-red-600"
+                  : "text-gray-700 hover:bg-white bg-transparent border"
+            }`}
+          >
+            <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+            <span className="truncate whitespace-nowrap">{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
             </div>
           </div>
 
