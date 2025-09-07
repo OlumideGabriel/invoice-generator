@@ -254,6 +254,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
           value={value}
           onChange={onChange}
           onClick={handleClick}
+          autocomplete="off"
           onFocus={handleTextareaFocus}
           onBlur={handleTextareaBlur}
           rows={3}

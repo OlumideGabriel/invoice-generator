@@ -16,7 +16,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({ paymentDetails, setPaym
           value={paymentDetails}
           onChange={(e) => setPaymentDetails(e.target.value)}
           rows={3}
-          className="md:w-2/3 md:max-w-80 w-full p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="md:w-2/3 md:max-w-70 w-full p-3 rounded-md bg-neutral-700 border !border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
       <div className="mb-6">
@@ -25,7 +25,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({ paymentDetails, setPaym
           value={terms}
           onChange={(e) => setTerms(e.target.value)}
           rows={3}
-          className="md:w-2/3 md:max-w-80 w-full p-3 rounded-md bg-neutral-700 border border-neutral-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="md:w-2/3 md:max-w-70 w-full p-3 rounded-md bg-neutral-700 border !border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         />
       </div>
     </>
