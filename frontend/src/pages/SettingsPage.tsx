@@ -519,7 +519,7 @@ const SettingsPage = () => {
                         isActive
                           ? 'bg-gray-900 text-neutral-50 font-medium'
                           : item.danger
-                            ? 'text-red-600 hover:bg-red-50 bg-red-50'
+                            ? 'text-red-600 hover:bg-red-50 bg-red-50 border border-red-600'
                             : 'text-gray-700 hover:bg-white bg-transparent border'
                       }`}
                     >
