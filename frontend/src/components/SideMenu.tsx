@@ -93,7 +93,7 @@ const SideMenu: React.FC = () => {
     <div className="hidden md:flex relative items-stretch">
       {/* Sidebar */}
       <aside
-        className={`transition-all duration-400 ${
+        className={`transition-all flex-1 duration-400 justify-between gap-96 ${
           collapsed ? 'w-55' : 'w-60'
         } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
       >

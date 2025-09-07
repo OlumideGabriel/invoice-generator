@@ -10,7 +10,7 @@ export default function UpgradeProCard() {
 
   return (
     <div className="flex items-start z-10 w-full">
-      <div className="bg-[#d2fee1] shadow-sm p-4 hover:shadow-md transition-shadow relative">
+      <div className="bg-[#d2fee1] shadow-xs p-4 hover:shadow-sm transition-shadow relative">
         {/* Close Button */}
         <button
           onClick={() => setIsVisible(false)}
@@ -37,7 +37,7 @@ export default function UpgradeProCard() {
         </button>
 
         {/* Price */}
-        <p className="text-left text-sm !font-semibold text-[#132a29] mt-2">
+        <p className="text-left hidden text-sm !font-semibold text-[#132a29] mt-2">
           From $2.99/mo
         </p>
       </div>
