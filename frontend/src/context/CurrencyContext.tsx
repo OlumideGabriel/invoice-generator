@@ -25,7 +25,7 @@ const currencyOptions: CurrencyOption[] = [
   { code: 'ZAR', symbol: 'R', label: 'South African Rand (R)' },
   { code: 'BRL', symbol: 'R$', label: 'Brazilian Real (R$)' },
   { code: 'MXN', symbol: '$', label: 'Mexican Peso ($)' },
-  { code: 'CHF', symbol: 'CHF', label: 'Swiss Franc (CHF)' },
+  { code: 'CHF', symbol: 'Fr', label: 'Swiss Franc (CHF)' },
   { code: 'SEK', symbol: 'kr', label: 'Swedish Krona (kr)' },
   { code: 'NOK', symbol: 'kr', label: 'Norwegian Krone (kr)' },
   { code: 'DKK', symbol: 'kr', label: 'Danish Krone (kr)' },

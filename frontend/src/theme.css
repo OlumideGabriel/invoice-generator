@@ -3,6 +3,7 @@
   --primary: #6CDD82;
   --secondary: #CFF4D6;
   --primary-hover: #39C454;
+  --primary-dark: #237A34;
   --dark-hover: #DBDCDD;
   --dark-light: #808080;
   --gray: #aaaaaa;
@@ -68,12 +69,12 @@ input:focus {
 }
 
 .button-custom.secondary, .btn-secondary {
-  background: var(--primary-hover) !important;
-  color: var(--foreground) !important;
-  border: none !important;
+  background: white;
+  color: var(--primary-dark) !important;
+  border: 1.5px solid var(--primary-dark) !important;
 }
 .button-custom.secondary:hover, .btn-secondary:hover {
-  background: var(--dark-hover) !important;
+  background: var(--secondary) !important;
 }
 
 button-custom.primary, .btn-primary {

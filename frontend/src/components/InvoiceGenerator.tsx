@@ -1,42 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronDownIcon } from 'lucide-react';
+import { ChevronDown, ChevronDownIcon, Plus } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import PartyField from './PartyField';
 import InvoiceLine from './InvoiceLine';
 import PaymentSection from './PaymentSection';
 import TaxDiscountSection from './TaxDiscountSection';
 import InvoiceSidebar from './InvoiceSidebar';
-import { Plus } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import useInvoice, { InvoiceItem } from '../hooks/useInvoice';
 import { useAuth } from '../context/AuthContext';
-import { Calendar } from "@/components/ui/calendar"
 import { DatePicker } from "@/components/date-picker"
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
 import { API_BASE_URL } from '../config/api';
 import CurrencySelector from './CurrencySelector';
 import Footer from './Footer';
-
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
+import { CircleAlert, X } from 'lucide-react';
 
 // Generate unique ID for items (same as in useInvoice hook)
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
+// Helper functions for generating default dates
+const getTodayString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const getSevenDaysFromNowString = () => {
+  const today = new Date();
+  const sevenDaysLater = new Date(today);
+  sevenDaysLater.setDate(today.getDate() + 7);
+  const year = sevenDaysLater.getFullYear();
+  const month = String(sevenDaysLater.getMonth() + 1).padStart(2, '0');
+  const day = String(sevenDaysLater.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // For now, this assumes all state/handlers are managed here; you may need to adjust if using a container/hook
 const InvoiceGenerator: React.FC = () => {
-
   // --- NEW STATE FOR USER/CLIENT/INVOICES ---
   const { user } = useAuth();
   const userId = user?.id || user?.user_id;
   const [clientId, setClientId] = useState<string | null>(null); // Optional
+  const [businessId, setBusinessId] = useState<string | null>(null); // Optional
   const [invoices, setInvoices] = useState<any[]>([]);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -80,9 +90,12 @@ const InvoiceGenerator: React.FC = () => {
     error, setError,
   } = useInvoice();
 
+  const { currency, setCurrency, currencyOptions } = useCurrency();
 
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
+    if (!userId) return;
+
     try {
       const res = await fetch(`${API_BASE_URL}api/invoices?user_id=${userId}`);
       const data = await res.json();
@@ -91,34 +104,37 @@ const InvoiceGenerator: React.FC = () => {
       }
     } catch (e) { /* ignore for now */ }
   };
-  useEffect(() => { fetchInvoices(); }, [userId]);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [userId]);
 
   // --- LOAD SELECTED INVOICE INTO FORM ---
-    const loadInvoice = (invoice: any) => {
-      setSelectedInvoiceId(invoice.id);
-      const d = invoice.data || {};
-      setFrom(d.from || "");
-      setTo(d.to || "");
-      // Ensure loaded items have IDs, add them if missing
-      const itemsWithIds = (d.items || []).map((item: any) => ({
-        ...item,
-        id: item.id || generateId() // Add ID if missing
-      }));
-      setItems(itemsWithIds.length > 0 ? itemsWithIds : [{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
-      setInvoiceNumber(d.invoice_number || "");
-      setIssuedDate(d.issued_date || "");
-      setDueDate(d.due_date || "");
-      setPaymentDetails(d.payment_details || "");
-      setTerms(d.terms || "");
-      setTaxPercent(d.tax_percent || 0);
-      setDiscountPercent(d.discount_percent || 0);
-      setShippingAmount(d.shipping_amount || 0);
-      setTaxType(d.tax_type || 'percent');
-      setDiscountType(d.discount_type || 'percent');
-      setShowTax(d.show_tax ?? true);
-      setShowDiscount(d.show_discount ?? false);
-      setShowShipping(d.show_shipping ?? true);
-      setLogoUrl(d.logo_url || null);
+  const loadInvoice = (invoice: any) => {
+    setSelectedInvoiceId(invoice.id);
+    const d = invoice.data || {};
+    setFrom(d.from || "");
+    setTo(d.to || "");
+    // Ensure loaded items have IDs, add them if missing
+    const itemsWithIds = (d.items || []).map((item: any) => ({
+      ...item,
+      id: item.id || generateId() // Add ID if missing
+    }));
+    setItems(itemsWithIds.length > 0 ? itemsWithIds : [{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
+    setInvoiceNumber(d.invoice_number || "");
+    setIssuedDate(d.issued_date || "");
+    setDueDate(d.due_date || "");
+    setPaymentDetails(d.payment_details || "");
+    setTerms(d.terms || "");
+    setTaxPercent(d.tax_percent || 0);
+    setDiscountPercent(d.discount_percent || 0);
+    setShippingAmount(d.shipping_amount || 0);
+    setTaxType(d.tax_type || 'percent');
+    setDiscountType(d.discount_type || 'percent');
+    setShowTax(d.show_tax ?? true);
+    setShowDiscount(d.show_discount ?? false);
+    setShowShipping(d.show_shipping ?? true);
+    setLogoUrl(d.logo_url || null);
   };
 
   // --- RESET FORM FOR NEW INVOICE ---
@@ -128,8 +144,8 @@ const InvoiceGenerator: React.FC = () => {
     setTo("");
     setItems([{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
     setInvoiceNumber("");
-    setIssuedDate("");
-    setDueDate("");
+    setIssuedDate(getTodayString());
+    setDueDate(getSevenDaysFromNowString());
     setPaymentDetails("");
     setTerms("");
     setTaxPercent(0);
@@ -167,6 +183,7 @@ const InvoiceGenerator: React.FC = () => {
       const invoicePayload = {
         user_id: userId,
         client_id: clientId,
+        business_id: businessId,
         data: {
           from,
           to,
@@ -198,38 +215,6 @@ const InvoiceGenerator: React.FC = () => {
         currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
         currency_label: typeof currency === 'string' ? currency : currency.label
       };
-
-    // Helper functions for generating default dates
-    const getTodayString = () => {
-      const today = new Date();
-      const year = today.getFullYear();
-      const month = String(today.getMonth() + 1).padStart(2, '0');
-      const day = String(today.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const getSevenDaysFromNowString = () => {
-      const today = new Date();
-      const sevenDaysLater = new Date(today);
-      sevenDaysLater.setDate(today.getDate() + 7);
-      const year = sevenDaysLater.getFullYear();
-      const month = String(sevenDaysLater.getMonth() + 1).padStart(2, '0');
-      const day = String(sevenDaysLater.getDate()).padStart(2, '0');
-      return `${year}-${month}-${day}`;
-    };
-
-    const getTodayFormatted = () => {
-      const today = new Date();
-      return today.toLocaleDateString();
-    };
-
-    const getSevenDaysFromNowFormatted = () => {
-      const today = new Date();
-      const sevenDaysLater = new Date(today);
-      sevenDaysLater.setDate(today.getDate() + 7);
-      return sevenDaysLater.toLocaleDateString();
-    };
-
 
       // Only save if user_id and required fields are present
       const hasRequiredFields =
@@ -290,8 +275,6 @@ const InvoiceGenerator: React.FC = () => {
     }
   };
 
-  const { currency } = useCurrency();
-
   const handleSelectInvoice = (invoice: any) => {
     if (invoice.id === 'new') {
       resetForm();
@@ -302,9 +285,24 @@ const InvoiceGenerator: React.FC = () => {
   };
 
   return (
-    <div className="py-6 flex flex-col md:flex-row w-full m-auto justify-center gap-4 lg:gap-8  p-2 sm:p-8 mb-20">
+
+    <div className="py-6 flex flex-col md:flex-row w-full m-auto justify-center gap-4 lg:gap-8 p-2 sm:p-8 mb-20">
       {/* Left Panel (Main Invoice Form) */}
+      <div className="block flex-col gap-4">
+        {error && (
+  <div className="flex items-center max-w-full xl:max-w-5xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border border-amber-100 mb-4">
+    <CircleAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
+    <span className="flex-1">{error}</span>
+    <button
+      onClick={() => setError('')}
+      className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
+    >
+      <X className="w-4 h-4" />
+    </button>
+  </div>
+)}
       <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border !border-gray-200 w-full bg-neutral-900 rounded-2xl p-4 sm:p-6 lg:p-8">
+
         <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
           <div className="w-full sm:w-auto">
             <LogoUpload
@@ -329,29 +327,43 @@ const InvoiceGenerator: React.FC = () => {
 
               {/* Currency Selector beside invoice number */}
               <div className="mt-0 md:hidden flex-1">
-                {(() => {
-                  const { currency, setCurrency, currencyOptions } = useCurrency();
-                  return <CurrencySelector currency={currency} setCurrency={setCurrency} currencyOptions={currencyOptions} />;
-                })()}
+                <CurrencySelector currency={currency} setCurrency={setCurrency} currencyOptions={currencyOptions} />
               </div>
             </div>
-
-
           </div>
         </div>
-        {error && <div className="text-red-400 mb-4">{error}</div>}
         <header className="flex flex-col lg:flex-row items-end md:flex-nowrap justify-between gap-6 mb-10">
+          <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-auto">
+            <div className="w-full lg:w-auto">
+              <PartyField
+                label="From"
+                value={from}
+                placeholder="Sender's name..."
+                noResultsText="Business not found"
+                onChange={(e) => setFrom(e.target.value)}
+                apiConfig={{
+                  endpoint: '/api/businesses',
+                  userId: userId
+                }}
+              />
+            </div>
+            <div className="w-full lg:w-auto">
+              <PartyField
+                label="To"
+                value={to}
+                placeholder="Who is this invoice to?"
+                noResultsText="Client not found"
+                onChange={(e) => setTo(e.target.value)}
+                onSelect={(client) => setSelectedClient(client)}
+                apiConfig={{
+                  endpoint: "/api/clients",
+                  userId: userId
+                }}
+              />
+            </div>
+          </div>
 
-            <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-auto">
-                <div className="w-full lg:w-auto">
-                  <PartyField label="From" value={from} onChange={(e) => setFrom(e.target.value)} />
-                </div>
-                <div className="w-full lg:w-auto">
-                  <PartyField label="To" value={to} onChange={(e) => setTo(e.target.value)} />
-                </div>
-              </div>
-
-          <div className=" lg:items-end w-full rounded-lg flex flex-col md:flex-row lg:flex-col gap-4">
+          <div className="lg:items-end w-full rounded-lg flex flex-col md:flex-row lg:flex-col gap-4">
             {/* Updated Issued Date with DatePicker */}
             <div className="">
               <DatePicker
@@ -361,7 +373,6 @@ const InvoiceGenerator: React.FC = () => {
                 onChange={setIssuedDate}
                 id="issued-date"
                 className="w-full"
-
               />
             </div>
 
@@ -374,31 +385,30 @@ const InvoiceGenerator: React.FC = () => {
                 onChange={setDueDate}
                 id="due-date"
                 className="w-full"
-
               />
             </div>
           </div>
         </header>
 
-<div className="bg-gray-900 text-white px-4 py-2.5 rounded-lg mb-4">
-    <div className="col-span-6">
-      <span className="text-md lg:hidden lg:ml-5 font-medium">Items & Description</span>
-    </div>
-  <div className="lg:grid hidden grid-cols-12 gap-4 items-center">
-    <div className="col-span-6">
-      <span className="text-md lg:ml-5 font-medium">Item</span>
-    </div>
-    <div className="col-span-2 text-center">
-      <span className="text-md hidden lg:ml-10 lg:inline font-medium">Qty</span>
-    </div>
-    <div className="col-span-2 text-center">
-      <span className="text-md hidden lg:inline lg:mr-10 font-medium">Rate</span>
-    </div>
-    <div className="col-span-2 text-right">
-      <span className="text-md hidden lg:inline lg:mr-6 font-medium">Amount</span>
-    </div>
-  </div>
-</div>
+        <div className="bg-gray-900 text-white px-4 py-2.5 rounded-lg mb-4">
+          <div className="col-span-6">
+            <span className="text-md lg:hidden lg:ml-5 font-medium">Items & Description</span>
+          </div>
+          <div className="lg:grid hidden grid-cols-12 gap-4 items-center">
+            <div className="col-span-6">
+              <span className="text-md lg:ml-5 font-medium">Item</span>
+            </div>
+            <div className="col-span-2 text-center">
+              <span className="text-md hidden lg:ml-10 lg:inline font-medium">Qty</span>
+            </div>
+            <div className="col-span-2 text-center">
+              <span className="text-md hidden lg:inline lg:mr-10 font-medium">Rate</span>
+            </div>
+            <div className="col-span-2 text-right">
+              <span className="text-md hidden lg:inline lg:mr-6 font-medium">Amount</span>
+            </div>
+          </div>
+        </div>
 
         <DragDropContext onDragEnd={onDragEnd}>
           <Droppable droppableId="invoice-lines-droppable" type="CARD">
@@ -427,7 +437,7 @@ const InvoiceGenerator: React.FC = () => {
                         />
                       )}
                     </Draggable>
-                ))}
+                  ))}
                   {provided.placeholder}
                 </div>
               );
@@ -485,31 +495,31 @@ const InvoiceGenerator: React.FC = () => {
           </div>
         </div>
       </div>
+      </div>
       {/* Right Sidebar */}
       <div className="w-full sm:w-auto md:flex-shrink-0">
         <InvoiceSidebar
-  loading={loading}
-  onSubmit={handleInvoiceSubmit}
-  onPreview={handlePreview}
-  previewPdfUrl={previewPdfUrl}
-  setPreviewPdfUrl={setPreviewPdfUrl}
-  previewInvoiceImage={previewInvoiceImage}
-  getTotal={getTotal}
-  getSubtotal={getSubtotal}
-  getTaxAmount={getTaxAmount}
-  getDiscountAmount={getDiscountAmount}
-  getShippingAmount={getShippingAmount}
-  dueDate={dueDate}
-  showTax={showTax}
-  showDiscount={showDiscount}
-  showShipping={showShipping}
-  taxPercent={taxPercent}
-  discountPercent={discountPercent}
-  shippingAmount={shippingAmount}
-  taxType={taxType}
-  discountType={discountType}
-/>
-
+          loading={loading}
+          onSubmit={handleInvoiceSubmit}
+          onPreview={handlePreview}
+          previewPdfUrl={previewPdfUrl}
+          setPreviewPdfUrl={setPreviewPdfUrl}
+          previewInvoiceImage={previewInvoiceImage}
+          getTotal={getTotal}
+          getSubtotal={getSubtotal}
+          getTaxAmount={getTaxAmount}
+          getDiscountAmount={getDiscountAmount}
+          getShippingAmount={getShippingAmount}
+          dueDate={dueDate}
+          showTax={showTax}
+          showDiscount={showDiscount}
+          showShipping={showShipping}
+          taxPercent={taxPercent}
+          discountPercent={discountPercent}
+          shippingAmount={shippingAmount}
+          taxType={taxType}
+          discountType={discountType}
+        />
       </div>
     </div>
   );

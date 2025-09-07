@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import BusinessSection from '../components/BusinessSection'; // Renamed import
 import {
   User,
   Mail,
@@ -43,6 +44,10 @@ const SettingsPage = () => {
     new: '',
     confirm: ''
   });
+
+  const BusinessSectionWrapper = () => (
+    <BusinessSection user={user} showNotification={showNotification} />
+  );
 
   const sidebarItems = [
     { id: 'profile', label: 'My Profile', icon: User },
@@ -397,18 +402,6 @@ const SettingsPage = () => {
     </Card>
   );
 
-  const BusinessSection = () => (
-    <Card title="Businesses" subtitle="Manage your business information and settings">
-      <div className="text-center py-8">
-        <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-        <p className="text-gray-500">No businesses added yet</p>
-        <button className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-          Add Business
-        </button>
-      </div>
-    </Card>
-  );
-
   const BillingSection = () => (
     <Card title="Billing Information" subtitle="Manage your subscription and billing details">
       <div className="space-y-6">
@@ -462,7 +455,7 @@ const SettingsPage = () => {
       profile: ProfileSection,
       notifications: NotificationsSection,
       templates: TemplatesSection,
-      business: BusinessSection,
+      business: BusinessSectionWrapper, // Use the wrapper
       billing: BillingSection,
       delete: DeleteSection
     };
@@ -522,7 +515,7 @@ const SettingsPage = () => {
                     <button
                       key={item.id}
                       onClick={() => setActiveSection(item.id)}
-                      className={`flex items-center px-4 py-2.5 rounded-full transition-colors text-sm min-w-fit ${
+                      className={`flex items-center px-4 py-2.5 rounded-full text-sm min-w-fit ${
                         isActive
                           ? 'bg-gray-900 text-neutral-50 font-medium'
                           : item.danger

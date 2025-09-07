@@ -7,7 +7,29 @@ import logging
 
 
 class Businesses:
-    """CRUD operations for Business Model"""
+    """CRUD operations for Business model"""
+
+    @staticmethod
+    def format_business_response(business, include_invoice_count=False):
+        """Format business response consistently across all methods"""
+        response_data = {
+            'id': str(business.id),
+            'user_id': str(business.user_id),
+            'name': business.name,
+            'email': business.email,
+            'address': business.address,
+            'phone': business.phone,
+            'tax_id': business.tax_id,
+            'data': business.data,
+            'created_at': business.created_at.isoformat() if business.created_at else None,
+            'updated_at': business.updated_at.isoformat() if business.updated_at else None
+        }
+
+        if include_invoice_count:
+            invoice_count = len(business.invoices) if business.invoices else 0
+            response_data['invoice_count'] = invoice_count
+
+        return response_data
 
     @staticmethod
     def validate_uuid(uuid_string):
@@ -24,9 +46,9 @@ class Businesses:
         errors = []
 
         if not is_update and not data.get('name'):
-            errors.append('Business name is required')
+            errors.append('Name is required')
         elif is_update and 'name' in data and not data['name']:
-            errors.append('Business name cannot be empty')
+            errors.append('Name cannot be empty')
 
         if not is_update and not data.get('user_id'):
             errors.append('User ID is required')
@@ -40,40 +62,7 @@ class Businesses:
             if not re.match(email_pattern, data['email']):
                 errors.append('Invalid email format')
 
-        # Validate website URL format if provided in data JSON
-        if data.get('data') and isinstance(data['data'], dict) and data['data'].get('website'):
-            import re
-            url_pattern = r'^https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)$'
-            if not re.match(url_pattern, data['data']['website']):
-                errors.append('Invalid website URL format')
-
         return errors
-
-    @staticmethod
-    def format_business_response(business):
-        """Format business object for JSON response"""
-        business_data = business.data or {}
-
-        # Count invoices for this business
-        invoice_count = len(business.invoices) if business.invoices else 0
-
-        # Update invoice_count in data if it exists
-        if isinstance(business_data, dict):
-            business_data['invoice_count'] = invoice_count
-
-        return {
-            'id': str(business.id),
-            'user_id': str(business.user_id),
-            'name': business.name,
-            'email': business.email,
-            'address': business.address,
-            'phone': business.phone,
-            'tax_id': business.tax_id,
-            'data': business_data,
-            'invoice_count': invoice_count,
-            'created_at': business.created_at.isoformat() if business.created_at else None,
-            'updated_at': business.updated_at.isoformat() if business.updated_at else None
-        }
 
     @staticmethod
     def create_business():
@@ -100,11 +89,6 @@ class Businesses:
                         'error': 'Business with this email already exists'
                     }), 409
 
-            # Prepare JSON data
-            json_data = data.get('data', {})
-            if not isinstance(json_data, dict):
-                json_data = {}
-
             # Create new business
             business = Business(
                 user_id=data['user_id'],
@@ -113,7 +97,7 @@ class Businesses:
                 address=data.get('address'),
                 phone=data.get('phone'),
                 tax_id=data.get('tax_id'),
-                data=json_data
+                data=data.get('data')
             )
 
             db.session.add(business)
@@ -144,7 +128,6 @@ class Businesses:
             page = int(request.args.get('page', 1))
             per_page = int(request.args.get('per_page', 10))
             search = request.args.get('search', '')
-            industry = request.args.get('industry', '')
 
             # Build query
             query = Business.query.filter_by(user_id=user_id)
@@ -157,16 +140,9 @@ class Businesses:
                         Business.name.ilike(search_term),
                         Business.email.ilike(search_term),
                         Business.phone.ilike(search_term),
-                        Business.tax_id.ilike(search_term),
-                        # Search in JSON data fields
-                        Business.data['industry'].astext.ilike(search_term),
-                        Business.data['description'].astext.ilike(search_term)
+                        Business.tax_id.ilike(search_term)
                     )
                 )
-
-            # Apply industry filter if provided (search in JSON data)
-            if industry:
-                query = query.filter(Business.data['industry'].astext.ilike(f"%{industry}%"))
 
             # Order by created_at descending
             query = query.order_by(Business.created_at.desc())
@@ -180,7 +156,8 @@ class Businesses:
 
             businesses = []
             for business in paginated.items:
-                businesses.append(Businesses.format_business_response(business))
+                business_data = Businesses.format_business_response(business, include_invoice_count=True)
+                businesses.append(business_data)
 
             return jsonify({
                 'success': True,
@@ -212,7 +189,7 @@ class Businesses:
 
             return jsonify({
                 'success': True,
-                'business': Businesses.format_business_response(business)
+                'business': Businesses.format_business_response(business, include_invoice_count=True)
             })
 
         except Exception as e:
@@ -252,7 +229,7 @@ class Businesses:
                         'error': 'Another business with this email already exists'
                     }), 409
 
-            # Update basic fields
+            # Update fields
             if 'name' in data:
                 business.name = data['name']
             if 'email' in data:
@@ -263,24 +240,15 @@ class Businesses:
                 business.phone = data['phone']
             if 'tax_id' in data:
                 business.tax_id = data['tax_id']
-
-            # Update JSON data field
             if 'data' in data:
-                current_data = business.data or {}
-                new_data = data['data']
-                if isinstance(new_data, dict):
-                    # Merge with existing data
-                    current_data.update(new_data)
-                    business.data = current_data
-                else:
-                    business.data = new_data
+                business.data = data['data']
 
             business.updated_at = datetime.utcnow()
             db.session.commit()
 
             return jsonify({
                 'success': True,
-                'business': Businesses.format_business_response(business)
+                'business': Businesses.format_business_response(business, include_invoice_count=True)
             })
 
         except Exception as e:
@@ -424,81 +392,3 @@ class Businesses:
             db.session.rollback()
             logging.error(f"Error bulk deleting businesses: {str(e)}", exc_info=True)
             return jsonify({'success': False, 'error': 'Failed to delete businesses'}), 500
-
-    @staticmethod
-    def get_businesses_by_industry():
-        """Get businesses grouped by industry"""
-        try:
-            user_id = request.args.get('user_id')
-            if not user_id:
-                return jsonify({'success': False, 'error': 'user_id is required'}), 400
-
-            if not Businesses.validate_uuid(user_id):
-                return jsonify({'success': False, 'error': 'Invalid user_id format'}), 400
-
-            businesses = Business.query.filter_by(user_id=user_id).all()
-
-            # Group by industry (from JSON data field)
-            industries = {}
-            for business in businesses:
-                business_data = business.data or {}
-                industry = business_data.get('industry', 'Other')
-
-                if industry not in industries:
-                    industries[industry] = []
-
-                industries[industry].append({
-                    'id': str(business.id),
-                    'name': business.name,
-                    'email': business.email,
-                    'phone': business.phone,
-                    'website': business_data.get('website'),
-                    'description': business_data.get('description')
-                })
-
-            return jsonify({
-                'success': True,
-                'industries': industries,
-                'total_businesses': len(businesses)
-            })
-
-        except Exception as e:
-            logging.error(f"Error getting businesses by industry: {str(e)}", exc_info=True)
-            return jsonify({'success': False, 'error': 'Failed to get businesses by industry'}), 500
-
-    @staticmethod
-    def update_business_data_field(business_id):
-        """Update specific fields in the JSON data column"""
-        try:
-            if not Businesses.validate_uuid(business_id):
-                return jsonify({'success': False, 'error': 'Invalid business ID format'}), 400
-
-            data = request.get_json()
-            if not data:
-                return jsonify({'success': False, 'error': 'No data provided'}), 400
-
-            business = Business.query.get(business_id)
-            if not business:
-                return jsonify({'success': False, 'error': 'Business not found'}), 404
-
-            # Get current data or initialize empty dict
-            current_data = business.data or {}
-
-            # Update specific fields in the data JSON
-            for key, value in data.items():
-                current_data[key] = value
-
-            business.data = current_data
-            business.updated_at = datetime.utcnow()
-            db.session.commit()
-
-            return jsonify({
-                'success': True,
-                'business': Businesses.format_business_response(business),
-                'message': 'Business data updated successfully'
-            })
-
-        except Exception as e:
-            db.session.rollback()
-            logging.error(f"Error updating business data {business_id}: {str(e)}", exc_info=True)
-            return jsonify({'success': False, 'error': 'Failed to update business data'}), 500

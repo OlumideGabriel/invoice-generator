@@ -74,13 +74,13 @@ const MainMenu: React.FC = () => {
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
           {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
-            <a href="/" className="flex items-center gap-2">
+            <a href="/" className="flex items-center gap-1 hover:contrast-125">
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
-                className="h-10 w-10"
+                className="h-8 w-8"
               />
-              <span className="text-2xl hidden font-semibold tracking-tight text-gray-800 font-[Open Sauce Sans]">
+              <span className="text-2xl hidden sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                 envoyce
               </span>
             </a>
@@ -123,7 +123,7 @@ const MainMenu: React.FC = () => {
                         <img
                           src={user.user_metadata.avatar_url}
                           alt="User Avatar"
-                          className="h-12 w-12 rounded-full"
+                          className="h-10 w-10 rounded-full"
                         />
                       ) : (
                         <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
@@ -161,9 +161,24 @@ const MainMenu: React.FC = () => {
 
 
                       <div className="flex flex-col min-w-0">
-                        {user.first_name ? `${user.first_name} ${user.last_name}` : user.email}
-                        <span className="text-sm text-gray-500">{user.email}</span>
+
+                        {/* Fixed username/email display */}
+                <div class="font-medium text-gray-900">
+                    {user?.first_name ?
+                        `${user.first_name} ${user.last_name || ''}`.trim() :
+                        (user?.user_metadata?.name || user?.email || 'Unknown User')
+                    }
+                </div>
+
+                {/* Always show email if available */}
+                {user?.email && (
+                    <div class="text-sm text-gray-500 mt-1">
+                        {user.email}
+                    </div>
+                )}
                       </div>
+
+
                     </span>
                   </Link>
                   <hr className="border-gray-200 mt-2 mr-2 ml-2" />
@@ -228,7 +243,8 @@ const MainMenu: React.FC = () => {
           ) : (
             <Link
               to="/auth?mode=login"
-              className="ml-4 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg shadow transition-colors duration-150"
+              className="ml-4 px-4 py-2.5 hover:bg-[#0e423e]/90 text-[#8eda91] hover:text-[#8eda91] bg-[#0e423e] font-semibold
+              rounded-lg shadow transition-colors ease-in-out duration-300"
             >
               Sign In
             </Link>
@@ -254,13 +270,13 @@ const MainMenu: React.FC = () => {
           >
             {/* Header with Logo */}
             <div className="flex items-center justify-between py-4 px-7 border-b border-gray-200">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <img
                   src="/envoyce.svg"
                   alt="Envoyce Logo"
                   className="h-8 w-8"
                 />
-                <span className="text-xl font-semibold tracking-tight text-gray-800 font-[Open Sauce Sans]">
+                <span className="text-2xl tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                   envoyce
                 </span>
               </div>

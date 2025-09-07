@@ -215,15 +215,117 @@ const Dashboard = () => {
         fetchDashboardData();
     }, [user]);
 
-    if (loading) {
+    // Skeleton Loading Component
+    const SkeletonLoader = () => {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-                <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                    <span className="ml-3 text-gray-500">Loading dashboard...</span>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+                {/* Header Skeleton */}
+                <div className="bg-white shadow-sm border-b border-slate-200">
+                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <div className="flex justify-between items-center py-6">
+                            <div className="flex items-center space-x-3 gap-6">
+                                <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
+                                <div>
+                                    <div className="h-8 w-48 bg-gray-200 rounded-md animate-pulse mb-2"></div>
+                                    <div className="h-4 w-64 bg-gray-200 rounded-md animate-pulse"></div>
+                                </div>
+                            </div>
+                            <div className="h-12 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Skeleton */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    {/* Metrics Cards Skeleton */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="w-full">
+                                        <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse mb-2"></div>
+                                        <div className="h-8 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+                                    </div>
+                                    <div className="h-12 w-12 bg-gray-200 rounded-full animate-pulse"></div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        {/* Recent Invoices Skeleton */}
+                        <div className="lg:col-span-2">
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-6 py-4 border-b border-gray-200">
+                                    <div className="flex items-center justify-between">
+                                        <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse"></div>
+                                        <div className="h-6 w-16 bg-gray-200 rounded-md animate-pulse"></div>
+                                    </div>
+                                </div>
+                                <div className="divide-y divide-gray-200">
+                                    {[...Array(4)].map((_, i) => (
+                                        <div key={i} className="px-6 py-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-3">
+                                                    <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse"></div>
+                                                    <div>
+                                                        <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse mb-2"></div>
+                                                        <div className="h-3 w-24 bg-gray-200 rounded-md animate-pulse"></div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="h-4 w-20 bg-gray-200 rounded-md animate-pulse mb-2"></div>
+                                                    <div className="flex items-center space-x-2 mt-1">
+                                                        <div className="h-6 w-16 bg-gray-200 rounded-md animate-pulse"></div>
+                                                        <div className="h-4 w-16 bg-gray-200 rounded-md animate-pulse"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Quick Stats & Actions Skeleton */}
+                        <div className="space-y-6">
+                            {/* Status Summary Skeleton */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse mb-4"></div>
+                                <div className="space-y-3">
+                                    {[...Array(2)].map((_, i) => (
+                                        <div key={i} className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-2">
+                                                <div className="h-4 w-4 bg-gray-200 rounded-full animate-pulse"></div>
+                                                <div className="h-4 w-16 bg-gray-200 rounded-md animate-pulse"></div>
+                                            </div>
+                                            <div className="h-4 w-8 bg-gray-200 rounded-md animate-pulse"></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Quick Actions Skeleton */}
+                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                                <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse mb-4"></div>
+                                <div className="space-y-3">
+                                    {[...Array(3)].map((_, i) => (
+                                        <div key={i} className="flex items-center space-x-3 px-4 py-2">
+                                            <div className="h-5 w-5 bg-gray-200 rounded-md animate-pulse"></div>
+                                            <div className="h-4 w-32 bg-gray-200 rounded-md animate-pulse"></div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
+    };
+
+    if (loading) {
+        return <SkeletonLoader />;
     }
 
     if (error) {

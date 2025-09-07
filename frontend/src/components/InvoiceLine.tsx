@@ -119,7 +119,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                 value={item.name}
                 onChange={(e) => onChange(index, 'name', e.target.value)}
                 className="w-full px-4 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg
-                  text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-emerald-500
+                  text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500
                   focus:border-transparent transition-all duration-200 text-md font-medium"
               />
               <button
@@ -142,7 +142,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   value={item.description || ''}
                   onChange={(e) => onChange(index, 'description', e.target.value)}
                   className="w-full px-4 py-3 bg-gray-50 border !border-gray-300 rounded-lg text-gray-700
-                  placeholder-gray-500 text-md focus:outline-none focus:ring-2 focus:ring-emerald-500
+                  placeholder-gray-400 text-md focus:outline-none focus:ring-2 focus:ring-emerald-500
                   focus:border-transparent transition-all duration-200 resize-none"
                   rows={3}
                 />

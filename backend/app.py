@@ -16,6 +16,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from sqlalchemy import text
 from clients import Clients
+from business import Businesses
 from invoices import InvoiceOperations
 import jwt
 import uuid
@@ -40,7 +41,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
-from models import User, Client, Invoice
+from models import User, Client, Invoice, Business
 
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
@@ -215,35 +216,6 @@ def preview_invoice():
         logging.exception("Error in preview_invoice")
         return jsonify({'error': str(e)}), 500
 
-
-# @app.route('/generate-invoice', methods=['POST'])
-# def generate_invoice():
-#     try:
-#         data = request.get_json()
-#         app.logger.debug(f"[GENERATE] Received data: {data}")
-#
-#         template_data = parse_invoice_data(data)
-#
-#         # Render the HTML template with invoice data
-#         html = render_template('invoice_template3.html', **template_data)
-#
-#         # Generate PDF with WeasyPrint
-#         pdf = HTML(
-#             string=html,
-#             base_url=os.path.dirname(os.path.abspath(__file__))
-#         ).write_pdf()
-#
-#         # Send PDF as response
-#         response = make_response(pdf)
-#         response.headers['Content-Type'] = 'application/pdf'
-#         response.headers['Content-Disposition'] = (
-#             f'attachment; filename=invoice_{template_data["invoice_number"]}.pdf'
-#         )
-#         return response
-#
-#     except Exception as e:
-#         logging.exception("Error in generate_invoice")
-#         return jsonify({'error': str(e)}), 500
 
 @app.route('/generate-invoice', methods=['POST'])
 def generate_invoice():
@@ -847,6 +819,7 @@ def db_info():
             'message': str(e)
         }), 500
 
+# Client routes
 @app.route('/api/clients', methods=['POST'])
 def create_client():
     """Create a new client"""
@@ -887,6 +860,49 @@ def get_client_invoices(client_id):
 def bulk_delete_clients():
     """Delete multiple clients at once"""
     return Clients.bulk_delete_clients()
+
+# Business routes
+
+@app.route('/api/businesses', methods=['POST'])
+def create_business():
+    """Create a new business"""
+    return Businesses.create_business()
+
+
+@app.route('/api/businesses', methods=['GET'])
+def get_businesses():
+    """Get all businesses for a user with optional filtering and pagination"""
+    return Businesses.get_businesses()
+
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['GET'])
+def get_business(business_id):
+    """Get a specific business by ID"""
+    return Businesses.get_business(str(business_id))
+
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['PUT'])
+def update_business(business_id):
+    """Update a business"""
+    return Businesses.update_business(str(business_id))
+
+
+@app.route('/api/businesses/<uuid:business_id>', methods=['DELETE'])
+def delete_business(business_id):
+    """Delete a business"""
+    return Businesses.delete_business(str(business_id))
+
+
+@app.route('/api/businesses/<uuid:business_id>/invoices', methods=['GET'])
+def get_business_invoices(business_id):
+    """Get all invoices for a specific business"""
+    return Businesses.get_business_invoices(str(business_id))
+
+
+@app.route('/api/businesses/bulk-delete', methods=['DELETE'])
+def bulk_delete_businesses():
+    """Delete multiple businesses at once"""
+    return Businesses.bulk_delete_businesses()
 
 
 @app.route('/', methods=['GET'])

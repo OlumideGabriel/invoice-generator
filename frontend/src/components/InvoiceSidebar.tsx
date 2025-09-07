@@ -21,7 +21,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
 }) => {
   return (
       <>
-    <div className="w-full max-w-48 hidden md:flex flex-col sticky top-8 z-10 self-start ">
+    <div className="w-full min-w-40 hidden md:flex flex-col sticky top-8 z-10 self-start ">
       {/* Action Buttons */}
       <div className="flex flex-col gap-4 mb-8">
         <InvoiceButton loading={loading} onClick={onSubmit} />
@@ -29,13 +29,20 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         {/* Send Button */}
         <button
           type="button"
-          onClick={onPreview}
+          onClick={() => {
+            const mailtoUrl = `mailto:talktoolumide@gmail.com?subject=Invoice Preview&body=Hello, here is your invoice preview.`;
+            const newWindow = window.open(mailtoUrl, '_blank');
+            if (!newWindow) {
+              // Fallback if popup is blocked
+              window.location.href = mailtoUrl;
+            }
+          }}
           disabled={loading}
-          className="w-full hidden px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
-          flex items-center justify-center gap-2 text-black transition"
+          className="w-full px-8 py-4 text-md bg-[white] hover:bg-gray-100 h-[3.5rem] whitespace-nowrap font-medium rounded-xl
+          flex items-center justify-center gap-2 text-black border-2 border-gray-300 transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
         >
-          <Send size={20} />
-          Send Invoice
+          <Send size={16} />
+          Send
         </button>
 
         {/* Preview Button */}
@@ -43,8 +50,8 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
           type="button"
           onClick={onPreview}
           disabled={loading}
-          className="w-full px-8 hidden py-4 text-lg bg-[#CCF1D3] hover:bg-[#6CDD82] h-[3.5rem] whitespace-nowrap font-medium rounded-xl
-          flex items-center justify-center gap-2 text-black transition"
+          className="w-full px-8 py-4 text-lg bg-[#CCF1D3] hidden hover:bg-[#6CDD82] h-[3.5rem] whitespace-nowrap font-medium rounded-xl
+          flex items-center justify-center gap-2 text-black transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
         >
           Preview
           <Eye size={20} />
@@ -52,7 +59,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
 
       </div>
       {/* Divider */}
-      <hr className="my-3 border-gray-900" />
+      <hr className="my-3 border-gray-400" />
       {/* Currency Selector below divider */}
       <div className="mt-0">
         {(() => {
@@ -96,7 +103,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
     onClick={() => {
     window.location.href = `mailto:talktoolumide@gmail.com?subject=Invoice Preview&body=Hello, here is your invoice preview.`;
   }}
-    className="w-1/6 px-4 py-4 text-lg btn-secondary whitespace-nowrap font-medium rounded-xl
+    className="w-1/6 px-4 py-4 text-lg btn-secondary !bg-[#CFF4D6] whitespace-nowrap font-medium rounded-xl
     flex items-center justify-center gap-2 text-black transition"
   >
     <Send size={20} />
