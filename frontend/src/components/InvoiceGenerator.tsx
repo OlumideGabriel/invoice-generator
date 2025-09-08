@@ -290,15 +290,17 @@ const InvoiceGenerator: React.FC = () => {
       {/* Left Panel (Main Invoice Form) */}
       <div className="block flex-col gap-4">
         {error && (
-  <div className="flex items-center max-w-full xl:max-w-5xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border border-amber-100 mb-4">
-    <CircleAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
-    <span className="flex-1">{error}</span>
-    <button
-      onClick={() => setError('')}
-      className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
-    >
-      <X className="w-4 h-4" />
-    </button>
+  <div className="sticky top-0 z-50">
+    <div className="flex items-center max-w-full xl:max-w-5xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border border-amber-100 mb-4 mx-auto">
+      <CircleAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
+      <span className="flex-1">{error}</span>
+      <button
+        onClick={() => setError('')}
+        className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
   </div>
 )}
       <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border !border-gray-200 w-full bg-neutral-900 rounded-2xl p-4 sm:p-6 lg:p-8">
@@ -488,10 +490,10 @@ const InvoiceGenerator: React.FC = () => {
         </div>
         {/* Total Display at bottom right */}
         <div className="flex justify-end flex-wrap w-full">
-          <div className="bg-neutral-950 rounded-md px-6 sm:px-10 lg:px-20 py-5 flex justify-end items-center gap-2 w-full sm:w-auto">
-            <span className="text-lg font-medium text-gray-200 pr-3 sm:pr-7">Total</span>
-            <span className="text-lg font-medium text-gray-400">{typeof currency === 'string' ? currency : currency.code}</span>
-            <span className="text-xl sm:text-2xl font-medium text-white">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <div className="bg-gray-100 px-10 rounded-md py-5 flex justify-end items-center gap-2 w-full sm:w-auto">
+            <span className="text-lg font-medium text-gray-700 pr-3 sm:pr-7">Total:</span>
+            <span className="text-lg== font-medium text-neutral-500">{typeof currency === 'string' ? currency : currency.code}</span>
+            <span className="text-2xl sm:text-3xl font-medium !text-[#000]">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
       </div>

@@ -41,6 +41,11 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv(
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db.session.remove()
+
 from models import User, Client, Invoice, Business
 
 # Initialize Flask-Migrate
@@ -415,16 +420,13 @@ def get_dashboard_data():
         return jsonify({'error': 'user_id is required'}), 400
 
     try:
-        from sqlalchemy.orm import Session
-        session = Session(bind=db.engine)
-
         # Check if user exists
-        user = session.get(User, user_id)
+        user = db.session.get(User, user_id)
         if not user:
             return jsonify({'error': 'User not found'}), 404
 
         # Get all invoices for the user
-        invoices = session.query(Invoice).filter_by(user_id=user_id).all()
+        invoices = db.session.query(Invoice).filter_by(user_id=user_id).all()
 
         # Initialize stats
         stats = {
