@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuth } from '../context/AuthContext';
 import BusinessSection from '../components/BusinessSection'; // Renamed import
@@ -38,16 +39,32 @@ const SettingsPage = () => {
   };
 
   const [formData, setFormData] = useState({
-    first_name: user?.first_name || '',
-    last_name: user?.last_name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    bio: user?.bio || '',
-    country: user?.country || '',
-    city: user?.city || '',
-    postal_code: user?.postal_code || '',
-    tax_id: user?.tax_id || ''
-  });
+      first_name: '',
+      last_name: '',
+      email: '',
+      phone: '',
+      bio: '',
+      country: '',
+      city: '',
+      postal_code: '',
+      tax_id: ''
+    });
+
+useEffect(() => {
+  if (user) {
+    setFormData({
+      first_name: user.first_name || '',
+      last_name: user.last_name || '',
+      email: user.email || '',
+      phone: user.phone || '',
+      bio: user.bio || '',
+      country: user.country || '',
+      city: user.city || '',
+      postal_code: user.postal_code || '',
+      tax_id: user.tax_id || ''
+    });
+  }
+}, [user]);
 
   const [passwords, setPasswords] = useState({
     current: '',
@@ -420,7 +437,7 @@ const SettingsPage = () => {
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">Current Plan</h4>
               <p className="text-2xl font-bold text-blue-600">Free Plan</p>
-              <p className="text-sm text-gray-600 mt-1">5 invoices per month</p>
+              <p className="text-sm hidden text-gray-600 mt-1">5 invoices per month</p>
             </div>
             <CreditCard className="h-12 w-12 text-blue-500" />
           </div>

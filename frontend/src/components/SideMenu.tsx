@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { MessageCircle } from "lucide-react";
 import { useAuth } from '../context/AuthContext';
 import UpgradeProCard from './UpgradeProCard';
 import {
@@ -90,10 +92,10 @@ const SideMenu: React.FC = () => {
 
   return (
       <div className="bg-neutral-900 border-r border-gray-200">
-    <div className="hidden md:flex relative items-stretch">
+    <div className="hidden md:flex relative items-stretch h-full">
       {/* Sidebar */}
       <aside
-        className={`transition-all flex-1 duration-400 justify-between gap-96 ${
+        className={`transition-all flex-1 duration-400 justify-between ${
           collapsed ? 'w-55' : 'w-60'
         } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
       >
@@ -142,6 +144,15 @@ const SideMenu: React.FC = () => {
         <aside className="mt-auto">
           <UpgradeProCard />
         </aside>
+
+        {/* Support button */}
+            <Link
+              to="/support"
+              className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
+            >
+              <MessageCircle className="w-4 h-4" />
+              <span>Contact support</span>
+            </Link>
       </aside>
 
       {/* Submenu Panel */}
