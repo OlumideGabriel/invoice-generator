@@ -146,13 +146,14 @@ const SideMenu: React.FC = () => {
         </aside>
 
         {/* Support button */}
-            <Link
-              to="/support"
-              className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
-            >
-              <MessageCircle className="w-4 h-4" />
-              <span>Contact support</span>
-            </Link>
+        <Link
+          to="/support"
+          className="flex items-center gap-2 p-2 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
+        >
+          <MessageCircle className="w-4 h-4" />
+          {!collapsed && <span>Contact support</span>}
+        </Link>
+
       </aside>
 
       {/* Submenu Panel */}

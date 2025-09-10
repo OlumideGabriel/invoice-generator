@@ -9,7 +9,9 @@ import {
   MapPin,
   Phone,
   Trash2,
-  Edit2
+  Edit2,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
 
 interface Business {
@@ -51,9 +53,7 @@ const BusinessCard: React.FC<{
   <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 transition-shadow">
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-center space-x-3">
-
-          <Building className="w-8 h-8 text-blue-700" />
-
+        <Building className="w-8 h-8 text-blue-700" />
         <div>
           <h3 className="font-semibold text-gray-900">{business.name}</h3>
           {business.email && (
@@ -250,30 +250,75 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const [fetchError, setFetchError] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+
+  // Monitor online/offline status
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      showNotification('Connection restored', 'success');
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      showNotification('No internet connection', 'error');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [showNotification]);
 
   useEffect(() => {
     fetchBusinesses();
   }, []);
 
   const fetchBusinesses = async () => {
+    // Don't try to fetch if offline
+    if (!isOnline) {
+      showNotification('No internet connection', 'error');
+      setFetchError(true);
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
+      setFetchError(false);
       const response = await fetch(`/api/businesses?user_id=${user.id}`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
 
       if (data.success) {
         setBusinesses(data.businesses);
       } else {
         showNotification('Failed to fetch businesses', 'error');
+        setFetchError(true);
       }
     } catch (error) {
+      console.error('Error fetching businesses:', error);
       showNotification('Error fetching businesses', 'error');
+      setFetchError(true);
     } finally {
       setLoading(false);
     }
   };
 
   const handleAddBusiness = async (formData: BusinessFormData) => {
+    if (!isOnline) {
+      showNotification('No internet connection', 'error');
+      return;
+    }
+
     try {
       const response = await fetch('/api/businesses', {
         method: 'POST',
@@ -303,6 +348,11 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
   const handleUpdateBusiness = async (formData: BusinessFormData) => {
     if (!editingBusiness) return;
 
+    if (!isOnline) {
+      showNotification('No internet connection', 'error');
+      return;
+    }
+
     try {
       const response = await fetch(`/api/businesses/${editingBusiness.id}`, {
         method: 'PUT',
@@ -328,6 +378,11 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
   };
 
   const handleDeleteBusiness = async (businessId: string) => {
+    if (!isOnline) {
+      showNotification('No internet connection', 'error');
+      return;
+    }
+
     if (!window.confirm('Are you sure you want to delete this business?')) {
       return;
     }
@@ -376,8 +431,19 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
   const Card: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-        {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+            {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+          </div>
+          <div className="flex items-center">
+            {isOnline ? (
+              <Wifi className="w-5 h-5 hidden text-green-500" title="Online" />
+            ) : (
+              <WifiOff className="w-5 h-5 hidden text-red-500" title="Offline" />
+            )}
+          </div>
+        </div>
       </div>
       <div className="p-6">{children}</div>
     </div>
@@ -391,13 +457,38 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
             <p className="text-gray-500 mt-4">Loading businesses...</p>
           </div>
+        ) : fetchError ? (
+          <div className="text-center py-8">
+            <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500 mb-4">
+              {isOnline
+                ? 'Failed to load businesses'
+                : 'No internet connection'}
+            </p>
+            <button
+              onClick={fetchBusinesses}
+              disabled={!isOnline}
+              className={`mt-4 inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+                isOnline
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              Retry
+            </button>
+          </div>
         ) : businesses.length === 0 ? (
           <div className="text-center py-8">
             <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">No businesses added yet</p>
             <button
               onClick={handleAddNewBusiness}
-              className="mt-4 inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              disabled={!isOnline}
+              className={`mt-4 inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+                isOnline
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               <Plus className="w-4 h-4 mr-2" />
               Add Business
@@ -415,15 +506,18 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
                 />
               ))}
 
-            <button
-              onClick={handleAddNewBusiness}
-              className="inline-flex items-center px-4 py-2 justify-center rounded-lg text-neutral-400
-               bg-gray-50 hover:bg-gray-100 transition-colors border-2 border-dashed border-gray-300"
-            >
-              <Plus  size={20} className="mr-2" />
-              Add Business
-            </button>
-
+              <button
+                onClick={handleAddNewBusiness}
+                disabled={!isOnline}
+                className={`inline-flex items-center px-4 py-2 justify-center rounded-lg transition-colors border-2 border-dashed ${
+                  isOnline
+                    ? 'text-neutral-400 bg-gray-50 hover:bg-gray-100 border-gray-300'
+                    : 'text-gray-300 bg-gray-100 border-gray-200 cursor-not-allowed'
+                }`}
+              >
+                <Plus size={20} className="mr-2" />
+                Add Business
+              </button>
             </div>
 
             <button
