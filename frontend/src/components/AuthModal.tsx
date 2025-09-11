@@ -100,6 +100,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="w-full max-w-sm z-50 mx-auto">
+
         <h2 className="text-3xl font-regular text-neutral-800 mb-8 text-center">
           {mode === 'signup' ? 'Create an account' : 'Sign in'}
         </h2>
