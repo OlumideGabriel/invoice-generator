@@ -448,10 +448,10 @@ const InvoiceGenerator: React.FC = () => {
         </DragDropContext>
         <button
           onClick={addItem}
-          className="mb-10 mt-2 lg:ml-[1.6rem] w-full lg:w-auto px-3 py-2.5 lg:bg-white bg-gray-100 hover:bg-gray-200 whitespace-nowrap
+          className="mb-10 mt-4 lg:ml-[1.6rem] w-full lg:w-auto px-3 py-2.5 lg:bg-white bg-gray-100 hover:bg-gray-200 whitespace-nowrap
           text-black font-medium rounded-md flex items-center justify-center gap-2 border border-black transition"
         >
-          <Plus size={20} /> Add Item
+          <Plus size={18} /> Add Item
         </button>
         <div className="w-full flex-1 flex flex-col lg:flex-row gap-6 mb-6 justify-between items-start">
           <div className="flex-1 w-full">

@@ -4,11 +4,13 @@ import DarkModeToggle from './DarkModeToggle';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from './Tooltip';
-
+import AuthModal from './AuthModal'; // Import the AuthModal component
 
 const MainMenu: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false); // State for auth modal
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login'); // Default to login mode
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -63,15 +65,20 @@ const MainMenu: React.FC = () => {
     setMobileMenuOpen(false);
     const success = await logout();
     if (success) {
-      navigate('/auth?mode=login', { replace: true });
+      navigate('/', { replace: true });
     } else {
       console.error('Logout failed');
     }
   };
 
+  const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
   return (
     <>
-      <header className="top-0 z-50 w-full bg-neutral-800 shadow-sm" onMouseLeave={() => setOpen(false)}>
+      <header className="top-0 z-40 w-full bg-neutral-800 shadow-sm" onMouseLeave={() => setOpen(false)}>
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
           {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
@@ -119,21 +126,19 @@ const MainMenu: React.FC = () => {
                 focus:outline-none text-xl font-bold"
               >
                 <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
-                      {/* Avatar if available, otherwise show initials/fallback */}
-                      {user?.user_metadata?.avatar_url ? (
-                        <img
-                          src={user.user_metadata.avatar_url}
-                          alt="User Avatar"
-                          className="h-10 w-10 rounded-full"
-                        />
-                      ) : (
-                        <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
-                          {getInitials(user) || <User className="w-6 h-6" />}
-                        </span>
-                      )}
-                  </span>
-
-
+                  {/* Avatar if available, otherwise show initials/fallback */}
+                  {user?.user_metadata?.avatar_url ? (
+                    <img
+                      src={user.user_metadata.avatar_url}
+                      alt="User Avatar"
+                      className="h-10 w-10 rounded-full"
+                    />
+                  ) : (
+                    <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
+                      {getInitials(user) || <User className="w-6 h-6" />}
+                    </span>
+                  )}
+                </span>
               </a>
 
               {open && (
@@ -159,27 +164,22 @@ const MainMenu: React.FC = () => {
                         </span>
                       )}
 
-
-
                       <div className="flex flex-col min-w-0">
-
                         {/* Fixed username/email display */}
-                <div class="font-medium text-gray-900">
-                    {user?.first_name ?
-                        `${user.first_name} ${user.last_name || ''}`.trim() :
-                        (user?.user_metadata?.name || user?.email || 'Unknown User')
-                    }
-                </div>
+                        <div className="font-medium text-gray-900">
+                          {user?.first_name ?
+                            `${user.first_name} ${user.last_name || ''}`.trim() :
+                            (user?.user_metadata?.name || user?.email || 'Unknown User')
+                          }
+                        </div>
 
-                {/* Always show email if available */}
-                {user?.email && (
-                    <div class="text-sm text-gray-500 mt-1">
-                        {user.email}
-                    </div>
-                )}
+                        {/* Always show email if available */}
+                        {user?.email && (
+                          <div className="text-sm text-gray-500 mt-1">
+                            {user.email}
+                          </div>
+                        )}
                       </div>
-
-
                     </span>
                   </Link>
                   <hr className="border-gray-200 mt-2 mr-2 ml-2" />
@@ -227,7 +227,7 @@ const MainMenu: React.FC = () => {
                       setOpen(false);
                       const success = await logout();
                       if (success) {
-                        navigate('/auth?mode=login', { replace: true });
+                        navigate('/', { replace: true });
                       } else {
                         console.error('Logout failed');
                       }
@@ -242,13 +242,14 @@ const MainMenu: React.FC = () => {
               )}
             </div>
           ) : (
-            <Link
-              to="/auth?mode=login"
+            // Updated Sign In button to open modal instead of navigating
+            <button
+              onClick={() => openAuthModal('login')}
               className="ml-4 px-4 py-2.5 hover:bg-[#0e423e]/90 text-[#8eda91] hover:text-[#8eda91] bg-[#0e423e] font-semibold
               rounded-lg shadow transition-colors ease-in-out duration-300"
             >
               Sign In
-            </Link>
+            </button>
           )}
         </div>
       </header>
@@ -294,19 +295,19 @@ const MainMenu: React.FC = () => {
             {/* User Profile Section */}
             <div className="flex absolute bottom-0 w-full items-center py-7 px-7 bg-gray-50 border-t border-gray-200">
               <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
-                      {/* Avatar if available, otherwise show initials/fallback */}
-                      {user?.user_metadata?.avatar_url ? (
-                        <img
-                          src={user.user_metadata.avatar_url}
-                          alt="User Avatar"
-                          className="h-12 w-12 mr-4 rounded-full"
-                        />
-                      ) : (
-                        <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
-                          {getInitials(user) || <User className="w-6 h-6" />}
-                        </span>
-                      )}
+                {/* Avatar if available, otherwise show initials/fallback */}
+                {user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="User Avatar"
+                    className="h-12 w-12 mr-4 rounded-full"
+                  />
+                ) : (
+                  <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
+                    {getInitials(user) || <User className="w-6 h-6" />}
                   </span>
+                )}
+              </span>
 
               <div className="flex flex-col min-w-0">
                 <span className="font-medium text-gray-900">
@@ -365,6 +366,13 @@ const MainMenu: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        initialMode={authModalMode}
+      />
     </>
   );
 };

@@ -49,7 +49,8 @@ export default function UpgradeProCard() {
       <div className="w-full flex lg:hidden justify-center items-center">
           <button
             onClick={() => navigate("/settings?section=billing")}
-            className="bg-[#d2fee1] shadow-xs py-2 w-full rounded-md hover:shadow-sm transition-shadow relative flex flex-col items-center justify-center"
+            className="bg-[#d2fee1] shadow-xs py-2 w-full rounded-md hover:shadow-sm hover:bg-[#8eda91] transition-shadow
+             relative flex flex-col items-center justify-center"
           >
             <Crown className="text-[#0e423e]" size={20} />
             <span className="text-xs font-medium mt-0.5 text-[#0e423e]">Pro</span>

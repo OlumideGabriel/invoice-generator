@@ -7,9 +7,15 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, openAuthModal } = useAuth();
+
   if (loading) return null; // Or a spinner/loading indicator
-  if (!user) return <Navigate to="/auth" replace />;
+
+  if (!user) {
+    openAuthModal('login');
+    return <Navigate to="/" replace />;
+  }
+
   return <>{children}</>;
 };
 

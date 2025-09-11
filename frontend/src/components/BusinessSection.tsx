@@ -103,8 +103,12 @@ const BusinessCard: React.FC<{
 
     <div className="mt-4 pt-4 border-t border-gray-100">
       <div className="flex items-center justify-between text-xs text-gray-500">
-        <span className="px-2 py-0.5 bg-blue-100 rounded-full text-blue-500">{business.invoice_count || 0} invoices</span>
-        <span className="px-2 py-0.5 bg-blue-100 rounded-full text-blue-500">Created {new Date(business.created_at).toLocaleDateString()}</span>
+        <span className="px-2 py-0.5 bg-blue-100 rounded-full text-blue-500">
+          {business.invoice_count || 0} invoices
+        </span>
+        <span className="px-2 py-0.5 bg-blue-100 rounded-full text-blue-500">
+          Created {new Date(business.created_at).toLocaleDateString()}
+        </span>
       </div>
     </div>
   </div>
@@ -253,13 +257,22 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
   const [fetchError, setFetchError] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
+  // Helpers for cache
+  const saveToCache = (data: Business[]) => {
+    localStorage.setItem('businesses', JSON.stringify(data));
+  };
+
+  const loadFromCache = () => {
+    const cached = localStorage.getItem('businesses');
+    return cached ? (JSON.parse(cached) as Business[]) : [];
+  };
+
   // Monitor online/offline status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
       showNotification('Connection restored', 'success');
     };
-
     const handleOffline = () => {
       setIsOnline(false);
       showNotification('No internet connection', 'error');
@@ -274,14 +287,18 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     };
   }, [showNotification]);
 
+  // Load cache first, then fetch fresh
   useEffect(() => {
+    const cachedBusinesses = loadFromCache();
+    if (cachedBusinesses.length > 0) {
+      setBusinesses(cachedBusinesses);
+    }
     fetchBusinesses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchBusinesses = async () => {
-    // Don't try to fetch if offline
     if (!isOnline) {
-      showNotification('No internet connection', 'error');
       setFetchError(true);
       setLoading(false);
       return;
@@ -290,22 +307,20 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     try {
       setLoading(true);
       setFetchError(false);
-      const response = await fetch(`/api/businesses?user_id=${user.id}`);
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      const response = await fetch(`/api/businesses?user_id=${user.id}`);
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
       const data = await response.json();
-
       if (data.success) {
         setBusinesses(data.businesses);
+        saveToCache(data.businesses);
       } else {
         showNotification('Failed to fetch businesses', 'error');
         setFetchError(true);
       }
-    } catch (error) {
-      console.error('Error fetching businesses:', error);
+    } catch (err) {
+      console.error('Error fetching businesses:', err);
       showNotification('Error fetching businesses', 'error');
       setFetchError(true);
     } finally {
@@ -314,25 +329,16 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
   };
 
   const handleAddBusiness = async (formData: BusinessFormData) => {
-    if (!isOnline) {
-      showNotification('No internet connection', 'error');
-      return;
-    }
+    if (!isOnline) return showNotification('No internet connection', 'error');
 
     try {
       const response = await fetch('/api/businesses', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ...formData,
-          user_id: user.id
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...formData, user_id: user.id })
       });
 
       const data = await response.json();
-
       if (data.success) {
         showNotification('Business added successfully');
         setShowModal(false);
@@ -340,30 +346,23 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
       } else {
         showNotification(data.error || 'Failed to add business', 'error');
       }
-    } catch (error) {
+    } catch {
       showNotification('Error adding business', 'error');
     }
   };
 
   const handleUpdateBusiness = async (formData: BusinessFormData) => {
     if (!editingBusiness) return;
-
-    if (!isOnline) {
-      showNotification('No internet connection', 'error');
-      return;
-    }
+    if (!isOnline) return showNotification('No internet connection', 'error');
 
     try {
       const response = await fetch(`/api/businesses/${editingBusiness.id}`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
       const data = await response.json();
-
       if (data.success) {
         showNotification('Business updated successfully');
         setEditingBusiness(null);
@@ -372,35 +371,25 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
       } else {
         showNotification(data.error || 'Failed to update business', 'error');
       }
-    } catch (error) {
+    } catch {
       showNotification('Error updating business', 'error');
     }
   };
 
   const handleDeleteBusiness = async (businessId: string) => {
-    if (!isOnline) {
-      showNotification('No internet connection', 'error');
-      return;
-    }
-
-    if (!window.confirm('Are you sure you want to delete this business?')) {
-      return;
-    }
+    if (!isOnline) return showNotification('No internet connection', 'error');
+    if (!window.confirm('Are you sure you want to delete this business?')) return;
 
     try {
-      const response = await fetch(`/api/businesses/${businessId}`, {
-        method: 'DELETE'
-      });
-
+      const response = await fetch(`/api/businesses/${businessId}`, { method: 'DELETE' });
       const data = await response.json();
-
       if (data.success) {
         showNotification('Business deleted successfully');
         fetchBusinesses();
       } else {
         showNotification(data.error || 'Failed to delete business', 'error');
       }
-    } catch (error) {
+    } catch {
       showNotification('Error deleting business', 'error');
     }
   };
@@ -461,9 +450,7 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
           <div className="text-center py-8">
             <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">
-              {isOnline
-                ? 'Failed to load businesses'
-                : 'No internet connection'}
+              {isOnline ? 'Failed to load businesses' : 'No internet connection'}
             </p>
             <button
               onClick={fetchBusinesses}
@@ -515,7 +502,8 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
                     : 'text-gray-300 bg-gray-100 border-gray-200 cursor-not-allowed'
                 }`}
               >
-                <Plus size={20} className="mr-2" />
+                <Plus size={20} className="mr-
+2" />
                 Add Business
               </button>
             </div>

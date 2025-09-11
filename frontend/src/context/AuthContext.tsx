@@ -6,19 +6,29 @@ interface AuthContextType {
   user: any;
   loading: boolean;
   logout: () => Promise<boolean>;
-  signinNative: (email: string, password: string) => Promise<void>;
+  signinNative: (user: any) => void;
+  authModalOpen: boolean;
+  authModalMode: 'login' | 'signup';
+  openAuthModal: (mode?: 'login' | 'signup') => void;
+  closeAuthModal: () => void;
 }
 
 const Ctx = createContext<AuthContextType>({
   user: null,
   loading: true,
   logout: async () => false,
-  signinNative: async () => {},
+  signinNative: () => {},
+  authModalOpen: false,
+  authModalMode: 'login',
+  openAuthModal: () => {},
+  closeAuthModal: () => {},
 });
 
 export const AuthProvider = ({ children }: any) => {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
 
   useEffect(() => {
     const initAuth = async () => {
@@ -77,9 +87,10 @@ export const AuthProvider = ({ children }: any) => {
   }, []);
 
   // Native login (Flask backend)
-  const signinNative = (user: User) => {
+  const signinNative = (user: any) => {
     localStorage.setItem("nativeUser", JSON.stringify(user));
     setUser(user);
+    closeAuthModal(); // Close modal after successful login
   };
 
   const logout = async () => {
@@ -103,8 +114,26 @@ export const AuthProvider = ({ children }: any) => {
     }
   };
 
+  const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
+  const closeAuthModal = () => {
+    setAuthModalOpen(false);
+  };
+
   return (
-    <Ctx.Provider value={{ user, loading, logout, signinNative }}>
+    <Ctx.Provider value={{
+      user,
+      loading,
+      logout,
+      signinNative,
+      authModalOpen,
+      authModalMode,
+      openAuthModal,
+      closeAuthModal
+    }}>
       {children}
     </Ctx.Provider>
   );

@@ -191,7 +191,7 @@ const AuthPage: React.FC = () => {
                   required
                 />
                 <label className="text-gray-500 text-sm">
-                  I agree to the <a href="/terms" className="underline">Terms & Conditions</a>
+                  I agree to the <a href="/terms-of-service" className="underline">Terms</a> and <a href="/privacy-policy" className="underline"> Privacy</a>
                 </label>
               </div>
             )}

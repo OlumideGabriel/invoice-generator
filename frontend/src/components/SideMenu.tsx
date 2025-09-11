@@ -57,6 +57,7 @@ const mobileMenuItems: MenuItem[] = [
 const ICON_SIZE = 20;
 const SideMenu: React.FC = () => {
   const location = useLocation();
+  const { user, openAuthModal } = useAuth();
 
   const [collapsed, setCollapsed] = useState(false);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -65,6 +66,22 @@ const SideMenu: React.FC = () => {
     if (item.submenu) {
       setCollapsed(true);
       setExpandedItem(prev => (prev === item.label ? null : item.label));
+    }
+  };
+
+  const handleNavigation = (e: React.MouseEvent, path: string, item: MenuItem) => {
+    if (!user) {
+      e.preventDefault();
+      openAuthModal('login');
+      return;
+    }
+
+    if (path === '/' && window.innerWidth < 1000) {
+      setCollapsed(!collapsed);
+    } else {
+      handleClick(item);
+      setCollapsed(false);
+      setExpandedItem(null);
     }
   };
 
@@ -119,20 +136,12 @@ const SideMenu: React.FC = () => {
             ) : (
               <Link
                 key={label}
-                to={path}
-                onClick={() => {
-                  if (path === '/' && window.innerWidth < 1000) {
-                    setCollapsed(!collapsed); // Toggle collapse state
-                  } else {
-                    handleClick({ path, label, icon, submenu });
-                    setCollapsed(false);
-                    setExpandedItem(null);
-                  }
-                }}
+                to={user ? path : '#'}
+                onClick={(e) => handleNavigation(e, path, { path, label, icon, submenu })}
                 className={`flex menu-item items-center gap-3 h-[3 rem] max-h-[3.2rem] px-4 py-3 font-medium
                     transition-colors duration-150 text-xl  ${
                   location.pathname === path ? 'active' : 'text-gray-700'
-                }`}
+                } ${!user ? 'cursor-pointer' : ''}`}
               >
                 {icon}
                 {!collapsed && label}
@@ -147,7 +156,13 @@ const SideMenu: React.FC = () => {
 
         {/* Support button */}
         <Link
-          to="/support"
+          to={user ? "/support" : "#"}
+          onClick={(e) => {
+            if (!user) {
+              e.preventDefault();
+              openAuthModal('login');
+            }
+          }}
           className="flex items-center gap-2 p-2 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
         >
           <MessageCircle className="w-4 h-4" />
@@ -165,7 +180,13 @@ const SideMenu: React.FC = () => {
                 <div className=" border-neutral-300" key={path}>
                 <Link
                   key={path}
-                  to={path}
+                  to={user ? path : '#'}
+                  onClick={(e) => {
+                    if (!user) {
+                      e.preventDefault();
+                      openAuthModal('login');
+                    }
+                  }}
                   className="flex font-medium cursor-pointer items-center text-lg gap-2 py-3 hover:bg-[#e8dacf] px-4
                   text-gray-700 hover:text-black/100"
                 >
@@ -189,7 +210,13 @@ const SideMenu: React.FC = () => {
         {mobileMenuItems.map(({ path, label, icon }) => (
           <Link
             key={label}
-            to={path}
+            to={user ? path : '#'}
+            onClick={(e) => {
+              if (!user) {
+                e.preventDefault();
+                openAuthModal('login');
+              }
+            }}
             className={`flex flex-col gap-1 w-1/6 py-2 px-3 text-xs items-center cursor-pointer rounded-lg text-gray-700 hover:text-black/100 ${
               location.pathname === path ? 'text-green-900 hover:text-green-800' : 'text-gray-800'
             }`}

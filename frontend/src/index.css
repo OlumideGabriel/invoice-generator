@@ -47,6 +47,10 @@ body {
   width: 100%;
 }
 
+.input {
+  @apply !bg-gray-100 border-none rounded-md w-full placeholder-black/40 text-gray-900;
+}
+
 /* From and To input groups side-by-side on desktop */
 .from-to-group {
   @apply flex flex-row gap-4 md:flex-col;
