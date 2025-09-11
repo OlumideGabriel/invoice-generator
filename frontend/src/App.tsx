@@ -10,7 +10,7 @@ import MainMenu from './components/MainMenu';
 import Footer from './components/Footer';
 import useInvoice from './hooks/useInvoice';
 import AuthPage from './pages/AuthPage';
-import AuthModal from './Components/AuthModal';
+import AuthModal from './components/AuthModal';
 import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import SettingsPage from './pages/SettingsPage';
