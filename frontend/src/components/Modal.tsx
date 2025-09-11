@@ -40,7 +40,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, title }) => {
               onClick={onClose}
               className="inline-flex items-center px-3 py-3 bg-transparent hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={27} />
             </button>
             </div>
 
