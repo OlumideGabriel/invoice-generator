@@ -4,13 +4,18 @@ import DarkModeToggle from './DarkModeToggle';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from './Tooltip';
-import AuthModal from './AuthModal'; // Import the AuthModal component
+import AuthModal from './AuthModal';
 
-const MainMenu: React.FC = () => {
+// Define the props interface
+interface MainMenuProps {
+  background?: string; // Add background prop
+}
+
+const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [authModalOpen, setAuthModalOpen] = useState(false); // State for auth modal
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login'); // Default to login mode
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -65,7 +70,7 @@ const MainMenu: React.FC = () => {
     setMobileMenuOpen(false);
     const success = await logout();
     if (success) {
-      navigate('/', { replace: true });
+      navigate('/home', { replace: true });
     } else {
       console.error('Logout failed');
     }
@@ -78,7 +83,7 @@ const MainMenu: React.FC = () => {
 
   return (
     <>
-      <header className="top-0 z-40 w-full bg-neutral-800 shadow-sm" onMouseLeave={() => setOpen(false)}>
+      <header className={`top-0 z-40 w-full ${background} shadow-sm`} onMouseLeave={() => setOpen(false)}>
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
           {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
@@ -227,7 +232,7 @@ const MainMenu: React.FC = () => {
                       setOpen(false);
                       const success = await logout();
                       if (success) {
-                        navigate('/', { replace: true });
+                        navigate('/home', { replace: true });
                       } else {
                         console.error('Logout failed');
                       }

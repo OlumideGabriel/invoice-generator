@@ -15,6 +15,7 @@ import { API_BASE_URL } from '../config/api';
 import CurrencySelector from './CurrencySelector';
 import Footer from './Footer';
 import { CircleAlert, X } from 'lucide-react';
+import Home from '../pages/Home';
 
 // Generate unique ID for items (same as in useInvoice hook)
 const generateId = () => {

@@ -3,7 +3,7 @@ import React from 'react';
 const Footer: React.FC = () => {
   return (
     <footer className="w-full text-neutral-400 py-8 px-4 border-neutral-800">
-      <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-left gap-4">
+      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-center gap-4">
         {/* Copyright and company info */}
         <div className="flex items-center gap-2 text-sm">
           <span>&copy;{new Date().getFullYear()} envoyce.xyz. All rights reserved.</span>
