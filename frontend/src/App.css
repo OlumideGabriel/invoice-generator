@@ -3,8 +3,9 @@
 /* App.css */
 
 html, body, #root {
-
+  overflow-x: hidden;
   max-height: 100dvh;
+  height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
