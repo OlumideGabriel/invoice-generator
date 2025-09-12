@@ -91,9 +91,9 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
-                className="h-10 w-10"
+                className="h-8 md:h-10 w-auto "
               />
-              <span className="text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+              <span className="md:text-3xl text-2xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                 envoyce
               </span>
             </a>
