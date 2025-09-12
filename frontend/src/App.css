@@ -1,21 +1,17 @@
 @import './theme.css';
 
-/* App.css */
-
 html, body, #root {
   overflow-x: hidden;
-  max-height: 100dvh;
-  height: 100dvh;
+  height: 100%;
   width: 100%;
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
-
 }
 
 #root {
   display: flex;
   flex-direction: column;
-  max-height: 100dvh;
-  align-items: center;
+  min-height: 100dvh;  /* use min-height, not max-height */
+  align-items: stretch; /* let children fill horizontally */
 }

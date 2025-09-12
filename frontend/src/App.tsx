@@ -5,7 +5,6 @@ import { CurrencyProvider } from './context/CurrencyContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import InvoiceGenerator from './components/InvoiceGenerator';
-import PartyField from './components/PartyField';
 import MainMenu from './components/MainMenu';
 import Footer from './components/Footer';
 import useInvoice from './hooks/useInvoice';
@@ -41,42 +40,33 @@ const AppContent: React.FC = () => {
 
   if (loading) return null;
 
-  // If user is logged in and tries to access auth page, redirect to home
-  if (isAuthPage && user) {
-    return <Navigate to="/" replace />;
-  }
-
-  // If user is logged in and tries to access home page, redirect to dashboard
-  if (isHomePage && user) {
-    return <Navigate to="/" replace />;
-  }
+  // Redirects
+  if (isAuthPage && user) return <Navigate to="/" replace />;
+  if (isHomePage && user) return <Navigate to="/" replace />;
 
   return (
-    <div className="min-h-screen w-full flex flex-col">
-      {/* Show AuthModal if it's open */}
+    <div className="flex flex-col flex-1 min-h-0">
+      {/* Auth modal */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={closeAuthModal}
         initialMode={authModalMode}
       />
 
-      {/* Show MainMenu unless we're on the auth page or home page when logged out */}
+      {/* MainMenu (top) */}
       {!isAuthPage && (!isHomePage || user) && <MainMenu />}
 
-      <div className="flex flex-row flex-1 main-content min-h-0">
-        {/* Show SideMenu unless we're on the auth page OR home page when logged out */}
+      {/* Main content row */}
+      <div className="flex flex-row flex-1 min-h-0">
         {!isAuthPage && (!isHomePage || user) && <SideMenu />}
 
-        {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto min-h-0">
           <Routes>
-            {/* Auth page route - only accessible when not logged in */}
+            {/* Auth routes */}
             <Route
               path="/auth"
               element={!user ? <AuthPage /> : <Navigate to="/" replace />}
             />
-
-            {/* Home page - only accessible when not logged in */}
             <Route
               path="/home"
               element={!user ? <Home /> : <Navigate to="/" replace />}
@@ -89,17 +79,16 @@ const AppContent: React.FC = () => {
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
 
-
             {/* Public routes */}
             <Route path="/" element={<InvoiceGenerator />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>
-
-          {/* Show Footer unless we're on the auth page or home page when logged out */}
-          {!isAuthPage && (!isHomePage || user) && <Footer />}
         </main>
       </div>
+
+      {/* Footer (always sticks at the bottom of layout, not inside <main>) */}
+      {!isAuthPage && (!isHomePage || user) && <Footer />}
     </div>
   );
 };
