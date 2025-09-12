@@ -87,7 +87,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
           {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
-            <a href="/" className="flex items-start gap-1 hover:contrast-125">
+            <Link to="/" className="flex items-start gap-1 hover:contrast-125">
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
@@ -96,7 +96,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
               <span className="md:text-3xl text-2xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                 envoyce
               </span>
-            </a>
+            </Link>
           </div>
 
           {/* Mobile hamburger menu - only show when user is logged in */}

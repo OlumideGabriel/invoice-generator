@@ -46,21 +46,15 @@ const Home = () => {
                         <p className="text-xl md:text-2xl text-gray-600 mb-12 leading-relaxed ">
                             Envoyce provides tools to help you <span className="standout bg-[#c7f9cc]">create</span>&nbsp;
                             <span className="standout bg-[#fae588]">manage</span>&nbsp;
-                             and <span className="standout bg-[#a2d2ff]">share</span> professional invoices seamlessly.
+                            and&nbsp;<span className="standout bg-[#a2d2ff]">share</span> professional invoices seamlessly.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-center">
-                            <button
-                                className="bg-black/90 text-white px-12 py-4 rounded-full text-lg
-                                font-semibold transition-all duration-300 hover:shadow-lg"
-                                onClick={(e) => {
-                                    if (!user) {
-                                        e.preventDefault();
-                                        openAuthModal('login');
-                                    }
-                                }}
-                            >
-                                Get Started
-                            </button>
+                        <Link to="/">
+                          <button className="bg-black/90 text-white px-12 py-4 rounded-full text-lg
+                                font-semibold transition-all duration-300 hover:shadow-lg">
+                            Create Invoice
+                          </button>
+                        </Link>
                         </div>
                     </div>
                 </div>
