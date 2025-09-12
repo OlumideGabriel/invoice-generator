@@ -52,7 +52,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="w-full flex flex-col">
+    <div className="min-h-screen w-full flex flex-col">
       {/* Show AuthModal if it's open */}
       <AuthModal
         isOpen={authModalOpen}
