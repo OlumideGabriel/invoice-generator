@@ -68,7 +68,7 @@ const AppContent: React.FC = () => {
         {!isAuthPage && (!isHomePage || user) && <SideMenu />}
 
         {/* Main content area */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-hidden">
           <Routes>
             {/* Auth page route - only accessible when not logged in */}
             <Route
