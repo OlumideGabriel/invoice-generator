@@ -1,60 +1,46 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
-import { MessageCircle } from "lucide-react";
-import { useAuth } from '../context/AuthContext';
-import UpgradeProCard from './UpgradeProCard';
+import React, { useState, useEffect } from "react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import UpgradeProCard from "./UpgradeProCard";
+import { useCurrency } from "../context/CurrencyContext";
+import Tooltip from "./Tooltip";
+
+// Heroicons - Outline
 import {
-  LayoutDashboard,
-  FileText,
-  Users,
-  Settings,
-  User,
-  SquarePlus,
-  CirclePlus,
-} from 'lucide-react';
-import { useCurrency } from '../context/CurrencyContext';
-import Tooltip from './Tooltip';
+  Squares2X2Icon as Squares2X2Outline,
+  DocumentTextIcon as DocumentTextOutline,
+  UsersIcon as UsersOutline,
+  Cog6ToothIcon as CogOutline,
+  SquaresPlusIcon as SquaresPlusOutline,
+  ChatBubbleLeftIcon
+} from "@heroicons/react/24/outline";
+
+// Heroicons - Solid
+import {
+  Squares2X2Icon as Squares2X2Solid,
+  DocumentTextIcon as DocumentTextSolid,
+  UsersIcon as UsersSolid,
+  Cog6ToothIcon as CogSolid,
+  SquaresPlusIcon as SquaresPlusSolid,
+} from "@heroicons/react/24/solid";
 
 interface MenuItem {
   path: string;
   label: string;
-  icon: React.ReactNode;
-  submenu?: { label: string; path: string}[];
+  outline: React.ElementType;
+  solid: React.ElementType;
+  submenu?: { label: string; path: string }[];
 }
 
+// Desktop + Mobile use the same config
 const menuItems: MenuItem[] = [
-  { path: '/Dashboard', label: 'Dashboard', icon: <LayoutDashboard size={22} /> },
-  {
-    path: '/invoices',
-    label: 'Invoices',
-    icon: <FileText size={22} />,
-
-  },
-  { path: '/clients', label: 'Clients', icon: <Users size={22} /> },
-  { path: '/settings', label: 'Settings', icon: <Settings size={22} />,
-
-  },
-
-  { path: '/', label: 'Create', icon: <SquarePlus size={22} /> },
+  { path: "/Dashboard", label: "Dashboard", outline: Squares2X2Outline, solid: Squares2X2Solid },
+  { path: "/invoices", label: "Invoices", outline: DocumentTextOutline, solid: DocumentTextSolid },
+  { path: "/clients", label: "Clients", outline: UsersOutline, solid: UsersSolid },
+  { path: "/settings", label: "Settings", outline: CogOutline, solid: CogSolid },
+  { path: "/", label: "Create", outline: SquaresPlusOutline, solid: SquaresPlusSolid },
 ];
 
-
-{/* Mobile menu items */}
-
-const mobileMenuItems: MenuItem[] = [
-  { path: '/Dashboard', label: 'Dashboard', icon: <LayoutDashboard size={27} /> },
-  {
-    path: '/invoices',
-    label: 'Invoices',
-    icon: <FileText size={27} />,
-  },
-  { path: '/', icon: <CirclePlus size={32} /> },
-  { path: '/clients', label: 'Clients', icon: <Users size={27} /> },
-  { path: '/settings', label: 'Settings', icon: <Settings size={27} /> },
-];
-
-const ICON_SIZE = 20;
 const SideMenu: React.FC = () => {
   const location = useLocation();
   const { user, openAuthModal } = useAuth();
@@ -65,18 +51,18 @@ const SideMenu: React.FC = () => {
   const handleClick = (item: MenuItem) => {
     if (item.submenu) {
       setCollapsed(true);
-      setExpandedItem(prev => (prev === item.label ? null : item.label));
+      setExpandedItem((prev) => (prev === item.label ? null : item.label));
     }
   };
 
   const handleNavigation = (e: React.MouseEvent, path: string, item: MenuItem) => {
-    if (!user) {
-      e.preventDefault();
-      openAuthModal('login');
-      return;
-    }
+    if (!user && path !== "/") {
+    e.preventDefault();
+    openAuthModal("login");
+    return;
+  }
 
-    if (path === '/' && window.innerWidth < 1000) {
+    if (path === "/" && window.innerWidth < 1000) {
       setCollapsed(!collapsed);
     } else {
       handleClick(item);
@@ -85,154 +71,150 @@ const SideMenu: React.FC = () => {
     }
   };
 
-        useEffect(() => {
-          const handleResize = () => {
-            if (window.innerWidth < 1120) {
-              setCollapsed(true);
-            } else {
-                setCollapsed(false);
-                }
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 1120) {
+        setCollapsed(true);
+      } else {
+        setCollapsed(false);
+      }
+    };
 
-          };
+    // Set initial state
+    handleResize();
 
-          // Set initial state
-          handleResize();
+    // Add event listener
+    window.addEventListener("resize", handleResize);
 
-          // Add event listener
-          window.addEventListener('resize', handleResize);
-
-          // Cleanup event listener on component unmount
-          return () => {
-            window.removeEventListener('resize', handleResize);
-          };
-        }, []);
+    // Cleanup event listener on component unmount
+    return () => {
+      window.removeEventListener("resize", handleResize);
+    };
+  }, []);
 
   return (
-      <div className="bg-neutral-900 border-r border-gray-200 overflow-hidden">
-    <div className="hidden md:flex relative items-stretch h-full">
-      {/* Sidebar */}
-      <aside
-        className={`transition-all flex-1 duration-400 justify-between ${
-          collapsed ? 'w-55' : 'w-60'
-        } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
-      >
-        <nav className="flex flex-col gap-1.5">
-
-          {menuItems.map(({ path, label, icon, submenu }) =>
-            submenu ? (
-
-              <a
-                key={label}
-                onClick={() => handleClick({ path, label, icon, submenu })}
-                className={`flex menu-item text-gray-700 items-center gap-3 px-4 py-3 h-[3.2rem] max-h-[3.2rem] font-medium transition-colors
-                    duration-150 text-left text-xl  ${
-                  expandedItem === label ? 'text-black/100 bg-neutral-900' : ''
-                }`}
-              >
-                {icon}
-                {!collapsed && label}
-              </a>
-
-            ) : (
-              <Link
-                key={label}
-                to={user ? path : '#'}
-                onClick={(e) => handleNavigation(e, path, { path, label, icon, submenu })}
-                className={`flex menu-item items-center gap-3 h-[3 rem] max-h-[3.2rem] px-4 py-3 font-medium
-                    transition-colors duration-150 text-xl  ${
-                  location.pathname === path ? 'active' : 'text-gray-700'
-                } ${!user ? 'cursor-pointer' : ''}`}
-              >
-                {icon}
-                {!collapsed && label}
-              </Link>
-            )
-          )}
-        </nav>
-        {/* Upgrade Card */}
-        <aside className="mt-auto">
-          <UpgradeProCard />
-        </aside>
-
-        {/* Support button */}
-        <Link
-          to={user ? "/support" : "#"}
-          onClick={(e) => {
-            if (!user) {
-              e.preventDefault();
-              openAuthModal('login');
-            }
-          }}
-          className="flex items-center gap-2 p-2 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
+    <div className="bg-neutral-900 border-r border-gray-200 overflow-hidden">
+      <div className="hidden md:flex relative items-stretch h-full">
+        {/* Sidebar */}
+        <aside
+          className={`transition-all duration-500 delay-150 ease-in-out flex-1 justify-between ${
+            collapsed ? "w-55" : "w-60"
+          } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
         >
-          <MessageCircle className="w-4 h-4" />
-          {!collapsed && <span>Contact support</span>}
-        </Link>
 
-      </aside>
+          <nav className="flex flex-col gap-1">
+            {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu }) => {
+              const isActive = location.pathname === path;
+              const Icon = isActive ? SolidIcon : OutlineIcon;
 
-      {/* Submenu Panel */}
-       {collapsed && expandedItem && (
-        <div className="w-48 bg-[#f6e9df] pt-10 border-neutral-300 shadow-sm">
-          {menuItems
-              .find(item => item.label === expandedItem)
-              ?.submenu?.map(({ label, path, icon }) => (
-                <div className=" border-neutral-300" key={path}>
-                <Link
-                  key={path}
-                  to={user ? path : '#'}
-                  onClick={(e) => {
-                    if (!user) {
-                      e.preventDefault();
-                      openAuthModal('login');
-                    }
-                  }}
-                  className="flex font-medium cursor-pointer items-center text-lg gap-2 py-3 hover:bg-[#e8dacf] px-4
-                  text-gray-700 hover:text-black/100"
+              return submenu ? (
+                <a
+                  key={label}
+                  onClick={() =>
+                    handleClick({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu })
+                  }
+                  className={`flex items-center gap-3 px-4 py-3 h-[3.2rem] max-h-[3.2rem] font-medium transition-colors duration-150 text-xl ${
+                    expandedItem === label ? "text-black/100 bg-neutral-900" : "text-gray-700"
+                  }`}
                 >
-                  {label}
-
+                  <Icon className="h-6 w-6 text-gray-500" />
+                  {!collapsed && label}
+                </a>
+              ) : (
+                <Link
+                  key={label}
+                  to={user ? path : "#"}
+                  onClick={(e) =>
+                    handleNavigation(e, path, { path, label, outline: OutlineIcon, solid: SolidIcon, submenu })
+                  }
+                  className={`flex items-center gap-3 h-[3 rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
+                    isActive ? "text-black bg-gray-100 hover:text-neutral-900" : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
+                  } ${!user ? "cursor-pointer" : ""}`}
+                >
+                  <Icon className="h-6 w-6" />
+                  {!collapsed && label}
                 </Link>
-                </div>
-              ))}
+              );
+            })}
+          </nav>
 
-        </div>
+          {/* Upgrade Card */}
+          <aside className="mt-auto">
+            <UpgradeProCard />
+          </aside>
 
-      )}
-
-
-
-    </div>
-
-    {/* Mobile Sidebar */}
-    <div className="fixed md:hidden max-h-16 h-16 bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-40">
-      <nav className="flex justify-around items-center mt-1">
-        {mobileMenuItems.map(({ path, label, icon }) => (
+          {/* Support button */}
           <Link
-            key={label}
-            to={user ? path : '#'}
+            to={user ? "/support" : "#"}
             onClick={(e) => {
               if (!user) {
                 e.preventDefault();
-                openAuthModal('login');
+                openAuthModal("login");
               }
             }}
-            className={`flex flex-col gap-1 w-1/6 py-2 px-3 text-xs items-center cursor-pointer rounded-lg text-gray-700 hover:text-black/100 ${
-              location.pathname === path ? 'text-green-900 hover:text-green-800' : 'text-gray-800'
-            }`}
+            className="flex items-center gap-2 p-2 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
           >
-            {icon}
-            {label}
+            <ChatBubbleLeftIcon className="w-4 h-4" />
+            {!collapsed && <span>Contact support</span>}
           </Link>
-        ))}
-      </nav>
+        </aside>
+
+        {/* Submenu Panel */}
+        {collapsed && expandedItem && (
+          <div className="w-48 bg-[#f6e9df] pt-10 border-neutral-300 shadow-sm">
+            {menuItems
+              .find((item) => item.label === expandedItem)
+              ?.submenu?.map(({ label, path }) => (
+                <div className="border-neutral-300" key={path}>
+                  <Link
+                    key={path}
+                    to={user ? path : "#"}
+                    onClick={(e) => {
+                      if (!user) {
+                        e.preventDefault();
+                        openAuthModal("login");
+                      }
+                    }}
+                    className="flex font-medium cursor-pointer items-center text-lg gap-2 py-3 hover:bg-gray-100 px-4 text-gray-700 hover:text-gray-100"
+                  >
+                    {label}
+                  </Link>
+                </div>
+              ))}
+          </div>
+        )}
       </div>
 
+      {/* Mobile Menubar */}
+      <div className="fixed md:hidden max-h-16 h-16 bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-40">
+        <nav className="flex justify-around items-center">
+          {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon }) => {
+            const isActive = location.pathname === path;
+            const Icon = isActive ? SolidIcon : OutlineIcon;
+
+            return (
+              <Link
+                key={label}
+                to={user ? path : "#"}
+                onClick={(e) => {
+                  if (!user && path !== "/") {
+                    e.preventDefault();
+                    openAuthModal("login");
+                  }
+                }}
+                className={`flex transition-all duration-300 delay-100 ease-in-out flex-col gap-1 w-1/6 py-2 px-3 text-xs border-t-4 border-transparent  items-center cursor-pointer ${
+                  isActive ? "text-black/80 hover:text-black/80 border-black/80" : "text-gray-800 hover:text-black/80"
+                }`}
+              >
+                <Icon className="h-6 w-6" />
+
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     </div>
-
-
   );
 };
-
 
 export default SideMenu;
