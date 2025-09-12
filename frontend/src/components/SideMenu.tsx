@@ -108,7 +108,7 @@ const SideMenu: React.FC = () => {
         }, []);
 
   return (
-      <div className="bg-neutral-900 border-r border-gray-200">
+      <div className="bg-neutral-900 border-r border-gray-200 overflow-hidden">
     <div className="hidden md:flex relative items-stretch h-full">
       {/* Sidebar */}
       <aside
