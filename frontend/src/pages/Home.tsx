@@ -9,9 +9,10 @@ const Home = () => {
     const { user, openAuthModal } = useAuth();
 
     return (
-        <div className="h-full bg-white max-h-100dvh text-gray-900 overflow-x-hidden justify-between flex flex-col">
+        <>
+        <div className="h-full bg-white max-h-100dvh  text-gray-900 overflow-x-hidden justify-between flex flex-col">
             <MainMenu background="bg-white" />
-            <section className="flex items-center mx-auto px-4 md:px-16">
+            <section className="flex items-center mx-auto px-8 md:px-16">
                 <div className="flex flex-col md:flex-row items-center w-full mx-auto">
                     {/* Hero Content */}
                     <div className="flex-1 max-w-lg md:max-w-2xl text-center">
@@ -64,20 +65,19 @@ const Home = () => {
                     </div>
                 </div>
             </section>
+            <section className="w-full px-4 md:px-0">
+            <div className="relative bottom-0 max-w-5xl w-full mx-auto md:mt-6 border-b-1 border-white overflow-hidden rounded-t-3xl">
+              <img
+                src="https://images.unsplash.com/photo-1755541516450-644adb257ad0?q=80&w=1480&auto=format&fit=crop&ixlib=rb-
+                4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                className="w-full h-40 md:h-80 object-cover object-[90%_25%] hover:scale-105 transition-transform duration-300"
+              />
 
-            <div className="relative bottom-0 max-w-5xl w-full mx-auto mt-6 border-b-1 border-white overflow-hidden rounded-t-3xl">
-  <img
-    src="https://images.unsplash.com/photo-1755541516450-644adb257ad0?q=80&w=1480&auto=format&fit=crop&ixlib=rb-
-    4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-    className="w-full h-64 md:h-80 object-cover object-[90%_25%] hover:scale-105 transition-transform duration-300"
-  />
-
-</div>
-
-
-
+            </div>
             <Footer />
+            </section>
         </div>
+        </>
     );
 };
 

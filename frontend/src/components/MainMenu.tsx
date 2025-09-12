@@ -87,13 +87,13 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
           {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
-            <a href="/" className="flex items-center gap-1 hover:contrast-125">
+            <a href="/" className="flex items-start gap-1 hover:contrast-125">
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
-                className="h-8 w-8"
+                className="h-10 w-10"
               />
-              <span className="text-2xl hidden sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+              <span className="text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                 envoyce
               </span>
             </a>
@@ -250,7 +250,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
             // Updated Sign In button to open modal instead of navigating
             <button
               onClick={() => openAuthModal('login')}
-              className="ml-4 px-4 py-2.5 hover:bg-[#0e423e]/90 text-[#8eda91] hover:text-[#8eda91] bg-[#0e423e] font-semibold
+              className="ml-4 px-4 py-3 hover:bg-[#0e423e]/90 text-[#D2FEE1] hover:text-[#D2FEE1] bg-[#0e423e] font-[600]
               rounded-lg shadow transition-colors ease-in-out duration-300"
             >
               Sign In
