@@ -14,7 +14,9 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
   const [isUploading, setIsUploading] = useState(false);
 
   const handleClick = () => {
-    fileInputRef.current?.click();
+    if (!isUploading) {
+      fileInputRef.current?.click();
+    }
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,7 +61,49 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
         className="h-40 md:max-w-xs border-2 border-dashed border-3 bg-green-100 rounded-xl flex items-center
         justify-center cursor-pointer hover:border-green-400 hover:bg-green-200 transition relative group overflow-hidden"
       >
-        {logoUrl ? (
+        {isUploading ? (
+          // SVG Loader Animation
+          <div className="flex flex-col items-center justify-center">
+            <svg
+              width="48"
+              height="48"
+              viewBox="0 0 38 38"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-green-500"
+            >
+              <defs>
+                <linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a">
+                  <stop stopColor="currentColor" stopOpacity="0" offset="0%" />
+                  <stop stopColor="currentColor" stopOpacity=".631" offset="63.146%" />
+                  <stop stopColor="currentColor" offset="100%" />
+                </linearGradient>
+              </defs>
+              <g fill="none" fillRule="evenodd">
+                <g transform="translate(1 1)">
+                  <path d="M36 18c0-9.94-8.06-18-18-18" id="Oval-2" stroke="url(#a)" strokeWidth="2">
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      from="0 18 18"
+                      to="360 18 18"
+                      dur="0.9s"
+                      repeatCount="indefinite" />
+                  </path>
+                  <circle fill="currentColor" cx="36" cy="18" r="1">
+                    <animateTransform
+                      attributeName="transform"
+                      type="rotate"
+                      from="0 18 18"
+                      to="360 18 18"
+                      dur="0.9s"
+                      repeatCount="indefinite" />
+                  </circle>
+                </g>
+              </g>
+            </svg>
+            <span className="text-green-500 mt-2">Uploading...</span>
+          </div>
+        ) : logoUrl ? (
           <>
             <img src={logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain p-4" />
             <button
