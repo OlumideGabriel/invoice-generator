@@ -205,7 +205,7 @@ const SideMenu: React.FC = () => {
     </div>
 
     {/* Mobile Sidebar */}
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-40">
+    <div className="absolute md:hidden bottom-1 left-2 right-2 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-40">
       <nav className="flex justify-around items-center mt-1">
         {mobileMenuItems.map(({ path, label, icon }) => (
           <Link
@@ -226,8 +226,6 @@ const SideMenu: React.FC = () => {
           </Link>
         ))}
       </nav>
-      {/* Single benefit */}
-
       </div>
 
     </div>
