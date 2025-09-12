@@ -287,7 +287,7 @@ const InvoiceGenerator: React.FC = () => {
 
   return (
 
-    <div className="py-6 flex flex-col md:flex-row w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-2 sm:p-8 mb-20">
+    <div className="py-6 flex flex-col md:flex-row w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-2 sm:p-8">
       {/* Left Panel (Main Invoice Form) */}
       <div className="block flex-col w-full gap-4">
         {error && (
