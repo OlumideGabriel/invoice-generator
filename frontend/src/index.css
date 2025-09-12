@@ -35,6 +35,7 @@ body {
   display: flex;
   justify-content: center;
   padding: 2rem;
+  min-height: 100dvh;
   background-color: rgba(130, 120, 120, 0.5);
 
 
