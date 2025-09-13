@@ -287,12 +287,12 @@ const InvoiceGenerator: React.FC = () => {
 
   return (
 
-    <div className="py-6 flex flex-col md:flex-row w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-2 sm:p-8">
+    <div className="py-6 flex flex-col md:flex-row w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-0 sm:p-8">
       {/* Left Panel (Main Invoice Form) */}
       <div className="block flex-col w-full gap-4">
         {error && (
   <div className="sticky top-0 z-50">
-    <div className="flex items-center max-w-full xl:max-w-7xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border border-amber-100 mb-4 mx-auto">
+    <div className="flex items-center max-w-full xl:max-w-7xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border  border-amber-100 mb-4 mx-auto">
       <CircleAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
       <span className="flex-1">{error}</span>
       <button
@@ -304,7 +304,7 @@ const InvoiceGenerator: React.FC = () => {
     </div>
   </div>
 )}
-      <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border !border-gray-200 w-full bg-neutral-900 rounded-2xl p-4 sm:p-6 lg:p-8">
+      <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border-none sm:border border-gray-200 w-full bg-transparent sm:bg-white rounded-2xl p-4 sm:p-6 lg:p-8">
 
         <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
           <div className="w-full sm:w-auto">
