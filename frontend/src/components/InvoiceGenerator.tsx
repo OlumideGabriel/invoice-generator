@@ -287,7 +287,7 @@ const InvoiceGenerator: React.FC = () => {
 
   return (
 
-    <div className="py-6 flex flex-col md:flex-row w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-0 sm:p-8">
+    <div className="py-6 flex flex-col md:flex-row w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-0 sm:p-8 pb-20">
       {/* Left Panel (Main Invoice Form) */}
       <div className="block flex-col w-full gap-4">
         {error && (
@@ -497,6 +497,8 @@ const InvoiceGenerator: React.FC = () => {
             <span className="text-2xl sm:text-3xl font-medium !text-[#000]">{getTotal().toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
         </div>
+
+
       </div>
       </div>
       {/* Right Sidebar */}
