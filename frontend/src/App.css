@@ -3,10 +3,12 @@
 html, body, #root {
   overflow-x: hidden;
   height: 100%;
+  min-height-100dvh; /* use min-height, not max-height */
   width: 100%;
   margin: 0;
   padding: 0;
   font-family: Arial, sans-serif;
+  -webkit-overflow-scrolling: touch; /* for smooth scrolling on iOS */
 }
 
 #root {
