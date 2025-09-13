@@ -95,16 +95,36 @@ const InvoiceGenerator: React.FC = () => {
 
   // --- FETCH INVOICES FROM BACKEND ---
   const fetchInvoices = async () => {
-    if (!userId) return;
+      if (!userId) return;
 
-    try {
-      const res = await fetch(`${API_BASE_URL}api/invoices?user_id=${userId}`);
-      const data = await res.json();
-      if (Array.isArray(data.invoices)) {
-        setInvoices(data.invoices);
+      try {
+        const res = await fetch(`${API_BASE_URL}api/invoices?user_id=${userId}`);
+        const data = await res.json();
+        if (Array.isArray(data.invoices)) {
+          setInvoices(data.invoices);
+
+          // Find max invoice number
+          const numbers = data.invoices
+            .map((inv: any) => {
+              const raw = inv.data?.invoice_number || "";
+              const num = raw.replace("#", ""); // strip prefix
+              return parseInt(num, 10);
+            })
+            .filter((n: number) => !isNaN(n));
+
+          if (numbers.length > 0) {
+            const next = Math.max(...numbers) + 1;
+            setInvoiceNumber(`#${next.toString().padStart(4, "0")}`);
+          } else {
+            setInvoiceNumber("#0001");
+          }
+        }
+      } catch (e) {
+        // ignore for now
       }
-    } catch (e) { /* ignore for now */ }
-  };
+    };
+
+
 
   useEffect(() => {
     fetchInvoices();
@@ -140,26 +160,33 @@ const InvoiceGenerator: React.FC = () => {
 
   // --- RESET FORM FOR NEW INVOICE ---
   const resetForm = () => {
-    setSelectedInvoiceId(null);
-    setFrom("");
-    setTo("");
-    setItems([{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
-    setInvoiceNumber("");
-    setIssuedDate(getTodayString());
-    setDueDate(getSevenDaysFromNowString());
-    setPaymentDetails("");
-    setTerms("");
-    setTaxPercent(0);
-    setDiscountPercent(0);
-    setShippingAmount(0);
-    setTaxType('percent');
-    setDiscountType('percent');
-    setShowTax(true);
-    setShowDiscount(false);
-    setShowShipping(true);
-    setLogoUrl(null);
-    // Optionally: setLogoFile(null);
-  };
+      setSelectedInvoiceId(null);
+      setFrom("");
+      setTo("");
+      setItems([{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
+
+      setInvoiceNumber((prev) => {
+        const num = parseInt(prev?.replace("#", ""), 10);
+        const next = isNaN(num) ? 1 : num + 1;
+        return `#${next.toString().padStart(4, "0")}`;
+      });
+
+      setIssuedDate(getTodayString());
+      setDueDate(getSevenDaysFromNowString());
+      setPaymentDetails("");
+      setTerms("");
+      setTaxPercent(0);
+      setDiscountPercent(0);
+      setShippingAmount(0);
+      setTaxType('percent');
+      setDiscountType('percent');
+      setShowTax(true);
+      setShowDiscount(false);
+      setShowShipping(true);
+      setLogoUrl(null);
+    };
+
+
 
   // Handler for drag end
   const onDragEnd = (result: DropResult) => {
