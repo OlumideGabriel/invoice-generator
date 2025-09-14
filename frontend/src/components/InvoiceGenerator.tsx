@@ -145,16 +145,16 @@ const InvoiceGenerator: React.FC = () => {
           const numbers = data.invoices
             .map((inv: any) => {
               const raw = inv.data?.invoice_number || "";
-              const num = raw.replace("#", ""); // strip prefix
+              const num = raw.replace("", ""); // strip prefix
               return parseInt(num, 10);
             })
             .filter((n: number) => !isNaN(n));
 
           if (numbers.length > 0) {
             const next = Math.max(...numbers) + 1;
-            setInvoiceNumber(`#${next.toString().padStart(4, "0")}`);
+            setInvoiceNumber(`${next.toString().padStart(4, "0")}`);
           } else {
-            setInvoiceNumber("#0001");
+            setInvoiceNumber("0001");
           }
         }
       } catch (e) {
@@ -235,7 +235,7 @@ const InvoiceGenerator: React.FC = () => {
       { id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }
     ]);
 
-    setInvoiceNumber(data.invoiceNumber || "");
+    setInvoiceNumber(data.invoiceNumber || "0001");
     setIssuedDate(data.issuedDate || getTodayString());
     setDueDate(data.dueDate || getSevenDaysFromNowString());
     setPaymentDetails(data.paymentDetails || "");
@@ -297,9 +297,9 @@ const InvoiceGenerator: React.FC = () => {
       setItems([{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
 
       setInvoiceNumber((prev) => {
-        const num = parseInt(prev?.replace("#", ""), 10);
+        const num = parseInt(prev?.replace("", ""), 10);
         const next = isNaN(num) ? 1 : num + 1;
-        return `#${next.toString().padStart(4, "0")}`;
+        return `${next.toString().padStart(4, "0")}`;
       });
 
       setIssuedDate(getTodayString());
