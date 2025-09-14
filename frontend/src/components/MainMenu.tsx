@@ -132,9 +132,10 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
               >
                 <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
                   {/* Avatar if available, otherwise show initials/fallback */}
-                  {user?.user_metadata?.avatar_url ? (
+
+                  {user?.profile_picture_url ? (
                     <img
-                      src={user.user_metadata.avatar_url}
+                      src={user.profile_picture_url}
                       alt="User Avatar"
                       className="h-10 w-10 rounded-full"
                     />

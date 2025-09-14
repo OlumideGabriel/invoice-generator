@@ -132,7 +132,7 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
         />
       </div>
       {logoStatus && (
-        <div className="mt-2 text-xs text-gray-500">{logoStatus}</div>
+        <div className="mt-2 hidden text-xs text-gray-500">{logoStatus}</div>
       )}
     </div>
   );

@@ -194,7 +194,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
             {/* Amount display */}
             <div className="flex flex-col w-full">
               <div className="flex md:items-center justify-end md:justify-start min-w-40 mt-1 md:mt-0 py-2.5 rounded-lg">
-                  <div className="text-md  font-semibold text-emerald-900">
+                  <div className="text-md font-semibold text-neutral-900">
                     <span className="text-sm mr-2 text-gray-600 font-medium">
                       {currency.code}
                     </span>

@@ -46,16 +46,17 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   return (
       <>
       {previewPdfUrl && (
-  <div className="fixed inset-0 bg-black grid bg-opacity-50 items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black flex px-2 sm:grid bg-opacity-50 items-center justify-center z-50">
 
-    <div className="bg-white/40 rounded-lg shadow-lg w-full md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col">
+    <div className="bg-white/40 rounded-lg shadow-lg w-full from-neutral-900 to-neutral-300
+    md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col">
       {/* Close Button */}
       <button
         onClick={() => {
           URL.revokeObjectURL(previewPdfUrl);
           setPreviewPdfUrl(null);
         }}
-        className="absolute top-5 right-5 text-black/60 hover:text-black/90 bg-black/5 p-0.5 hover:bg-black/10 rounded-md  z-10"
+        className="absolute top-5 right-5 text-black/60 hover:text-black/90 bg-black/5 p-0.5 hover:bg-black/10 rounded-md z-10"
       >
         <X size={21}/>
       </button>
@@ -73,7 +74,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   </div>
 )}
 
-    <div className="w-full min-w-40 hidden md:flex flex-col sticky top-8 z-10 self-start ">
+    <div className="w-full min-w-40 hidden md:flex flex-col sticky top-8 z-10 self-start">
       {/* Action Buttons */}
       <div className="flex flex-col gap-4 mb-8">
         <InvoiceButton loading={loading} onClick={onSubmit} />
