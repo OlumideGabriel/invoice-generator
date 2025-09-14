@@ -41,6 +41,44 @@ const getSevenDaysFromNowString = () => {
   return `${year}-${month}-${day}`;
 };
 
+// localStorage utility functions
+const localStorageKeys = {
+  INVOICE_DATA: 'invoiceData',
+  LAST_SAVED: 'lastSavedInvoice'
+};
+
+const saveInvoiceToLocalStorage = (invoiceData: any) => {
+  try {
+    localStorage.setItem(localStorageKeys.INVOICE_DATA, JSON.stringify(invoiceData));
+    localStorage.setItem(localStorageKeys.LAST_SAVED, new Date().toISOString());
+    return true;
+  } catch (error) {
+    console.error('Error saving to localStorage:', error);
+    return false;
+  }
+};
+
+const loadInvoiceFromLocalStorage = () => {
+  try {
+    const data = localStorage.getItem(localStorageKeys.INVOICE_DATA);
+    return data ? JSON.parse(data) : null;
+  } catch (error) {
+    console.error('Error loading from localStorage:', error);
+    return null;
+  }
+};
+
+const clearInvoiceFromLocalStorage = () => {
+  try {
+    localStorage.removeItem(localStorageKeys.INVOICE_DATA);
+    localStorage.removeItem(localStorageKeys.LAST_SAVED);
+    return true;
+  } catch (error) {
+    console.error('Error clearing localStorage:', error);
+    return false;
+  }
+};
+
 // For now, this assumes all state/handlers are managed here; you may need to adjust if using a container/hook
 const InvoiceGenerator: React.FC = () => {
   // --- NEW STATE FOR USER/CLIENT/INVOICES ---
@@ -52,6 +90,7 @@ const InvoiceGenerator: React.FC = () => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
   // Use the invoice hook for all invoice-related state and functionality
   const {
@@ -86,7 +125,6 @@ const InvoiceGenerator: React.FC = () => {
     getTotal,
     handleSubmit, // This is the PDF generation function
     previewInvoice,
-    previewInvoiceImage,
     loading, setLoading,
     error, setError,
   } = useInvoice();
@@ -124,11 +162,104 @@ const InvoiceGenerator: React.FC = () => {
       }
     };
 
+  // Load from localStorage on component mount
+  useEffect(() => {
+    const savedInvoice = loadInvoiceFromLocalStorage();
+    if (savedInvoice) {
+      // Only load if we don't have a selected invoice from the backend
+      if (!selectedInvoiceId) {
+        loadInvoiceFromLocalData(savedInvoice);
+      }
+    }
 
+    // Load last saved time
+    const lastSaved = localStorage.getItem(localStorageKeys.LAST_SAVED);
+    if (lastSaved) {
+      setLastSavedTime(new Date(lastSaved).toLocaleString());
+    }
+  }, []);
+
+  // Save to localStorage whenever invoice data changes
+  useEffect(() => {
+    const invoiceData = {
+      from,
+      to,
+      items,
+      invoiceNumber,
+      issuedDate,
+      dueDate,
+      paymentDetails,
+      terms,
+      taxPercent,
+      discountPercent,
+      shippingAmount,
+      taxType,
+      discountType,
+      showTax,
+      showDiscount,
+      showShipping,
+      logoUrl,
+      currency: typeof currency === 'string' ? currency : currency.code
+    };
+
+    // Debounce the save to prevent too frequent writes
+    const timeoutId = setTimeout(() => {
+      saveInvoiceToLocalStorage(invoiceData);
+      setLastSavedTime(new Date().toLocaleString());
+    }, 500);
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    from, to, items, invoiceNumber, issuedDate, dueDate,
+    paymentDetails, terms, taxPercent, discountPercent,
+    shippingAmount, taxType, discountType, showTax,
+    showDiscount, showShipping, logoUrl, currency
+  ]);
 
   useEffect(() => {
     fetchInvoices();
   }, [userId]);
+
+  // Function to load data from localStorage
+  const loadInvoiceFromLocalData = (data: any) => {
+    setFrom(data.from || "");
+    setTo(data.to || "");
+
+    // Ensure items have IDs
+    const itemsWithIds = (data.items || []).map((item: any) => ({
+      ...item,
+      id: item.id || generateId()
+    }));
+
+    setItems(itemsWithIds.length > 0 ? itemsWithIds : [
+      { id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }
+    ]);
+
+    setInvoiceNumber(data.invoiceNumber || "");
+    setIssuedDate(data.issuedDate || getTodayString());
+    setDueDate(data.dueDate || getSevenDaysFromNowString());
+    setPaymentDetails(data.paymentDetails || "");
+    setTerms(data.terms || "");
+    setTaxPercent(data.taxPercent || 0);
+    setDiscountPercent(data.discountPercent || 0);
+    setShippingAmount(data.shippingAmount || 0);
+    setTaxType(data.taxType || 'percent');
+    setDiscountType(data.discountType || 'percent');
+    setShowTax(data.showTax ?? true);
+    setShowDiscount(data.showDiscount ?? false);
+    setShowShipping(data.showShipping ?? true);
+    setLogoUrl(data.logoUrl || null);
+
+    // Set currency if it exists in saved data
+    if (data.currency) {
+      const currencyOption = currencyOptions.find(
+        (opt: any) => opt.code === data.currency || opt === data.currency
+      );
+      if (currencyOption) {
+        setCurrency(currencyOption);
+      }
+    }
+  };
 
   // --- LOAD SELECTED INVOICE INTO FORM ---
   const loadInvoice = (invoice: any) => {
@@ -184,9 +315,11 @@ const InvoiceGenerator: React.FC = () => {
       setShowDiscount(false);
       setShowShipping(true);
       setLogoUrl(null);
+
+      // Clear localStorage when resetting form
+      clearInvoiceFromLocalStorage();
+      setLastSavedTime(null);
     };
-
-
 
   // Handler for drag end
   const onDragEnd = (result: DropResult) => {
@@ -294,7 +427,7 @@ const InvoiceGenerator: React.FC = () => {
 
   const handlePreview = async () => {
     try {
-      const previewUrl = await previewInvoiceImage();
+      const previewUrl = await previewInvoice();
       if (previewUrl) {
         setPreviewPdfUrl(previewUrl);
       }
@@ -310,6 +443,38 @@ const InvoiceGenerator: React.FC = () => {
       loadInvoice(invoice);
     }
     setDropdownOpen(false);
+  };
+
+  // Manual save to localStorage function
+  const manualSaveToLocalStorage = () => {
+    const invoiceData = {
+      from, to, items, invoiceNumber, issuedDate, dueDate,
+      paymentDetails, terms, taxPercent, discountPercent,
+      shippingAmount, taxType, discountType, showTax,
+      showDiscount, showShipping, logoUrl,
+      currency: typeof currency === 'string' ? currency : currency.code
+    };
+    saveInvoiceToLocalStorage(invoiceData);
+    setLastSavedTime(new Date().toLocaleString());
+    alert('Invoice saved to browser storage!');
+  };
+
+  // Manual load from localStorage function
+  const manualLoadFromLocalStorage = () => {
+    const saved = loadInvoiceFromLocalStorage();
+    if (saved) {
+      loadInvoiceFromLocalData(saved);
+      alert('Invoice loaded from browser storage!');
+    } else {
+      alert('No invoice found in browser storage.');
+    }
+  };
+
+  // Manual clear localStorage function
+  const manualClearLocalStorage = () => {
+    clearInvoiceFromLocalStorage();
+    setLastSavedTime(null);
+    alert('Browser storage cleared!');
   };
 
   return (
@@ -332,6 +497,13 @@ const InvoiceGenerator: React.FC = () => {
   </div>
 )}
       <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border-none sm:border border-gray-200 w-full bg-transparent sm:bg-white rounded-2xl p-4 sm:p-6 lg:p-8">
+
+        {/* Auto-save indicator */}
+        {lastSavedTime && (
+          <div className="text-xs hidden text-gray-500 mb-2 text-right">
+            Auto-saved: {lastSavedTime}
+          </div>
+        )}
 
         <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
           <div className="w-full sm:w-auto">
@@ -384,7 +556,7 @@ const InvoiceGenerator: React.FC = () => {
                 placeholder="Who is this invoice to?"
                 noResultsText="Client not found"
                 onChange={(e) => setTo(e.target.value)}
-                onSelect={(client) => setSelectedClient(client)}
+                onSelect={(client) => setClientId(client?.id || null)}
                 apiConfig={{
                   endpoint: "/api/clients",
                   userId: userId
@@ -536,7 +708,7 @@ const InvoiceGenerator: React.FC = () => {
           onPreview={handlePreview}
           previewPdfUrl={previewPdfUrl}
           setPreviewPdfUrl={setPreviewPdfUrl}
-          previewInvoiceImage={previewInvoiceImage}
+          previewInvoice={previewInvoice}
           getTotal={getTotal}
           getSubtotal={getSubtotal}
           getTaxAmount={getTaxAmount}
@@ -551,6 +723,11 @@ const InvoiceGenerator: React.FC = () => {
           shippingAmount={shippingAmount}
           taxType={taxType}
           discountType={discountType}
+          // Add localStorage management functions as props
+          onSaveToLocalStorage={manualSaveToLocalStorage}
+          onLoadFromLocalStorage={manualLoadFromLocalStorage}
+          onClearLocalStorage={manualClearLocalStorage}
+          lastSavedTime={lastSavedTime}
         />
       </div>
     </div>

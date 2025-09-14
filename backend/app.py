@@ -16,6 +16,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from sqlalchemy import text
 from clients import Clients
+from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
 import jwt
@@ -201,25 +202,25 @@ def preview_invoice():
         data = request.get_json()
         app.logger.debug(f"[PREVIEW] Received data: {data}")
         template_data = parse_invoice_data(data)
-        html = render_template('invoice_template3.html', **template_data)
+        html = render_template('invoice.html', **template_data)
 
-        # Render PDF first
+        # Render PDF directly
         pdf_io = BytesIO()
         HTML(string=html).write_pdf(pdf_io)
         pdf_io.seek(0)
 
-        # Convert PDF to PNG using pdf2image
-        from pdf2image import convert_from_bytes
-        images = convert_from_bytes(pdf_io.read())
-        img_io = BytesIO()
-        images[0].save(img_io, format='PNG')
-        img_io.seek(0)
-
-        return send_file(img_io, mimetype='image/png')
+        # Return PDF so frontend can display in a modal <iframe>
+        return send_file(
+            pdf_io,
+            mimetype='application/pdf',
+            as_attachment=False,
+            download_name="invoice_preview.pdf"
+        )
 
     except Exception as e:
         logging.exception("Error in preview_invoice")
         return jsonify({'error': str(e)}), 500
+
 
 
 @app.route('/generate-invoice', methods=['POST'])
@@ -304,44 +305,48 @@ def download_image_for_weasyprint(image_url):
         tmp_file.write(response.content)
         return tmp_file.name
 
-@app.route('/api/users/<uuid:user_id>', methods=['GET'])
-def get_user(user_id):
-    """Fetch user details by user_id"""
-    try:
-        from models import User
+@app.route('/api/users/profile', methods=['GET'])
+def get_user_profile():
+    return Users.get_user_profile()
 
-        user = User.query.filter_by(id=user_id).first()
-        if not user:
-            return jsonify({
-                'success': False,
-                'error': 'User not found'
-            }), 404
-
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'google_id': user.google_id,
-                'auth_provider': user.auth_provider,
-                'auth_method': 'google' if user.google_id else 'native',
-                'is_guest': user.is_guest,
-                'profile_picture_url': user.profile_picture_url,
-                'email_verified': user.email_verified,
-                'data': user.data if user.data else {},
-                'created_at': user.created_at.isoformat() if user.created_at else None,
-                'updated_at': user.updated_at.isoformat() if user.updated_at else None
-            }
-        })
-
-    except Exception as e:
-        app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': 'Failed to fetch user'
-        }), 500
+# @app.route('/api/users/<uuid:user_id>', methods=['GET'])
+# def get_user(user_id):
+#     """Fetch user details by user_id"""
+#     try:
+#         from models import User
+#
+#         user = User.query.filter_by(id=user_id).first()
+#         if not user:
+#             return jsonify({
+#                 'success': False,
+#                 'error': 'User not found'
+#             }), 404
+#
+#         return jsonify({
+#             'success': True,
+#             'user': {
+#                 'id': str(user.id),
+#                 'email': user.email,
+#                 'first_name': user.first_name,
+#                 'last_name': user.last_name,
+#                 'google_id': user.google_id,
+#                 'auth_provider': user.auth_provider,
+#                 'auth_method': 'google' if user.google_id else 'native',
+#                 'is_guest': user.is_guest,
+#                 'profile_picture_url': user.profile_picture_url,
+#                 'email_verified': user.email_verified,
+#                 'data': user.data if user.data else {},
+#                 'created_at': user.created_at.isoformat() if user.created_at else None,
+#                 'updated_at': user.updated_at.isoformat() if user.updated_at else None
+#             }
+#         })
+#
+#     except Exception as e:
+#         app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
+#         return jsonify({
+#             'success': False,
+#             'error': 'Failed to fetch user'
+#         }), 500
 
 
 @app.route('/api/invoices', methods=['GET'])
@@ -905,6 +910,15 @@ def get_business_invoices(business_id):
 def bulk_delete_businesses():
     """Delete multiple businesses at once"""
     return Businesses.bulk_delete_businesses()
+
+# User routes
+@app.route('/api/users/delete', methods=['DELETE'])
+def delete_user():
+    return Users.delete_user()
+
+@app.route('/api/users/password', methods=['PUT'])
+def update_password():
+    return Users.update_password()
 
 
 @app.route('/', methods=['GET'])

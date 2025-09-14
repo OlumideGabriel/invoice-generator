@@ -201,99 +201,72 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     }
   };
 
+
+
   const previewInvoice = async (): Promise<string | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filtered = items.filter((item) => item.name.trim());
-      if (!from.trim() || !to.trim()) throw new Error('Fill "From" and "To" fields.');
-      if (filtered.length === 0) throw new Error('Add at least one valid item.');
+  setLoading(true);
+  setError(null);
 
-      const payload = {
-        from,
-        to,
-        items: filtered,
-        tax_percent: taxPercent,
-        discount_percent: discountPercent,
-        payment_details: paymentDetails,
-        payment_instructions: paymentInstructions,
-        terms,
-        logo_url: logoUrl,
-        invoice_number: invoiceNumber,
-        issued_date: issuedDate,
-        due_date: dueDate,
-        tax_type: taxType,
-        discount_type: discountType,
-        shipping_amount: shippingAmount,
-        show_tax: showTax,
-        show_discount: showDiscount,
-        show_shipping: showShipping,
-        currency: typeof currency === 'string' ? currency : currency?.code || 'EUR',
-        currency_symbol: typeof currency === 'string' ? currency : currency?.symbol || '€',
-        currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
-      };
+  try {
+    // ✅ Validate inputs
+    const filteredItems = items.filter(item => item.name.trim());
+    if (!from.trim() || !to.trim()) throw new Error('Please fill in both "From" and "To" fields.');
+    if (filteredItems.length === 0) throw new Error('Please add at least one valid item.');
 
-      const res = await fetch(`${API_BASE_URL}preview-invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    // ✅ Build payload cleanly
+    const payload = {
+      from,
+      to,
+      items: filteredItems,
+      tax_percent: taxPercent,
+      discount_percent: discountPercent,
+      payment_details: paymentDetails,
+      payment_instructions: paymentInstructions,
+      terms,
+      logo_url: logoUrl,
+      invoice_number: invoiceNumber,
+      issued_date: issuedDate,
+      due_date: dueDate,
+      tax_type: taxType,
+      discount_type: discountType,
+      shipping_amount: shippingAmount,
+      show_tax: showTax,
+      show_discount: showDiscount,
+      show_shipping: showShipping,
+      currency: typeof currency === 'string' ? currency : currency?.code || 'EUR',
+      currency_symbol: typeof currency === 'string' ? currency : currency?.symbol || '€',
+      currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)',
+    };
 
-      if (!res.ok) throw new Error('Failed to fetch preview image');
 
-      const blob = await res.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      return imageUrl;
-    } catch (err) {
-      if (err instanceof Error) setError(err.message);
-      else setError('Unknown error');
-      return null;
-    } finally {
-      setLoading(false);
+
+    // ✅ Fetch preview PDF
+    const response = await fetch(`${API_BASE_URL}preview-invoice`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch invoice preview (${response.status})`);
     }
-  };
 
-  const previewInvoiceImage = async (): Promise<string | null> => {
-    setLoading(true);
-    setError(null);
-    try {
-      const filtered = items.filter((item) => item.name.trim());
-      if (!from.trim() || !to.trim()) throw new Error('Fill "From" and "To" fields.');
-      if (filtered.length === 0) throw new Error('Add at least one valid item.');
 
-      const payload = {
-        from,
-        to,
-        items: filtered,
-        tax_percent: taxPercent,
-        discount_percent: discountPercent,
-        payment_details: paymentDetails,
-        payment_instructions: paymentInstructions,
-        logo_url: logoUrl,
-        invoice_number: invoiceNumber,
-        issued_date: issuedDate,
-        due_date: dueDate,
-      };
 
-      const res = await fetch(`${API_BASE_URL}preview-invoice`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+    // ✅ Create blob URL for preview
+    const blob = await response.blob();
+    return URL.createObjectURL(blob);
 
-      if (!res.ok) throw new Error('Failed to fetch preview image');
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Unexpected error occurred';
+    setError(message);
+    return null;
 
-      const blob = await res.blob();
-      const imageUrl = URL.createObjectURL(blob);
-      return imageUrl;
-    } catch (err) {
-      if (err instanceof Error) setError(err.message);
-      else setError('Unknown error');
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  };
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return {
     from,
@@ -336,7 +309,6 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     getTotal,
     handleSubmit,
     previewInvoice,
-    previewInvoiceImage,
     loading,
     setLoading,
     error,
