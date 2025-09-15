@@ -53,7 +53,7 @@
     .invoice-number {
       font-size: 20px;
       font-weight: 400;
-      color: #2D3748;
+      color: #718096;
       margin-top: -10px;
 
     }
@@ -202,6 +202,7 @@
     .totals-section {
       display: flex;
       justify-content: flex-end;
+      margin-top: 50px;
 
     }
 
@@ -293,6 +294,7 @@
       background: #F2F5F9;
       padding: 15px;
       border-radius: 6px;
+      line-height: 1.1;
     }
 
     /* Print Styles */
@@ -329,6 +331,11 @@
         <img src="{{ logo_url }}" alt="Company Logo">
       {% elif company_logo %}
         <img src="{{ company_logo }}" alt="Company Logo">
+        {% else %}
+        <div style="font-size: 30px; color: #718096; font-weight: 800; margin-left: 10px;
+         align-items: center; display: flex; height: 75px; justify-content: center;">
+            {{ from }}
+        </div>
       {% endif %}
 
       <div>
