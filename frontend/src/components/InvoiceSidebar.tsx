@@ -189,16 +189,25 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         <InvoiceButton loading={loading} onClick={onSubmit} />
       </div>
 
-      {/* Mobile Send Button */}
+      {/* Mobile Preview Button */}
       <button
         type="button"
         onClick={onPreview}
-        disabled={loading}
+        disabled={previewLoading}
         className="w-20 px-0 py-4 text-lg border-2 border-black/90 whitespace-nowrap font-medium rounded-xl
         flex items-center justify-center gap-2 text-black transition"
       >
-        <Eye size={20} />
+      {previewLoading ? (
+            <Spinner size="md" color="current" />
+          ) : (
+            <>
+              <Eye size={20} />
+            </>
+          )}
       </button>
+
+
+
     </div>
 
     {/* Mobile Browser Storage Buttons */}

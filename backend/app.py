@@ -859,6 +859,8 @@ def update_profile():
             'error': 'Failed to update profile'
         }), 500
 
+
+
 # Debug route to check database connection
 @app.route('/db-info')
 def db_info():
