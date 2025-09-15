@@ -435,19 +435,17 @@ const InvoiceGenerator: React.FC = () => {
 };
 
 const handlePreview = async () => {
-  setPreviewLoading(true);
+  // Open modal immediately
+  setPreviewPdfUrl(''); // temporary placeholder for modal open
   try {
-    // Your existing preview logic
-    const pdfUrl = await previewInvoice();
-    if (pdfUrl) {
-      setPreviewPdfUrl(pdfUrl);
-    }
-  } catch (error) {
-    console.error("Error generating preview:", error);
-  } finally {
-    setPreviewLoading(false);
+    const url = await previewInvoice(); // fetch PNG URL from backend
+    setPreviewPdfUrl(url); // set actual preview
+  } catch (err) {
+    console.error('Preview failed', err);
+    setPreviewPdfUrl(null);
   }
 };
+
 
   const handleSelectInvoice = (invoice: any) => {
     if (invoice.id === 'new') {

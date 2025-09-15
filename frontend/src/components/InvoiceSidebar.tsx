@@ -48,34 +48,52 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
 }) => {
   return (
       <>
-      {previewPdfUrl && (
-  <div className="fixed inset-0 bg-black px-2 flex md:grid bg-opacity-70 items-center justify-center z-50">
-
-    <div className="bg-white/40 rounded-lg shadow-lg w-full from-neutral-900 to-neutral-300
-    md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col">
+      {previewPdfUrl !== null && (
+  <div
+    className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 px-2
+    bg-blur-lg"
+    onClick={() => {
+      // Click on backdrop closes the preview
+      if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
+      setPreviewPdfUrl(null);
+    }}
+  >
+    <div
+      className="bg-white/40 rounded-xl shadow-lg md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col transition-all ease-in-out delay-500"
+      onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from closing
+    >
       {/* Close Button */}
       <button
         onClick={() => {
-          URL.revokeObjectURL(previewPdfUrl);
+          if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
           setPreviewPdfUrl(null);
         }}
-        className="absolute top-5 right-5 text-black/60 hover:text-black/90 bg-black/5 p-0.5 hover:bg-black/10 rounded-md z-10"
+        className="absolute top-3 right-3 md:top-5 md:right-5 text-black/60 hover:text-black/90 bg-black/5 p-1 hover:bg-black/10 rounded-lg z-10"
       >
-        <X size={21}/>
+        <X size={18} />
       </button>
 
-      {/* Letter-sized preview with reduced zoom */}
-      <div className="flex justify-center items-center w-full overflow-hidden">
-        <h1 className="sr-only">Invoice Preview Modal</h1>
-        <iframe
-          src={`${previewPdfUrl}#toolbar=0&navpanes=0&scrollbar=0&zoom=20`}
-          title="Invoice Preview"
-          className="aspect-[85/110] w-full !bg-neutral-800 rounded-lg p-2"
-        />
+      {/* Render preview or spinner */}
+      <div className="flex justify-center items-center w-full overflow-hidden p-2 md:p-4 min-h-[400px]">
+        {previewPdfUrl === '' ? (
+          <div className="transition-opacity duration-500 ease-in-out opacity-100">
+            <Spinner size="lg" color="white" />
+          </div>
+        ) : (
+          <img
+            src={previewPdfUrl}
+            alt="Invoice Preview"
+            className="aspect-[85/110] w-full max-w-2xl rounded-lg bg-neutral-800 p-2 object-contain transition-opacity duration-500 ease-in-out opacity-100"
+          />
+        )}
       </div>
     </div>
   </div>
 )}
+
+
+
+
 
     <div className="w-full min-w-40 hidden md:flex flex-col sticky top-8 z-10 self-start">
       {/* Action Buttons */}

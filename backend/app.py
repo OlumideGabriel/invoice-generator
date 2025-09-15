@@ -11,7 +11,6 @@ from dotenv import load_dotenv
 import os
 import logging
 from datetime import datetime
-from io import BytesIO
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
 from sqlalchemy import text
@@ -19,6 +18,9 @@ from clients import Clients
 from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
+from io import BytesIO
+from pdf2image import convert_from_bytes
+import tempfile, os
 import jwt
 import uuid
 from functools import lru_cache
@@ -215,6 +217,70 @@ def parse_invoice_data(data):
     return template_data
 
 
+# @app.route('/preview-invoice', methods=['POST'])
+# def preview_invoice():
+#     temp_files = []  # Store temporary files to clean up later
+#
+#     try:
+#         data = request.get_json()
+#         app.logger.debug(f"[PREVIEW] Received data: {data}")
+#         template_data = parse_invoice_data(data)
+#
+#         # Download and replace external image URLs with local file paths (SAME AS GENERATE)
+#         if 'logo_url' in template_data and template_data['logo_url']:
+#             try:
+#                 logo_path = download_image_for_weasyprint(template_data['logo_url'])
+#                 temp_files.append(logo_path)
+#                 template_data['logo_url'] = logo_path
+#                 app.logger.debug(f"Downloaded logo to: {logo_path}")
+#             except Exception as e:
+#                 app.logger.warning(f"Failed to download logo: {e}")
+#                 # Keep original URL as fallback
+#
+#         html = render_template('invoice_template4.html', **template_data)
+#
+#         # Create SSL context for WeasyPrint (SAME AS GENERATE)
+#         ssl_context = ssl.create_default_context(cafile=certifi.where())
+#
+#         # Render PDF with SSL context
+#         pdf_io = BytesIO()
+#         HTML(
+#             string=html,
+#             base_url=os.path.dirname(os.path.abspath(__file__))
+#         ).write_pdf(pdf_io, ssl_context=ssl_context)
+#         pdf_io.seek(0)
+#
+#         # Clean up temporary files
+#         for temp_file in temp_files:
+#             try:
+#                 os.unlink(temp_file)
+#             except:
+#                 pass
+#
+#         # Return PDF so frontend can display in a modal <iframe>
+#         return send_file(
+#             pdf_io,
+#             mimetype='application/pdf',
+#             as_attachment=False,
+#             download_name="invoice_preview.pdf"
+#         )
+#
+#     except Exception as e:
+#         # Clean up temporary files even if error occurs
+#         for temp_file in temp_files:
+#             try:
+#                 os.unlink(temp_file)
+#             except:
+#                 pass
+#         logging.exception("Error in preview_invoice")
+#         return jsonify({'error': str(e)}), 500
+
+from flask import send_file, jsonify, request
+from io import BytesIO
+from weasyprint import HTML
+from pdf2image import convert_from_bytes
+import ssl, certifi, os, logging
+
 @app.route('/preview-invoice', methods=['POST'])
 def preview_invoice():
     temp_files = []  # Store temporary files to clean up later
@@ -224,7 +290,7 @@ def preview_invoice():
         app.logger.debug(f"[PREVIEW] Received data: {data}")
         template_data = parse_invoice_data(data)
 
-        # Download and replace external image URLs with local file paths (SAME AS GENERATE)
+        # ✅ Download and replace external logo URLs with local file paths
         if 'logo_url' in template_data and template_data['logo_url']:
             try:
                 logo_path = download_image_for_weasyprint(template_data['logo_url'])
@@ -235,12 +301,10 @@ def preview_invoice():
                 app.logger.warning(f"Failed to download logo: {e}")
                 # Keep original URL as fallback
 
+        # ✅ Render HTML template into PDF (intermediate step)
         html = render_template('invoice_template4.html', **template_data)
 
-        # Create SSL context for WeasyPrint (SAME AS GENERATE)
         ssl_context = ssl.create_default_context(cafile=certifi.where())
-
-        # Render PDF with SSL context
         pdf_io = BytesIO()
         HTML(
             string=html,
@@ -248,19 +312,25 @@ def preview_invoice():
         ).write_pdf(pdf_io, ssl_context=ssl_context)
         pdf_io.seek(0)
 
-        # Clean up temporary files
+        # ✅ Convert PDF (first page only) into image
+        images = convert_from_bytes(pdf_io.read(), dpi=150)
+        img_io = BytesIO()
+        images[0].save(img_io, format="PNG")
+        img_io.seek(0)
+
+        # ✅ Clean up temporary logo files
         for temp_file in temp_files:
             try:
                 os.unlink(temp_file)
             except:
                 pass
 
-        # Return PDF so frontend can display in a modal <iframe>
+        # ✅ Return PNG instead of PDF
         return send_file(
-            pdf_io,
-            mimetype='application/pdf',
+            img_io,
+            mimetype='image/png',
             as_attachment=False,
-            download_name="invoice_preview.pdf"
+            download_name="invoice_preview.png"
         )
 
     except Exception as e:
@@ -272,7 +342,6 @@ def preview_invoice():
                 pass
         logging.exception("Error in preview_invoice")
         return jsonify({'error': str(e)}), 500
-
 
 
 @app.route('/generate-invoice', methods=['POST'])
