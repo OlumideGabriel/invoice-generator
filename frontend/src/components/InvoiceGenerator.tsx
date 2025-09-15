@@ -90,6 +90,8 @@ const InvoiceGenerator: React.FC = () => {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false); // For download
+  const [previewLoading, setPreviewLoading] = useState(false); // For preview
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
 
   // Use the invoice hook for all invoice-related state and functionality
@@ -125,7 +127,6 @@ const InvoiceGenerator: React.FC = () => {
     getTotal,
     handleSubmit, // This is the PDF generation function
     previewInvoice,
-    loading, setLoading,
     error, setError,
   } = useInvoice();
 
@@ -411,6 +412,8 @@ const InvoiceGenerator: React.FC = () => {
   };
 
   const handleInvoiceSubmit = async () => {
+  setLoading(true);
+  try {
     // First save to database
     const saved = await saveInvoiceToDatabase();
 
@@ -423,18 +426,28 @@ const InvoiceGenerator: React.FC = () => {
     } else {
       alert("Invoice downloaded (not saved to database). Please check required fields and try again to save.");
     }
-  };
+  } catch (error) {
+    console.error("Error in invoice submission:", error);
+    alert("An error occurred while processing your invoice.");
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handlePreview = async () => {
-    try {
-      const previewUrl = await previewInvoice();
-      if (previewUrl) {
-        setPreviewPdfUrl(previewUrl);
-      }
-    } catch (err) {
-      console.error('Error generating preview:', err);
+const handlePreview = async () => {
+  setPreviewLoading(true);
+  try {
+    // Your existing preview logic
+    const pdfUrl = await previewInvoice();
+    if (pdfUrl) {
+      setPreviewPdfUrl(pdfUrl);
     }
-  };
+  } catch (error) {
+    console.error("Error generating preview:", error);
+  } finally {
+    setPreviewLoading(false);
+  }
+};
 
   const handleSelectInvoice = (invoice: any) => {
     if (invoice.id === 'new') {
@@ -704,6 +717,7 @@ const InvoiceGenerator: React.FC = () => {
       <div className="w-full sm:w-auto md:flex-shrink-0">
         <InvoiceSidebar
           loading={loading}
+          previewLoading={previewLoading}
           onSubmit={handleInvoiceSubmit}
           onPreview={handlePreview}
           previewPdfUrl={previewPdfUrl}

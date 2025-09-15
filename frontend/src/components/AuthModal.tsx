@@ -8,15 +8,16 @@ import Modal from './Modal';
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  initialMode?: 'signup' | 'login';
+  mode: 'signup' | 'login';
+  onModeChange: (mode: 'signup' | 'login') => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ 
-  isOpen, 
-  onClose, 
-  initialMode = 'login' 
+const AuthModal: React.FC<AuthModalProps> = ({
+  isOpen,
+  onClose,
+  mode,
+  onModeChange
 }) => {
-  const [mode, setMode] = useState<'signup' | 'login'>(initialMode);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -30,7 +31,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   const { signinNative } = useAuth();
 
   useEffect(() => {
-    // Reset form when modal opens/closes
+    // Reset form when modal opens/closes or mode changes
     if (!isOpen) {
       setFirstName('');
       setLastName('');
@@ -39,7 +40,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
       setError(null);
       setTerms(false);
     }
-  }, [isOpen]);
+  }, [isOpen, mode]); // Added mode to dependency array
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -186,7 +187,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 className="text-neutral-700 hover:text-neutral-900 underline"
-                onClick={() => { setMode('login'); setError(null); }}
+                onClick={() => { onModeChange('login'); setError(null); }}
               >
                 Log in
               </button>
@@ -197,7 +198,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
               <button
                 type="button"
                 className="text-gray-800 hover:text-gray-900 underline"
-                onClick={() => { setMode('signup'); setError(null); }}
+                onClick={() => { onModeChange('signup'); setError(null); }}
               >
                 Create one
               </button>

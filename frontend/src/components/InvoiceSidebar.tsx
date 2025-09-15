@@ -3,10 +3,12 @@ import InvoiceButton from './InvoiceButton';
 import { X, Eye, Send, Save, Download, Trash2 } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import CurrencySelector from './CurrencySelector';
+import Spinner from './Spinner';
 
 
 interface InvoiceSidebarProps {
   loading: boolean;
+  previewLoading: boolean;
   onSubmit: () => void;
   onPreview: () => void;
   previewPdfUrl?: string | null;
@@ -34,6 +36,7 @@ interface InvoiceSidebarProps {
 
 const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   loading,
+  previewLoading,
   onSubmit,
   onPreview,
   previewPdfUrl,
@@ -99,15 +102,21 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         </button>
 
         {/* Preview Button */}
-        <button
+      <button
           type="button"
           onClick={onPreview}
-          disabled={loading}
+          disabled={previewLoading}
           className="w-40 px-8 py-4 text-lg bg-transparent border-2 hover:bg-[#0f131a] h-[3.5rem] whitespace-nowrap font-medium rounded-xl
           flex items-center justify-center gap-2 text-black hover:text-white transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
         >
-          Preview
-          <Eye size={20} />
+          {previewLoading ? (
+            <Spinner size="md" color="current" />
+          ) : (
+            <>
+              Preview
+              <Eye size={20} />
+            </>
+          )}
         </button>
 
 

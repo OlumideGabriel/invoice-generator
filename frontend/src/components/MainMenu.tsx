@@ -76,9 +76,13 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
     }
   };
 
-  const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
+  const openAuthModal = (mode: 'login' | 'signup') => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
+  };
+
+  const handleAuthModeChange = (mode: 'login' | 'signup') => {
+    setAuthModalMode(mode);
   };
 
   return (
@@ -111,7 +115,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
             </button>
           )}
 
-          {/* Desktop: Right side: Sign In or Avatar */}
+          {/* Desktop: Right side: Sign In/Sign Up or Avatar */}
           {user ? (
             <div className="hidden md:flex relative z-100" ref={menuRef}>
               <span className="flex hidden items-center justify-center mr-7"> {/* Notification bell */}
@@ -248,14 +252,23 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
               )}
             </div>
           ) : (
-            // Updated Sign In button to open modal instead of navigating
-            <button
-              onClick={() => openAuthModal('login')}
-              className="ml-4 px-4 py-3 hover:bg-[#0e423e]/90 text-[#D2FEE1] hover:text-[#D2FEE1] bg-[#0e423e] font-[600]
-              rounded-lg shadow transition-colors ease-in-out duration-300"
-            >
-              Sign In
-            </button>
+            // Updated Sign In and Sign Up buttons to open modal with appropriate mode
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={() => openAuthModal('login')}
+                className="px-2 py-2 text-[#0e423e] hover:text-[#0e423e] font-medium
+                rounded-lg transition-colors ease-in-out duration-300 text-lg"
+              >
+                Sign in
+              </button>
+              <button
+                onClick={() => openAuthModal('signup')}
+                className="px-4 py-3 hover:bg-[#0e423e]/90 text-[#D2FEE1] hover:text-[#D2FEE1] bg-[#0e423e] font-medium
+                rounded-lg shadow transition-colors ease-in-out duration-300"
+              >
+                Sign Up
+              </button>
+            </div>
           )}
         </div>
       </header>
@@ -377,7 +390,8 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        initialMode={authModalMode}
+        mode={authModalMode}
+        onModeChange={handleAuthModeChange}
       />
     </>
   );

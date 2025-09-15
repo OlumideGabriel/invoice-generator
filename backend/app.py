@@ -104,6 +104,25 @@ def upload_logo():
 
 
 
+def format_date(date_value, default=None):
+    """
+    Formats a date into 'Aug 10, 2025' style.
+    Accepts datetime objects or ISO date strings.
+    """
+    if not date_value:
+        return default
+
+    if isinstance(date_value, datetime):
+        return date_value.strftime('%b %d, %Y')
+
+    # Try parsing string
+    try:
+        parsed = datetime.fromisoformat(date_value)
+        return parsed.strftime('%b %d, %Y')
+    except (ValueError, TypeError):
+        return date_value  # fallback: return as-is
+
+
 def parse_invoice_data(data):
     if not data:
         raise ValueError("Missing JSON payload.")
@@ -126,7 +145,7 @@ def parse_invoice_data(data):
         items_with_subtotals.append(item)
         subtotal += sub
 
-    # Handle tax (percent or fixed)
+    # Tax
     tax_percent = float(data.get('tax_percent', 0) or 0)
     tax_type = data.get('tax_type', 'percent')
     show_tax = data.get('show_tax', False)
@@ -134,12 +153,12 @@ def parse_invoice_data(data):
     if show_tax:
         if tax_type == 'percent':
             tax_amount = subtotal * (tax_percent / 100)
-        else:  # fixed
+        else:
             tax_amount = tax_percent
     else:
         tax_amount = 0
 
-    # Handle discount (percent or fixed)
+    # Discount
     discount_percent = float(data.get('discount_percent', 0) or 0)
     discount_type = data.get('discount_type', 'percent')
     show_discount = data.get('show_discount', False)
@@ -147,12 +166,12 @@ def parse_invoice_data(data):
     if show_discount:
         if discount_type == 'percent':
             discount_amount = subtotal * (discount_percent / 100)
-        else:  # fixed
+        else:
             discount_amount = discount_percent
     else:
         discount_amount = 0
 
-    # Handle shipping
+    # Shipping
     shipping_amount = float(data.get('shipping_amount', 0) or 0)
     show_shipping = data.get('show_shipping', False)
 
@@ -162,11 +181,11 @@ def parse_invoice_data(data):
     total = subtotal + tax_amount - discount_amount + shipping_amount
 
     invoice_number = data.get('invoice_number', f"INV-{datetime.now().strftime('%Y%m%d-%H%M%S')}")
-    issued_date = data.get('issued_date', datetime.now().strftime('%Y-%m-%d'))
-    due_date = data.get('due_date', '')
+    issued_date = format_date(data.get('issued_date'), datetime.now().strftime('%b %d, %Y'))
+    due_date = format_date(data.get('due_date'), '')
 
     template_data = {
-        'date': datetime.now().strftime('%B %d, %Y'),
+        'date': datetime.now().strftime('%b %d, %Y'),
         'from': data['from'],
         'to': data['to'],
         'items': items_with_subtotals,
@@ -198,16 +217,43 @@ def parse_invoice_data(data):
 
 @app.route('/preview-invoice', methods=['POST'])
 def preview_invoice():
+    temp_files = []  # Store temporary files to clean up later
+
     try:
         data = request.get_json()
         app.logger.debug(f"[PREVIEW] Received data: {data}")
         template_data = parse_invoice_data(data)
-        html = render_template('invoice.html', **template_data)
 
-        # Render PDF directly
+        # Download and replace external image URLs with local file paths (SAME AS GENERATE)
+        if 'logo_url' in template_data and template_data['logo_url']:
+            try:
+                logo_path = download_image_for_weasyprint(template_data['logo_url'])
+                temp_files.append(logo_path)
+                template_data['logo_url'] = logo_path
+                app.logger.debug(f"Downloaded logo to: {logo_path}")
+            except Exception as e:
+                app.logger.warning(f"Failed to download logo: {e}")
+                # Keep original URL as fallback
+
+        html = render_template('invoice_template4.html', **template_data)
+
+        # Create SSL context for WeasyPrint (SAME AS GENERATE)
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+
+        # Render PDF with SSL context
         pdf_io = BytesIO()
-        HTML(string=html).write_pdf(pdf_io)
+        HTML(
+            string=html,
+            base_url=os.path.dirname(os.path.abspath(__file__))
+        ).write_pdf(pdf_io, ssl_context=ssl_context)
         pdf_io.seek(0)
+
+        # Clean up temporary files
+        for temp_file in temp_files:
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
 
         # Return PDF so frontend can display in a modal <iframe>
         return send_file(
@@ -218,6 +264,12 @@ def preview_invoice():
         )
 
     except Exception as e:
+        # Clean up temporary files even if error occurs
+        for temp_file in temp_files:
+            try:
+                os.unlink(temp_file)
+            except:
+                pass
         logging.exception("Error in preview_invoice")
         return jsonify({'error': str(e)}), 500
 
@@ -245,7 +297,7 @@ def generate_invoice():
                 # Keep original URL as fallback
 
         # Render the HTML template with invoice data
-        html = render_template('invoice_template3.html', **template_data)
+        html = render_template('invoice_template4.html', **template_data)
 
         # Create SSL context for WeasyPrint
         ssl_context = ssl.create_default_context(cafile=certifi.where())
