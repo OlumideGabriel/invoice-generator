@@ -49,7 +49,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   return (
       <>
       {previewPdfUrl && (
-  <div className="fixed inset-0 bg-black sm:px-2 grid bg-opacity-50 items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black px-2 flex md:grid bg-opacity-50 items-center justify-center z-50">
 
     <div className="bg-white/40 rounded-lg shadow-lg w-full from-neutral-900 to-neutral-300
     md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col">
@@ -68,19 +68,10 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
       <div className="flex justify-center items-center w-full overflow-hidden">
         <h1 className="sr-only">Invoice Preview Modal</h1>
         <iframe
-          src={`${previewPdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
+          src={`${previewPdfUrl}#toolbar=0&navpanes=0&scrollbar=0&zoom=40`}
           title="Invoice Preview"
-          className="aspect-[85/110] hidden w-full !bg-neutral-800 rounded-lg p-2"
+          className="aspect-[85/110] w-full !bg-neutral-800 rounded-lg p-2"
         />
-           <div className="w-full max-w-full flex justify-center">
-          <iframe
-            src={`${previewPdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
-            title="Invoice Preview"
-            className="w-full h-[80vh] sm:h-[90vh] rounded-lg p-2 bg-neutral-800"
-            style={{ border: "none" }}
-          />
-        </div>
-
       </div>
     </div>
   </div>
