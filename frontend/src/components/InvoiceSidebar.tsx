@@ -70,8 +70,17 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         <iframe
           src={`${previewPdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
           title="Invoice Preview"
-          className="aspect-[85/110] w-full !bg-neutral-800 rounded-lg p-2"
+          className="aspect-[85/110] hidden w-full !bg-neutral-800 rounded-lg p-2"
         />
+           <div className="w-full max-w-full flex justify-center">
+          <iframe
+            src={`${previewPdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=Fit`}
+            title="Invoice Preview"
+            className="w-full h-[80vh] sm:h-[90vh] rounded-lg p-2 bg-neutral-800"
+            style={{ border: "none" }}
+          />
+        </div>
+
       </div>
     </div>
   </div>
