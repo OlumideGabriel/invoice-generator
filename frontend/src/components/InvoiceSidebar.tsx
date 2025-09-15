@@ -49,7 +49,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   return (
       <>
       {previewPdfUrl && (
-  <div className="fixed inset-0 bg-black flex px-2 sm:grid bg-opacity-50 items-center justify-center z-50">
+  <div className="fixed inset-0 bg-black sm:px-2 grid bg-opacity-50 items-center justify-center z-50">
 
     <div className="bg-white/40 rounded-lg shadow-lg w-full from-neutral-900 to-neutral-300
     md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col">
