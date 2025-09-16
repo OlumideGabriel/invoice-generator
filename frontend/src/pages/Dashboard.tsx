@@ -367,7 +367,7 @@ const Dashboard = () => {
                         {/* New Invoice Button */}
                         <button
                             onClick={() => navigate('/')}
-                            className="lg:inline-flex hidden items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                            className="lg:inline-flex hidden items-center px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
                         >
                             <Plus className="h-4 w-4 mr-2" />
                             New Invoice
@@ -376,10 +376,10 @@ const Dashboard = () => {
                         {/* Mobile floating button */}
                         <button
                             onClick={() => navigate('/')}
-                            className="inline-flex absolute bottom-20 right-5 lg:hidden items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                            className="inline-flex lg:hidden items-center gap-2 px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
                         >
-                            <Plus size={25} />
-                            New Invoice
+                            <Plus size={20} />
+                             New Invoice
                         </button>
                     </div>
                 </div>

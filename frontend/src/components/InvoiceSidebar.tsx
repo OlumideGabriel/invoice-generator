@@ -50,8 +50,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
       <>
       {previewPdfUrl !== null && (
   <div
-    className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 px-2
-    bg-blur-lg"
+    className="fixed inset-0 bg-black bg-blur-50 bg-opacity-60 flex items-center justify-center z-50 px-2"
     onClick={() => {
       // Click on backdrop closes the preview
       if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
@@ -59,7 +58,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
     }}
   >
     <div
-      className="bg-white/40 rounded-xl shadow-lg md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col transition-all ease-in-out delay-500"
+      className="bg-white rounded-xl shadow-lg md:min-w-[600px] sm:min-w-[500px] min-w-full h-auto relative flex flex-col transition-all ease-in-out delay-500"
       onClick={(e) => e.stopPropagation()} // Prevent clicks inside modal from closing
     >
       {/* Close Button */}
@@ -68,16 +67,16 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
           if (previewPdfUrl) URL.revokeObjectURL(previewPdfUrl);
           setPreviewPdfUrl(null);
         }}
-        className="absolute top-3 right-3 md:top-5 md:right-5 text-black/60 hover:text-black/90 bg-black/5 p-1 hover:bg-black/10 rounded-lg z-10"
+        className="absolute top-2 right-2 md:top-3 md:right-3 text-black/60 hover:text-black/90 bg-black/5 p-1 hover:bg-black/10 rounded-lg z-10"
       >
         <X size={18} />
       </button>
 
       {/* Render preview or spinner */}
-      <div className="flex justify-center items-center w-full overflow-hidden p-2 md:p-4 min-h-[400px]">
+      <div className="flex justify-center items-center w-full overflow-hidden  min-h-[400px]">
         {previewPdfUrl === '' ? (
           <div className="transition-opacity duration-500 ease-in-out opacity-100">
-            <Spinner size="lg" color="white" />
+            <Spinner size="xl" color="current" />
           </div>
         ) : (
           <img

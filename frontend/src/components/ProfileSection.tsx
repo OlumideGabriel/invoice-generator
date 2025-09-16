@@ -280,18 +280,18 @@ const ProfileSection = ({ showNotification }) => {
     <div className="space-y-6">
       {/* Profile Header */}
       <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-6 sm:space-y-0">
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-xl font-bold text-white">
+              <div className=" h-20 w-20 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full flex items-center justify-center text-xl font-bold text-white">
                 {user?.profile_picture_url ? (
-                  <img src={user.profile_picture_url} alt="Profile" className="w-16 h-16 rounded-full object-cover" />
+                  <img src={user.profile_picture_url} alt="Profile" className="w-full p-2 rounded-full object-cover" />
                 ) : (
                   <span>{getInitials(user)}</span>
                 )}
               </div>
               <button className="absolute -bottom-1 -right-1 bg-white hover:bg-gray-50 text-gray-600 p-1.5 rounded-full shadow-lg border transition-colors">
-                <Camera className="w-3 h-3" />
+                <Edit2 className="w-3 h-3" />
               </button>
             </div>
             <div>
@@ -300,16 +300,16 @@ const ProfileSection = ({ showNotification }) => {
                   ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
                   : 'User'}
               </h2>
-              <p className="text-gray-600 text-sm">Team Manager</p>
               <div className="flex items-center text-gray-500 text-sm mt-1">
                 <MapPin className="w-3 h-3 mr-1" />
-                <span>Member since {new Date(user?.created_at || Date.now()).getFullYear()}</span>
+                <span>Joined since {new Date(user?.created_at || Date.now()).getFullYear()}</span>
               </div>
             </div>
           </div>
           <button
             onClick={() => isEditing ? handleCancelEdit() : setIsEditing(true)}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+            className="inline-flex min-w-40 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700
+            transition-colors duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isLoading}
           >
             <Edit2 className="w-4 h-4 mr-2" />
@@ -362,9 +362,9 @@ const ProfileSection = ({ showNotification }) => {
       {/* Security */}
       <Card title="Security">
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col md:flex-row items-start justify-between p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center">
-              <Lock className="h-5 w-5 text-gray-400 mr-3" />
+              <Lock className="h-5 w-5 self-start text-gray-400 mr-3" />
               <div>
                 <h4 className="font-medium text-gray-900">Password</h4>
                 <p className="text-sm text-gray-600">Update your account password</p>
@@ -372,7 +372,7 @@ const ProfileSection = ({ showNotification }) => {
             </div>
             <button
               onClick={() => setShowPasswordModal(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 w-full mt-3 md:mt-0 md:w-auto min-w-40 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               Change Password
             </button>
@@ -383,7 +383,7 @@ const ProfileSection = ({ showNotification }) => {
       {/* Account Management */}
       <Card title="Account Management">
         <div className="space-y-4">
-          <div className="flex flex-col md:flex-row items-center justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex flex-col md:flex-row items-start justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
             <div className="flex items-center">
               <Trash2 className="h-5 w-5 self-start text-red-600 mr-3" />
               <div>
@@ -395,7 +395,7 @@ const ProfileSection = ({ showNotification }) => {
             </div>
             <button
               onClick={() => setShowDeleteModal(true)}
-              className="px-4 w-full md:w-auto mt-2 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              className="px-4 w-full mt-3 md:mt-0 min-w-40 md:w-auto py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               Delete Account
             </button>

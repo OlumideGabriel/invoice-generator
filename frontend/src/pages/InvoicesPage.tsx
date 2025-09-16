@@ -431,11 +431,12 @@ const InvoicesPage = () => {
                 onClick={() => {
                   window.location.href = '/';
                 }}
-                className="lg:inline-flex hidden items-center px-3 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                className="inline-flex items-center px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Create Invoice
+                <Plus className="h-5 w-5 mr-2" />
+                New <span className="ml-1 hidden lg:inline">Invoice</span>
               </button>
+
             </div>
           </div>
         </div>
@@ -552,7 +553,7 @@ const InvoicesPage = () => {
               </p>
               <button
                 onClick={() => window.location.href = '/'}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex hidden items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Create First Invoice

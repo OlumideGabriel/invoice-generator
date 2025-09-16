@@ -26,7 +26,7 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
           role="button"
           tabIndex={0}
           onClick={() => setIsOpen(!isOpen)}
-          className="w-full lg:py-3 py-3 px-6 pr-16 text-gray-400 rounded-md bg-gray-100 md:bg-transparent md:hover:bg-gray-200 "
+          className="w-full lg:py-3 py-3 px-6 pr-16 text-gray-400 rounded-md bg-white md:bg-transparent md:hover:bg-gray-200 "
           aria-haspopup="listbox"
           aria-expanded={isOpen}
         >

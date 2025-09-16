@@ -1,13 +1,13 @@
 import React from 'react';
 
 interface SpinnerProps {
-  size?: 'sm' | 'md' | 'lg' | 'xl';
-  color?: 'white' | 'primary' | 'gray' | 'current';
+  size?: 'sm' | 'md' | 'lg' | 'xl' ;
+  color?: 'white' | 'primary' | 'gray' | 'current' | 'accent';
   className?: string;
 }
 
 const Spinner: React.FC<SpinnerProps> = ({
-  size = 'md',
+  size = '2xl',
   color = 'current',
   className = ''
 }) => {
@@ -22,7 +22,8 @@ const Spinner: React.FC<SpinnerProps> = ({
     white: 'text-white',
     primary: 'text-blue-600',
     gray: 'text-gray-400',
-    current: 'text-current'
+    current: 'text-current',
+    accent: 'text-[#d2fee1]'
   };
 
   return (

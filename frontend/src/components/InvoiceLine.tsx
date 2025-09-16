@@ -88,7 +88,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
         marginBottom: '5px',
       }}
       className={`flex group rounded-xl transition-all duration-200 items-start border-none ${
-        snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-white'
+        snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-transparent'
       }`}
     >
       {/* Drag handle icon */}

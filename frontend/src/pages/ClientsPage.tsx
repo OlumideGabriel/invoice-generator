@@ -254,18 +254,10 @@ const ClientsPage = () => {
             </div>
             <button
               onClick={handleCreateClient}
-              className="lg:inline-flex hidden items-center px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Client
-            </button>
-
-            <button
-              onClick={handleCreateClient}
-              className="inline-flex absolute bottom-20 right-5 lg:hidden items-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
-            >
-              <Plus size={25} />
-                Add Client
+              <Plus className="h-5 w-5 mr-2" />
+              Add <span className="ml-1 hidden lg:inline">Client</span>
             </button>
           </div>
         </div>
