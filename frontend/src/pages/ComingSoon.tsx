@@ -19,7 +19,8 @@ const ComingSoon: React.FC = () => {
         Our Customer Support page is currently under development and will be available soon.</p>
 
         <div className=" rounded-lg p-4 mb-6">
-        <button onclick="window.location.href='mailto:support@envoyce.xyz'">
+        <button onClick={() => window.location.href = 'mailto:support@envoyce.xyz'}
+        className="w-full bg-white border border-gray-300 py-3 px-4 rounded-lg hover:bg-gray-100 transition-colors font-medium">
           <div className="flex items-center justify-center">
             <Mail className="h-5 w-5 text-gray-600 mr-2" />
             <span className="text-gray-800 font-medium">
