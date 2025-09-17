@@ -398,7 +398,7 @@ const TermsOfServicePage = () => {
 
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="space-y-2 text-sm">
-              <p><strong>Email:</strong> contact@envoyce.xyz</p>
+              <p><strong>Email:</strong>support@envoyce.xyz</p>
               <p><strong>Address:</strong> Liverpool, UK</p>
               <p><strong>Response Time:</strong> We will respond to legal inquiries within 5 business days</p>
             </div>

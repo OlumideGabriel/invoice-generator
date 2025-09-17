@@ -205,14 +205,14 @@ const ProfileSection = ({ showNotification }) => {
     <>
       <button
         onClick={resetPasswordForm}
-        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        className="px-4 py-2 lg:w-1/2 h-10 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
         disabled={isLoading}
       >
         Cancel
       </button>
       <button
         onClick={handlePasswordSubmit}
-        className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 lg:w-1/2 h-10 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isLoading}
       >
         {isLoading ? 'Updating...' : 'Update Password'}
@@ -224,14 +224,14 @@ const ProfileSection = ({ showNotification }) => {
     <>
       <button
         onClick={resetDeleteForm}
-        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        className="px-4 py-2 lg:w-1/2 h-10 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
         disabled={isLoading}
       >
         Keep Account
       </button>
       <button
         onClick={handleDeleteAccount}
-        className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 lg:w-1/2 h-10 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isLoading}
       >
         {isLoading ? 'Deleting...' : 'Delete Forever'}

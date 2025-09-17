@@ -19,6 +19,8 @@ import ClientsPage from './pages/ClientsPage';
 import Home from './pages/Home';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import ComingSoon from './pages/ComingSoon';
+
 
 const App: React.FC = () => {
   const invoice = useInvoice();
@@ -86,8 +88,11 @@ const AppContent: React.FC = () => {
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/auth/callback" element={<ProtectedRoute><AuthCallback /></ProtectedRoute>} />
             <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+            <Route path="/clients/new" element={<ClientsPage />} />
+            <Route path="/clients/edit/:id" element={<ClientsPage />} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
 
 
             {/* Public routes */}

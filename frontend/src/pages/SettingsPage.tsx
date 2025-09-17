@@ -157,7 +157,7 @@ const SettingsPage = () => {
             <div>
               <h4 className="font-semibold text-gray-900 mb-1">Current Plan</h4>
               <p className="text-2xl font-bold text-blue-600">Free Plan</p>
-              <p className="text-sm text-gray-600 mt-1">5 invoices per month</p>
+              <p className="text-sm hidden text-gray-600 mt-1">5 invoices per month</p>
             </div>
             <CreditCard className="h-12 w-12 text-blue-500" />
           </div>

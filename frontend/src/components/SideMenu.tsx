@@ -68,7 +68,7 @@ const SideMenu: React.FC = () => {
       return;
     }
 
-    
+
 
     // Finally, navigate
     navigate(path);
@@ -155,8 +155,7 @@ const SideMenu: React.FC = () => {
           </aside>
 
           {/* Support button */}
-          <a
-            href="/support"
+          <button
             onClick={(e) => {
               if (!user) {
                 e.preventDefault();
@@ -169,7 +168,7 @@ const SideMenu: React.FC = () => {
           >
             <ChatBubbleLeftIcon className="w-4 h-4" />
             {!collapsed && <span>Contact support</span>}
-          </a>
+          </button>
         </aside>
 
         {/* Submenu Panel */}

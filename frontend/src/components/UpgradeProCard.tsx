@@ -11,7 +11,7 @@ export default function UpgradeProCard() {
   }
 
   return (
-    <div className="flex items-start lg:block z-10 w-full">
+    <div className="flex items-start hidden z-10 w-full">
       <div className="bg-[#d2fee1] shadow-xs hidden xl:block p-4 hover:shadow-sm transition-shadow relative">
         {/* Close Button */}
         <button

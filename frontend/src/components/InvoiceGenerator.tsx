@@ -494,19 +494,19 @@ const handlePreview = async () => {
       {/* Left Panel (Main Invoice Form) */}
       <div className="block flex-col w-full gap-4">
         {error && (
-  <div className="sticky top-0 z-50">
-    <div className="flex items-center max-w-full xl:max-w-7xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border  border-amber-100 mb-4 mx-auto">
-      <CircleAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
-      <span className="flex-1">{error}</span>
-      <button
-        onClick={() => setError('')}
-        className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
-      >
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  </div>
-)}
+          <div className="sticky top-0 z-50 transform">
+            <div className={`flex items-center max-w-full xl:max-w-7xl gap-3 text-amber-700 bg-amber-50 px-4 py-3 rounded-lg shadow-sm border border-amber-100 mb-4 mx-auto transition-all duration-300 ${error ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-2'}`}>
+              <CircleAlert className="w-5 h-5 text-amber-500 flex-shrink-0" />
+              <span className="flex-1">{error}</span>
+              <button
+                onClick={() => setError('')}
+                className="text-amber-500 hover:text-amber-700 transition-colors flex-shrink-0"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
       <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border-none sm:border border-gray-200 w-full bg-transparent sm:bg-white rounded-2xl p-4 sm:p-6 lg:p-8">
 
         {/* Auto-save indicator */}
@@ -548,33 +548,34 @@ const handlePreview = async () => {
         </div>
         <header className="flex flex-col lg:flex-row items-end md:flex-nowrap justify-between gap-6 mb-10">
           <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-auto">
-            <div className="w-full lg:w-auto">
-              <PartyField
-                label="From"
-                value={from}
-                placeholder="Sender's name..."
-                noResultsText="Business not found"
-                onChange={(e) => setFrom(e.target.value)}
-                apiConfig={{
-                  endpoint: '/api/businesses',
-                  userId: userId
-                }}
-              />
-            </div>
-            <div className="w-full lg:w-auto">
-              <PartyField
-                label="To"
-                value={to}
-                placeholder="Who is this invoice to?"
-                noResultsText="Client not found"
-                onChange={(e) => setTo(e.target.value)}
-                onSelect={(client) => setClientId(client?.id || null)}
-                apiConfig={{
-                  endpoint: "/api/clients",
-                  userId: userId
-                }}
-              />
-            </div>
+            <PartyField
+          label="From"
+          value={from}
+          placeholder="Sender's name..."
+          noResultsText="Business not found"
+          onChange={(e) => setFrom(e.target.value)}
+          onSelect={(business) => setBusinessId(business?.id || null)}
+          apiConfig={{
+            endpoint: '/api/businesses',
+            userId: userId
+          }}
+          addLabel="Add New Business"
+        />
+
+        <PartyField
+          label="To"
+          value={to}
+          placeholder="Who is this invoice to?"
+          noResultsText="Client not found"
+          onChange={(e) => setTo(e.target.value)}
+          onSelect={(client) => setClientId(client?.id || null)}
+          apiConfig={{
+            endpoint: '/api/clients',
+            userId: userId
+          }}
+          addLabel="Add New Client"
+        />
+
           </div>
 
           <div className="lg:items-end w-full rounded-lg flex flex-col md:flex-row lg:flex-col gap-4">
