@@ -19,6 +19,7 @@ import ClientsPage from './pages/ClientsPage';
 import Home from './pages/Home';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
+import SupportForm from './pages/SupportForm';
 import ComingSoon from './pages/ComingSoon';
 
 

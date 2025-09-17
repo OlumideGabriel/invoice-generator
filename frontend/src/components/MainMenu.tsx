@@ -5,6 +5,10 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Tooltip from './Tooltip';
 import AuthModal from './AuthModal';
+// Heroicons - Outline
+import {
+  ChatBubbleLeftIcon
+} from "@heroicons/react/24/outline";
 
 // Define the props interface
 interface MainMenuProps {
@@ -289,55 +293,33 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
               mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
             }`}
           >
+
+            {/* Off-canvas menu starts here */}
+          <div className="flex flex-col h-full justify-between">
             {/* Header with Logo */}
-            <div className="flex items-center justify-between py-4 px-7 border-b border-gray-200">
-              <div className="flex items-center gap-1">
-                <img
-                  src="/envoyce.svg"
-                  alt="Envoyce Logo"
-                  className="h-8 w-8"
-                />
-                <span className="text-2xl tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
-                  envoyce
-                </span>
-              </div>
-              <button
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center w-10 h-10 rounded-md text-gray-400
-                  hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
-                aria-label="Close menu"
-              >
-                <X className="w-6 h-6" />
-              </button>
-            </div>
+              <div>
+                <div className="flex items-center justify-between py-4 px-7 border-b border-gray-200">
+                  <div className="flex items-center gap-1">
+                    <img
+                      src="/envoyce.svg"
+                      alt="Envoyce Logo"
+                      className="h-8 w-8"
+                    />
+                    <span className="text-2xl tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+                      envoyce
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-center w-10 h-10 rounded-md text-gray-400
+                      hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
+                    aria-label="Close menu"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
 
-            {/* User Profile Section */}
-            <div className="flex absolute bottom-0 w-full items-center py-7 px-7 bg-gray-50 border-t border-gray-200">
-              <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
-                {/* Avatar if available, otherwise show initials/fallback */}
-                {user?.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="User Avatar"
-                    className="h-12 w-12 mr-4 rounded-full"
-                  />
-                ) : (
-                  <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
-                    {getInitials(user) || <User className="w-6 h-6" />}
-                  </span>
-                )}
-              </span>
-
-              <div className="flex flex-col min-w-0">
-                <span className="font-medium text-gray-900">
-                  {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
-                </span>
-                <span className="text-sm text-gray-500">{user?.email}</span>
-              </div>
-            </div>
-
-            {/* Menu Items */}
-            <nav className="flex flex-col p-4 space-y-2">
+              <div className="pt-2 flex flex-col p-4 relative">
               <Link
                 to="/settings"
                 className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
@@ -373,16 +355,63 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                 <Scale className="w-5 h-5 mr-3" />
                 Terms of Service
               </Link>
+              </div>
+
+
+              </div>
+
+            {/* Menu Items */}
+            <nav className="flex flex-col p-4 relative">
+                {/* Bottom Section with Sign Out and User Info */}
+              <div className="">
+              <hr className="border-gray-300 my-2" />
+              <Link
+                to="/support"
+                className="flex items-center px-4 py-3  text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                onClick={() => setMobileMenuOpen(false)}
+              >
+                <ChatBubbleLeftIcon className="w-5 h-5 mr-3" />
+                Support
+              </Link>
+
 
               <button
                 onClick={handleMobileLogout}
-                className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150 w-full text-left"
+                className="flex items-center px-4 py-3 text-red-700 rounded-lg bg-red-50 hover:bg-red-100 hover:text-red-900 transition-colors duration-150 w-full text-left"
               >
                 <LogOut className="w-5 h-5 mr-3" />
                 Sign Out
               </button>
+
+              {/* User Profile Section */}
+            <div className="flex w-full !bg-gray-100 rounded-lg items-center p-6 mt-4 bg-gray-50 ">
+              <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
+                {/* Avatar if available, otherwise show initials/fallback */}
+                {user?.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    alt="User Avatar"
+                    className="h-12 w-12 mr-4 rounded-full"
+                  />
+                ) : (
+                  <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 mr-2 rounded-full justify-center items-center">
+                    {getInitials(user) || <User className="w-6 h-6" />}
+                  </span>
+                )}
+              </span>
+
+              <div className="flex flex-col min-w-0">
+                <span className="font-medium text-gray-900">
+                  {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
+                </span>
+                <span className="text-sm text-gray-500">{user?.email}</span>
+              </div>
+              </div>
+               </div>
+
             </nav>
           </div>
+        </div>
         </div>
       )}
 
