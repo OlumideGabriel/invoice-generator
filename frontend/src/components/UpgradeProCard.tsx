@@ -12,7 +12,7 @@ export default function UpgradeProCard() {
 
   return (
     <div className="flex items-start lg:block z-10 w-full">
-      <div className="bg-[#d2fee1] shadow-xs hidden lg:block p-4 hover:shadow-sm transition-shadow relative">
+      <div className="bg-[#d2fee1] shadow-xs hidden xl:block p-4 hover:shadow-sm transition-shadow relative">
         {/* Close Button */}
         <button
           onClick={() => setIsVisible(false)}
@@ -46,7 +46,7 @@ export default function UpgradeProCard() {
       </div>
 
       {/* Upgrade Mobile */}
-      <div className="w-full flex lg:hidden justify-center items-center">
+      <div className="w-full flex xl:hidden justify-center items-center">
           <button
             onClick={() => navigate("/settings?section=billing")}
             className="bg-[#d2fee1] shadow-xs py-2 w-full rounded-md hover:shadow-sm hover:bg-[#8eda91] transition-shadow

@@ -349,21 +349,38 @@ const InvoicesPage = () => {
     }
   };
 
-  const getStatusConfig = (status: string = '') => {
-    switch (status.toLowerCase()) {
-      case 'draft':
-        return { label: 'Draft', className: 'bg-gray-100 text-gray-700 border border-gray-200' };
-      case 'sent':
-      case 'in progress':
-        return { label: 'Sent', className: 'bg-blue-50 text-blue-600 border border-blue-200' };
-      case 'paid':
-        return { label: 'Paid', className: 'bg-green-50 text-green-600 border border-green-200' };
-      case 'overdue':
-        return { label: 'Overdue', className: 'bg-red-50 text-red-600 border border-red-200' };
-      default:
-        return { label: status.charAt(0).toUpperCase() + status.slice(1), className: 'bg-gray-100 text-gray-700 border border-gray-200' };
-    }
-  };
+  const getStatusConfig = (status = '') => {
+        switch (status.toLowerCase()) {
+            case 'draft':
+                return {
+                    label: 'Draft',
+                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                };
+            case 'sent':
+            case 'in progress':
+                return {
+                    label: 'Sent',
+                    className: 'bg-blue-50 text-blue-600 border border-blue-200'
+                };
+            case 'paid':
+                return {
+                    label: 'Paid',
+                    className: 'bg-green-50 text-green-600 border border-green-200'
+                };
+            case 'overdue':
+                return {
+                    label: 'Overdue',
+                    className: 'bg-red-50 text-red-600 border border-red-200'
+                };
+            default:
+                return {
+                    label: status.charAt(0).toUpperCase() + status.slice(1),
+                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                };
+        }
+    };
+
+
 
   const getCustomerInitials = (customerName: string): string => {
     return customerName
@@ -429,7 +446,7 @@ const InvoicesPage = () => {
               </button>
               <button
                 onClick={() => {
-                  window.location.href = '/';
+                  window.location.href = '/new';
                 }}
                 className="inline-flex items-center px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
               >
@@ -552,7 +569,7 @@ const InvoicesPage = () => {
                 {searchTerm || statusFilter ? 'No invoices match your criteria.' : 'Get started by creating your first invoice.'}
               </p>
               <button
-                onClick={() => window.location.href = '/'}
+                onClick={() => window.location.href = '/new'}
                 className="inline-flex hidden items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -564,7 +581,7 @@ const InvoicesPage = () => {
               <table className="w-full">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="px-6 py-3 text-left">
+                    <th className="px-4 py-3 text-left">
                       <input
                         type="checkbox"
                         className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
@@ -572,20 +589,20 @@ const InvoicesPage = () => {
                         onChange={(e) => handleSelectAll(e.target.checked)}
                       />
                     </th>
+                    <th className="px-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Invoice #
+                    </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Client
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount
+                      Amount Due
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Invoice #
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Issued
+                      Date Issued
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Due Date
@@ -606,13 +623,16 @@ const InvoicesPage = () => {
 
                     return (
                       <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4 w-2">
                           <input
                             type="checkbox"
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                             checked={selectedInvoices.has(invoice.id)}
                             onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
                           />
+                        </td>
+                        <td className="px-0 text-left py-4 text-sm text-gray-900">
+                          {invoice.data?.invoice_number || '-'}
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center">
@@ -638,19 +658,17 @@ const InvoicesPage = () => {
                           </div>
                         </td>
                         <td className="px-6 py-4">
-                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>
+                          <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
                             {statusConfig.label}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-900">
-                          {invoice.data?.invoice_number || '-'}
-                        </td>
+
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {formatDate(invoice.data?.issued_date)}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
-                          {formatDate(invoice.data?.due_date)}
-                        </td>
+                          {invoice.data?.due_date ? formatDate(invoice.data.due_date) : 'N/A'}
+                          </td>
                         <td className="px-6 py-4 text-right relative">
                           <div className="relative inline-block text-left">
                             <button

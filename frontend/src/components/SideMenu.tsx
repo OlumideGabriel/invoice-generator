@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import UpgradeProCard from "./UpgradeProCard";
 import { useCurrency } from "../context/CurrencyContext";
@@ -32,17 +32,17 @@ interface MenuItem {
   submenu?: { label: string; path: string }[];
 }
 
-// Desktop + Mobile use the same config
 const menuItems: MenuItem[] = [
   { path: "/Dashboard", label: "Dashboard", outline: Squares2X2Outline, solid: Squares2X2Solid },
   { path: "/invoices", label: "Invoices", outline: DocumentTextOutline, solid: DocumentTextSolid },
   { path: "/clients", label: "Clients", outline: UsersOutline, solid: UsersSolid },
   { path: "/settings", label: "Settings", outline: CogOutline, solid: CogSolid },
-  { path: "/", label: "Create", outline: SquaresPlusOutline, solid: SquaresPlusSolid },
+  { path: "/new", label: "Create", outline: SquaresPlusOutline, solid: SquaresPlusSolid },
 ];
 
 const SideMenu: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, openAuthModal } = useAuth();
 
   const [collapsed, setCollapsed] = useState(false);
@@ -55,20 +55,23 @@ const SideMenu: React.FC = () => {
     }
   };
 
-  const handleNavigation = (e: React.MouseEvent, path: string, item: MenuItem) => {
-    if (!user && path !== "/") {
+  const handleNavigation = (
+    e: React.MouseEvent,
+    path: string,
+    item: MenuItem
+  ) => {
     e.preventDefault();
-    openAuthModal("login");
-    return;
-  }
 
-    if (path === "/" && window.innerWidth < 1000) {
-      setCollapsed(!collapsed);
-    } else {
-      handleClick(item);
-      setCollapsed(false);
-      setExpandedItem(null);
+    // Unauthenticated users: block all except /new
+    if (!user && path !== "/new") {
+      openAuthModal("login");
+      return;
     }
+
+    
+
+    // Finally, navigate
+    navigate(path);
   };
 
   useEffect(() => {
@@ -80,16 +83,9 @@ const SideMenu: React.FC = () => {
       }
     };
 
-    // Set initial state
     handleResize();
-
-    // Add event listener
     window.addEventListener("resize", handleResize);
-
-    // Cleanup event listener on component unmount
-    return () => {
-      window.removeEventListener("resize", handleResize);
-    };
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   return (
@@ -101,7 +97,6 @@ const SideMenu: React.FC = () => {
             collapsed ? "w-55" : "w-60"
           } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
         >
-
           <nav className="flex flex-col gap-1">
             {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu }) => {
               const isActive = location.pathname === path;
@@ -110,30 +105,46 @@ const SideMenu: React.FC = () => {
               return submenu ? (
                 <a
                   key={label}
-                  onClick={() =>
-                    handleClick({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu })
+                  onClick={(e) =>
+                    handleNavigation(e, path, {
+                      path,
+                      label,
+                      outline: OutlineIcon,
+                      solid: SolidIcon,
+                      submenu,
+                    })
                   }
                   className={`flex items-center gap-3 px-4 py-3 h-[3.2rem] max-h-[3.2rem] font-medium transition-colors duration-150 text-xl ${
-                    expandedItem === label ? "text-black/100 bg-neutral-900" : "text-gray-700"
+                    expandedItem === label
+                      ? "text-black/100 bg-neutral-900"
+                      : "text-gray-700"
                   }`}
                 >
                   <Icon className="h-6 w-6 text-gray-500" />
                   {!collapsed && label}
                 </a>
               ) : (
-                <Link
+                <a
                   key={label}
-                  to={user ? path : "#"}
+                  href={path} // dummy href for accessibility
                   onClick={(e) =>
-                    handleNavigation(e, path, { path, label, outline: OutlineIcon, solid: SolidIcon, submenu })
+                    handleNavigation(e, path, {
+                      path,
+                      label,
+                      outline: OutlineIcon,
+                      solid: SolidIcon,
+                      submenu,
+                    })
                   }
                   className={`flex items-center gap-3 h-[3 rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
-                    isActive ? "text-black bg-gray-100 hover:text-neutral-900" : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
+                    isActive
+                      ? "text-black bg-gray-100 hover:text-neutral-900"
+                      : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
                   } ${!user ? "cursor-pointer" : ""}`}
                 >
                   <Icon className="h-6 w-6" />
                   {!collapsed && label}
-                </Link>
+                </a>
               );
             })}
           </nav>
@@ -144,19 +155,21 @@ const SideMenu: React.FC = () => {
           </aside>
 
           {/* Support button */}
-          <Link
-            to={user ? "/support" : "#"}
+          <a
+            href="/support"
             onClick={(e) => {
               if (!user) {
                 e.preventDefault();
                 openAuthModal("login");
+              } else {
+                navigate("/support");
               }
             }}
             className="flex items-center gap-2 p-2 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
           >
             <ChatBubbleLeftIcon className="w-4 h-4" />
             {!collapsed && <span>Contact support</span>}
-          </Link>
+          </a>
         </aside>
 
         {/* Submenu Panel */}
@@ -166,19 +179,20 @@ const SideMenu: React.FC = () => {
               .find((item) => item.label === expandedItem)
               ?.submenu?.map(({ label, path }) => (
                 <div className="border-neutral-300" key={path}>
-                  <Link
-                    key={path}
-                    to={user ? path : "#"}
+                  <a
+                    href={path}
                     onClick={(e) => {
                       if (!user) {
                         e.preventDefault();
                         openAuthModal("login");
+                      } else {
+                        navigate(path);
                       }
                     }}
                     className="flex font-medium cursor-pointer items-center text-lg gap-2 py-3 hover:bg-gray-100 px-4 text-gray-700 hover:text-gray-100"
                   >
                     {label}
-                  </Link>
+                  </a>
                 </div>
               ))}
           </div>
@@ -193,22 +207,18 @@ const SideMenu: React.FC = () => {
             const Icon = isActive ? SolidIcon : OutlineIcon;
 
             return (
-              <Link
+              <a
                 key={label}
-                to={user ? path : "#"}
-                onClick={(e) => {
-                  if (!user && path !== "/") {
-                    e.preventDefault();
-                    openAuthModal("login");
-                  }
-                }}
-                className={`flex transition-all duration-300 delay-100 ease-in-out flex-col gap-1 w-1/6 py-2 px-3 text-xs border-t-4 border-transparent  items-center cursor-pointer ${
-                  isActive ? "text-black/80 hover:text-black/80 border-black/80" : "text-gray-800 hover:text-black/80"
+                href={path}
+                onClick={(e) => handleNavigation(e, path, { path, label, outline: OutlineIcon, solid: SolidIcon })}
+                className={`flex transition-all duration-300 delay-100 ease-in-out flex-col gap-1 w-1/6 py-2 px-3 text-xs border-t-4 border-transparent items-center cursor-pointer ${
+                  isActive
+                    ? "text-black/80 hover:text-black/80 border-black/80"
+                    : "text-gray-800 hover:text-black/80"
                 }`}
               >
                 <Icon className="h-6 w-6" />
-
-              </Link>
+              </a>
             );
           })}
         </nav>

@@ -13,7 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
   if (!user) {
     openAuthModal('login');
-    return <Navigate to="/" replace />;
+    return <Navigate to="/new" replace />;
   }
 
   return <>{children}</>;

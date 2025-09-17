@@ -70,7 +70,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
     setMobileMenuOpen(false);
     const success = await logout();
     if (success) {
-      navigate('/home', { replace: true });
+      navigate('/', { replace: true });
     } else {
       console.error('Logout failed');
     }
@@ -237,7 +237,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                       setOpen(false);
                       const success = await logout();
                       if (success) {
-                        navigate('/home', { replace: true });
+                        navigate('/', { replace: true });
                       } else {
                         console.error('Logout failed');
                       }

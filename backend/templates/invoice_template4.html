@@ -406,9 +406,9 @@
         <thead class="services-title">
           <tr>
             <th style="width: 50%">Items & Description</th>
-            <th style="width: 15%; text-align: right">Quantity</th>
-            <th style="width: 20%; text-align: right">Unit Price</th>
-            <th style="width: 15%; text-align: right">Amount</th>
+            <th style="width: 10%; text-align: right">Quantity</th>
+            <th style="width: 15%; text-align: right">Unit Price</th>
+            <th style="width: 20%; text-align: right">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -421,8 +421,8 @@
               {% endif %}
             </td>
             <td class="item-qty">{{ item.quantity }}</td>
-            <td class="item-price">${{ "%.2f"|format(item.unit_cost) }}</td>
-            <td class="item-total">${{ "%.2f"|format(item.quantity * item.unit_cost) }}</td>
+            <td class="item-price">{{ "{:,.2f}".format(item.unit_cost) }}</td>
+            <td class="item-total">{{ "{:,.2f}".format(item.quantity * item.unit_cost) }}</td>
           </tr>
           {% endfor %}
         </tbody>
@@ -434,26 +434,26 @@
       <div class="totals-container">
         <div class="subtotal-row">
           <div class="total-label">Subtotal:</div>
-          <div class="subtotal-amount">${{ "%.2f"|format(subtotal) }}</div>
+          <div class="subtotal-amount">{{ currency_symbol }} {{ "{:,.2f}".format(subtotal) }}</div>
         </div>
 
         {% if tax_amount > 0 %}
         <div class="subtotal-row">
           <div class="total-label">Tax ({{ tax_percent }}%):</div>
-          <div class="subtotal-amount">${{ "%.2f"|format(tax_amount) }}</div>
+          <div class="subtotal-amount">{{ currency_symbol }} {{ "{:,.2f}".format(tax_amount) }}</div>
         </div>
         {% endif %}
 
         {% if discount_amount > 0 %}
         <div class="subtotal-row">
           <div class="total-label">Discount ({{ discount_percent }}%):</div>
-          <div class="subtotal-amount">-${{ "%.2f"|format(discount_amount) }}</div>
+          <div class="subtotal-amount">{{ currency_symbol }} {{ "{:,.2f}".format(discount_amount) }}</div>
         </div>
         {% endif %}
 
         <div class="total-row grand-total">
           <div class="total-label">Total ({{ currency }}):</div>
-          <div class="total-amount">${{ "%.2f"|format(total) }}</div>
+          <div class="total-amount">{{ currency_symbol }} {{ "{:,.2f}".format(total) }}</div>
         </div>
       </div>
     </div>

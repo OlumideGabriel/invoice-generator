@@ -36,19 +36,19 @@ const App: React.FC = () => {
 const AppContent: React.FC = () => {
   const location = useLocation();
   const isAuthPage = location.pathname === '/auth';
-  const isHomePage = location.pathname === '/home';
+  const isHomePage = location.pathname === '/';
   const { user, loading, authModalOpen, authModalMode, closeAuthModal } = useAuth();
 
   if (loading) return null;
 
   // If user is logged in and tries to access auth page, redirect to home
   if (isAuthPage && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/new" replace />;
   }
 
   // If user is logged in and tries to access home page, redirect to dashboard
   if (isHomePage && user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/new" replace />;
   }
 
   return (
@@ -78,7 +78,7 @@ const AppContent: React.FC = () => {
 
             {/* Home page - only accessible when not logged in */}
             <Route
-              path="/home"
+              path="/"
               element={!user ? <Home /> : <Navigate to="/" replace />}
             />
 
@@ -91,13 +91,10 @@ const AppContent: React.FC = () => {
 
 
             {/* Public routes */}
-            <Route path="/" element={<InvoiceGenerator />} />
+            <Route path="/new" element={<InvoiceGenerator />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>
-
-          {/* Show Footer unless we're on the auth page or home page when logged out */}
-          {!isAuthPage && (!isHomePage || user) && <Footer />}
         </main>
       </div>
     </div>

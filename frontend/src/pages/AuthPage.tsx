@@ -34,7 +34,7 @@ const AuthPage: React.FC = () => {
         if (res.ok) {
           const user = await res.json();
           signinNative(user);
-          navigate('/');
+          navigate('/new');
         }
       }
     };
@@ -65,7 +65,7 @@ const AuthPage: React.FC = () => {
 
       if (data.success && data.user) {
         signinNative(data.user);
-        navigate('/');
+        navigate('/new');
       } else {
         setError(data.error || 'Authentication failed');
       }
@@ -224,7 +224,7 @@ const AuthPage: React.FC = () => {
             <button
               type="button"
               className="hidden w-full justify-center px-6 py-4 mt-2 border rounded-xl text-emerald-900 hover:bg-gray-100"
-              onClick={() => navigate('/')}
+              onClick={() => navigate('/new')}
             >
               Continue as Guest
             </button>
@@ -235,7 +235,7 @@ const AuthPage: React.FC = () => {
       {/* Right Section */}
       <div className="hidden flex-1 lg:flex flex-col justify-center items-center bg-gradient-to-tr from-emerald-400 to-emerald-900 px-8 md:px-16 py-12 min-h-screen relative">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/new')}
           className="mb-20 bg-white/10 text-white px-6 py-3 rounded-md hover:bg-white/20 transition"
         >
           Continue as guest →

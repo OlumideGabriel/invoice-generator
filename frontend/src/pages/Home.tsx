@@ -10,8 +10,8 @@ const Home = () => {
 
     return (
         <>
-        <div className="h-full bg-white max-h-100dvh  text-gray-900 overflow-x-hidden justify-between flex flex-col">
-            <MainMenu background="bg-white" />
+        <div className="h-full bg-[#f6f4ed] max-h-100dvh  text-gray-900 overflow-x-hidden justify-between flex flex-col">
+            <MainMenu background="bg-[#f6f4ed]" />
             <section className="flex items-center mx-auto px-8 md:px-16">
                 <div className="flex flex-col md:flex-row items-center w-full mx-auto">
                     {/* Hero Content */}
@@ -49,7 +49,7 @@ const Home = () => {
                             and&nbsp;<span className="standout bg-[#a2d2ff]">share</span> professional invoices seamlessly.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-center">
-                        <Link to="/">
+                        <Link to="/new">
                           <button className="bg-black/90 text-white px-12 py-4 rounded-full text-lg
                                 font-semibold transition-all duration-300 hover:shadow-lg">
                             Create Invoice

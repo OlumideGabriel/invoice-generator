@@ -22,7 +22,7 @@ export default function AuthCallback() {
 
         if (session) {
           // Successfully authenticated, redirect to home/dashboard
-          navigate('/', { replace: true });
+          navigate('/new', { replace: true });
         } else {
           // No session found, might need to wait a bit longer or show error
           setTimeout(() => {
