@@ -38,7 +38,8 @@ const Home = () => {
                             className="rounded-full w-6 h-6 md:w-7 md:h-7 inline-block -ml-2 border-2 border-white"
                         />
                     </div>
-                        Already used by 597+ freelancers worldwide&nbsp;
+
+                        Already used by 597+ freelancers <span className="md:inline-block hidden">worldwide</span>&nbsp;
                         </span>
                         <h1 className="text-5xl font-semibold leading-none mb-6">
                             A simpler way to invoice
