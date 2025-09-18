@@ -12,7 +12,7 @@ const Home = () => {
         <>
         <div className="h-full bg-[#f6f4ed] max-h-100dvh  text-gray-900 overflow-x-hidden justify-between flex flex-col">
             <MainMenu background="bg-[#f6f4ed]" />
-            <section className="flex items-center mx-auto px-8 md:px-16">
+            <section className="flex items-center mx-auto px-2 md:px-16">
                 <div className="flex flex-col md:flex-row items-center w-full mx-auto">
                     {/* Hero Content */}
                     <div className="flex-1 max-w-lg md:max-w-2xl text-center">
@@ -60,7 +60,7 @@ const Home = () => {
                 </div>
             </section>
             <section className="w-full px-4 md:px-0">
-            <div className="relative bottom-0 max-w-5xl w-full mx-auto md:mt-2 border-b-1 border-white overflow-hidden rounded-t-3xl">
+            <div className="relative bottom-0 max-w-5xl w-full mx-auto md:mt-6 mt-6 border-b-1 border-white overflow-hidden rounded-t-3xl">
               <img
                 src="https://images.unsplash.com/photo-1755541516450-644adb257ad0?q=80&w=1480&auto=format&fit=crop&ixlib=rb-
                 4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
