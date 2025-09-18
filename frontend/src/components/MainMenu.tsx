@@ -1,18 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Menu, Settings, LogOut, User, Bell, Receipt, Shredder, X, Shield, Scale } from 'lucide-react';
-import DarkModeToggle from './DarkModeToggle';
+import { Menu, Settings, LogOut, User, Bell, X, Shield, Scale } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import Tooltip from './Tooltip';
 import AuthModal from './AuthModal';
-// Heroicons - Outline
-import {
-  ChatBubbleLeftIcon
-} from "@heroicons/react/24/outline";
+import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 
-// Define the props interface
 interface MainMenuProps {
-  background?: string; // Add background prop
+  background?: string;
 }
 
 const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
@@ -48,7 +42,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
     };
     if (mobileMenuOpen) {
       document.addEventListener('keydown', handleEscape);
-      // Prevent body scroll when menu is open
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
@@ -59,7 +52,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
     };
   }, [mobileMenuOpen]);
 
-  // Helper for avatar initials
   const getInitials = (u: any) => {
     if (!u) return '';
     const first = u.first_name ? u.first_name[0].toUpperCase() : '';
@@ -93,7 +85,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
     <>
       <header className={`top-0 z-40 w-full ${background} shadow-sm`} onMouseLeave={() => setOpen(false)}>
         <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
-          {/* Logo and hamburger menu for mobile */}
           <div className="flex items-center space-x-6">
             <Link to="/" className="flex items-start gap-1 hover:contrast-125">
               <img
@@ -107,7 +98,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
             </Link>
           </div>
 
-          {/* Mobile hamburger menu - only show when user is logged in */}
           {user && (
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -119,10 +109,9 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
             </button>
           )}
 
-          {/* Desktop: Right side: Sign In/Sign Up or Avatar */}
           {user ? (
             <div className="hidden md:flex relative z-100" ref={menuRef}>
-              <span className="flex hidden items-center justify-center mr-7"> {/* Notification bell */}
+              <span className="flex hidden items-center justify-center mr-7">
                 <span className=" absolute top-0 left-4 bg-red-500 text-white text-sm font-bold px-1 py-1 rounded-full
                 min-w-[20px] h-4 flex items-center justify-center">
                   {count > 99 ? '99+' : count}
@@ -139,8 +128,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                 focus:outline-none text-xl font-bold"
               >
                 <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
-                  {/* Avatar if available, otherwise show initials/fallback */}
-
                   {user?.profile_picture_url ? (
                     <img
                       src={user.profile_picture_url}
@@ -165,7 +152,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                     onClick={() => setOpen(false)}
                   >
                     <span className="flex flex-row items-center text-lg block px-4 py-3 text-md text-gray-900 font-medium">
-                      {/* Avatar if available, otherwise show initials/fallback */}
                       {user?.user_metadata?.avatar_url ? (
                         <img
                           src={user.user_metadata.avatar_url}
@@ -179,7 +165,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                       )}
 
                       <div className="flex flex-col min-w-0">
-                        {/* Fixed username/email display */}
                         <div className="font-medium text-gray-900">
                           {user?.first_name ?
                             `${user.first_name} ${user.last_name || ''}`.trim() :
@@ -187,7 +172,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                           }
                         </div>
 
-                        {/* Always show email if available */}
                         {user?.email && (
                           <div className="text-sm text-gray-500 mt-1">
                             {user.email}
@@ -234,6 +218,7 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                     <Scale className="w-5 h-5 mr-2" />
                     Terms of Service
                   </Link>
+                  <hr className="border-gray-200 mt-1 mb-1 mr-2 ml-2" />
                   <Link
                     to="#"
                     onClick={async (e) => {
@@ -246,8 +231,8 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
                         console.error('Logout failed');
                       }
                     }}
-                    className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md text-gray-700
-                    hover:bg-gray-100 hover:text-gray-900"
+                    className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md !text-red-600
+                    hover:bg-red-50"
                   >
                     <LogOut className="w-5 h-5 mr-2" />
                     Sign Out
@@ -256,7 +241,6 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
               )}
             </div>
           ) : (
-            // Updated Sign In and Sign Up buttons to open modal with appropriate mode
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => openAuthModal('login')}
@@ -278,142 +262,143 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
       </header>
 
       {/* Mobile Off-Canvas Menu Overlay */}
-      {mobileMenuOpen && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
-            onClick={() => setMobileMenuOpen(false)}
-          />
+      <div className={`fixed inset-0 z-50 md:hidden transition-opacity duration-300 ease-in-out ${mobileMenuOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+        {/* Backdrop with fade transition */}
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 transition-opacity duration-300 ease-in-out"
+          onClick={() => setMobileMenuOpen(false)}
+        />
 
-          {/* Off-canvas menu */}
-          <div
-            ref={mobileMenuRef}
-            className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${
-              mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}
-          >
-
-            {/* Off-canvas menu starts here */}
+        {/* Off-canvas menu with slide transition */}
+        <div
+          ref={mobileMenuRef}
+          className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+        >
           <div className="flex flex-col h-full justify-between">
             {/* Header with Logo */}
-              <div>
-                <div className="flex items-center justify-between py-4 px-7 border-b border-gray-200">
-                  <div className="flex items-center gap-1">
-                    <img
-                      src="/envoyce.svg"
-                      alt="Envoyce Logo"
-                      className="h-8 w-8"
-                    />
-                    <span className="text-2xl tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
-                      envoyce
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center justify-center w-10 h-10 rounded-md text-gray-400
-                      hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
-                    aria-label="Close menu"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+            <div>
+              <div className="flex items-center justify-between py-4 px-7 border-b border-gray-200">
+                <div className="flex items-center gap-1">
+                  <img
+                    src="/envoyce.svg"
+                    alt="Envoyce Logo"
+                    className="h-8 w-8"
+                  />
+                  <span className="text-2xl tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+                    envoyce
+                  </span>
                 </div>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center justify-center w-10 h-10 rounded-md text-gray-400
+                    hover:text-gray-600 hover:bg-gray-100 transition-colors duration-150"
+                  aria-label="Close menu"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
 
               <div className="pt-2 flex flex-col p-4 relative">
-              <Link
-                to="/settings"
-                className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <User className="w-5 h-5 mr-3" />
-                Profile
-              </Link>
+                <Link
+                  to="/settings"
+                  className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <User className="w-5 h-5 mr-3" />
+                  Profile
+                </Link>
 
-              <Link
-                to="/settings"
-                className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Settings className="w-5 h-5 mr-3" />
-                Settings
-              </Link>
+                <Link
+                  to="/settings"
+                  className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Settings className="w-5 h-5 mr-3" />
+                  Settings
+                </Link>
 
-              <Link
-                to="/privacy-policy"
-                className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Shield className="w-5 h-5 mr-3" />
-                Privacy Policy
-              </Link>
+                <Link
+                  to="/privacy-policy"
+                  className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Shield className="w-5 h-5 mr-3" />
+                  Privacy Policy
+                </Link>
 
-              <Link
-                to="/terms-of-service"
-                className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <Scale className="w-5 h-5 mr-3" />
-                Terms of Service
-              </Link>
+                <Link
+                  to="/terms-of-service"
+                  className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <Scale className="w-5 h-5 mr-3" />
+                  Terms of Service
+                </Link>
               </div>
-
-
-              </div>
+            </div>
 
             {/* Menu Items */}
             <nav className="flex flex-col p-4 relative">
-                {/* Bottom Section with Sign Out and User Info */}
+              {/* Bottom Section with Sign Out and User Info */}
               <div className="">
-              <hr className="border-gray-300 my-2" />
-              <Link
-                to="/support"
-                className="flex items-center px-4 py-3  text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <ChatBubbleLeftIcon className="w-5 h-5 mr-3" />
-                Support
-              </Link>
 
+                <Link
+                  to="/support"
+                  className="flex items-center px-4 py-3 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-colors duration-150"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  <ChatBubbleLeftIcon className="w-5 h-5 mr-3" />
+                  Support
+                </Link>
+                <button
+                  onClick={handleMobileLogout}
+                  className="flex items-center px-4 py-3 !text-red-600 rounded-lg hover:bg-red-50 hover:text-gray-900
+                  transition-colors w-full duration-150"
+                >
+                  <LogOut className="w-5 h-5 mr-3" />
+                   Sign Out
+                </button>
+                <hr className="border-gray-300 my-2" />
 
-              <button
-                onClick={handleMobileLogout}
-                className="flex items-center px-4 py-3 text-red-700 rounded-lg bg-red-50 hover:bg-red-100 hover:text-red-900 transition-colors duration-150 w-full text-left"
-              >
-                <LogOut className="w-5 h-5 mr-3" />
-                Sign Out
-              </button>
-
-              {/* User Profile Section */}
-            <div className="flex w-full !bg-gray-100 rounded-lg items-center p-6 mt-4 bg-gray-50 ">
-              <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
-                {/* Avatar if available, otherwise show initials/fallback */}
-                {user?.user_metadata?.avatar_url ? (
-                  <img
-                    src={user.user_metadata.avatar_url}
-                    alt="User Avatar"
-                    className="h-12 w-12 mr-4 rounded-full"
-                  />
-                ) : (
-                  <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 mr-2 rounded-full justify-center items-center">
-                    {getInitials(user) || <User className="w-6 h-6" />}
+                {/* User Profile Section */}
+                <div className="flex w-full rounded-lg items-center py-6 mt-4 px-2 justify-between">
+                <div className="flex items-center">
+                  <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
+                    {user?.user_metadata?.avatar_url ? (
+                      <img
+                        src={user.user_metadata.avatar_url}
+                        alt="User Avatar"
+                        className="h-12 w-12 mr-4 rounded-full"
+                      />
+                    ) : (
+                      <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 mr-2 rounded-full justify-center items-center">
+                        {getInitials(user) || <User className="w-6 h-6" />}
+                      </span>
+                    )}
                   </span>
-                )}
-              </span>
 
-              <div className="flex flex-col min-w-0">
-                <span className="font-medium text-gray-900">
-                  {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
-                </span>
-                <span className="text-sm text-gray-500">{user?.email}</span>
-              </div>
-              </div>
-               </div>
+                  <div className="flex flex-col min-w-0">
+                    <span className="font-medium text-gray-900">
+                      {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
+                    </span>
+                    <span className="text-sm text-gray-500">{user?.email}</span>
+                  </div>
+                </div>
+                  {/* Sign Out Button */}
+                  <button
+                  onClick={handleMobileLogout}
+                  className="flex items-center p-4 text-gray-700 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-gray-900
+                  transition-colors duration-150"
+                >
+                  <LogOut className="w-5 h-5" />
+                </button>
 
+                </div>
+              </div>
             </nav>
           </div>
         </div>
-        </div>
-      )}
+      </div>
 
       {/* Auth Modal */}
       <AuthModal
