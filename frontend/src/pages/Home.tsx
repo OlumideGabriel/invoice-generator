@@ -46,8 +46,8 @@ const Home = () => {
                         </h1>
                         <p className="text-xl md:text-xl text-gray-600 mb-10 leading-relaxed ">
                             Envoyce provides tools to help you <span className="standout bg-[#c7f9cc]">create</span>&nbsp;
-                            <span className="standout bg-[#fae588]">manage</span>&nbsp;
-                            and&nbsp;<span className="standout bg-[#a2d2ff]">share</span> professional invoices seamlessly.
+                            <span className="standout bg-[#fae588]">manage</span>&nbsp;and&nbsp;
+                            <span className="standout bg-[#a2d2ff]">share</span> professional invoices seamlessly.
                         </p>
                         <div className="flex flex-col sm:flex-row gap-4 justify-center md:justify-center">
                         <Link to="/new">
