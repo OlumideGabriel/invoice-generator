@@ -6,6 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import Tooltip from '../components/Tooltip';
 import { API_BASE_URL } from '../config/api';
+import MainMenu from '../components/MainMenu';
+import Navbar from '../components/Navbar';
 
 const Dashboard = () => {
     const { user } = useAuth();
@@ -218,7 +220,15 @@ const Dashboard = () => {
     // Skeleton Loading Component
     const SkeletonLoader = () => {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+            <>
+      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <MainMenu showLogo={false} />
+      </div>
+      <div className="md:hidden block">
+      <MainMenu />
+      </div>
+
+            <div className="">
                 {/* Header Skeleton */}
                 <div className="bg-white shadow-sm border-b border-slate-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -321,6 +331,7 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+            </>
         );
     };
 
@@ -330,7 +341,7 @@ const Dashboard = () => {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col items-center justify-center">
+            <div className="flex flex-col items-center justify-center">
                 <AlertCircle className="h-16 w-16 text-red-500 mb-4" />
                 <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
                 <p className="text-gray-600">{error}</p>
@@ -343,7 +354,15 @@ const Dashboard = () => {
     const metrics = getDashboardMetrics(invoices);
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+        <>
+      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <MainMenu showLogo={false} />
+      </div>
+      <div className="md:hidden block">
+      <MainMenu />
+      </div>
+
+        <div className="">
             {/* Header */}
             <div className="bg-white shadow-sm border-b border-slate-200">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -386,7 +405,7 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-40 lg:px-8 py-8">
                 {/* Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
@@ -579,6 +598,8 @@ const Dashboard = () => {
                 </div>
             </div>
         </div>
+        <Navbar />
+        </>
     );
 };
 

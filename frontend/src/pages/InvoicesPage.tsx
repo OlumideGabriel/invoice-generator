@@ -19,6 +19,8 @@ import {
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { API_BASE_URL } from '../config/api';
+import MainMenu from '../components/MainMenu';
+import Navbar from '../components/Navbar';
 
 // Define types based on your actual data structure
 interface Currency {
@@ -416,7 +418,15 @@ const InvoicesPage = () => {
   const pagination = invoicesData?.pagination;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <>
+      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <MainMenu showLogo={false} />
+      </div>
+      <div className="md:hidden block">
+      <MainMenu />
+      </div>
+
+    <div className="">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -513,7 +523,7 @@ const InvoicesPage = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 mb-40 sm:px-6 lg:px-8 py-8">
         {/* Search and Filters */}
         <div className="rounded-xl py-3 mb-6">
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
@@ -796,6 +806,8 @@ const InvoicesPage = () => {
         </div>
       )}
     </div>
+    <Navbar />
+    </>
   );
 };
 

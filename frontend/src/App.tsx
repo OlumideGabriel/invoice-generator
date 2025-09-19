@@ -64,7 +64,7 @@ const AppContent: React.FC = () => {
       />
 
       {/* Show MainMenu unless we're on the auth page or home page when logged out */}
-      {!isAuthPage && (!isHomePage || user) && <MainMenu />}
+      {/*!isAuthPage && (!isHomePage || user) && <MainMenu />*/}
 
       <div className="flex flex-row flex-1 main-content min-h-0">
         {/* Show SideMenu unless we're on the auth page OR home page when logged out */}

@@ -18,6 +18,8 @@ import { CircleAlert, X } from 'lucide-react';
 import Home from '../pages/Home';
 import ClientModal from './ClientModal';
 import BusinessModal from './BusinessModal';
+import MainMenu from './MainMenu';
+import Navbar from './Navbar';
 
 // Generate unique ID for items (same as in useInvoice hook)
 const generateId = () => {
@@ -491,8 +493,17 @@ const handlePreview = async () => {
   };
 
   return (
+      <>
+      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <MainMenu showLogo={false} />
+      </div>
+      <div className="md:hidden block">
+      <MainMenu />
+      </div>
+
 
     <div className="py-6 flex flex-col md:flex-row mb-40 lg:mb-20 w-full xl:max-w-7xl m-auto justify-center gap-4 lg:gap-8 p-0 sm:p-8 pb-20">
+
       {/* Left Panel (Main Invoice Form) */}
       <div className="block flex-col w-full gap-4">
         {error && (
@@ -755,6 +766,8 @@ const handlePreview = async () => {
         />
       </div>
     </div>
+    <Navbar/>
+    </>
   );
 };
 

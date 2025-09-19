@@ -7,18 +7,50 @@ import { ChatBubbleLeftIcon } from "@heroicons/react/24/outline";
 
 interface MainMenuProps {
   background?: string;
+  showLogo?: boolean;
 }
 
-const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
+const MainMenu: React.FC<MainMenuProps> = ({
+  background = 'bg-white',
+  showLogo = true
+}) => {
   const [open, setOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
+  const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const headerRef = useRef<HTMLHeadElement>(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [count, setCount] = useState(3);
+  const lastScrollY = useRef(0);
+
+  // Scroll behavior for mobile
+  useEffect(() => {
+    const controlHeader = () => {
+      if (window.innerWidth >= 768) return; // Only apply to mobile
+
+      const currentScrollY = window.scrollY;
+
+      if (currentScrollY > lastScrollY.current && currentScrollY > 100) {
+        // Scrolling down
+        setIsHeaderVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        // Scrolling up
+        setIsHeaderVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', controlHeader, { passive: true });
+
+    return () => {
+      window.removeEventListener('scroll', controlHeader);
+    };
+  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -83,19 +115,27 @@ const MainMenu: React.FC<MainMenuProps> = ({ background = 'bg-white' }) => {
 
   return (
     <>
-      <header className={`top-0 z-40 w-full ${background} shadow-sm`} onMouseLeave={() => setOpen(false)}>
-        <div className="flex items-center justify-between main-menu mx-3 px-4 py-4">
+      <header
+        ref={headerRef}
+        className={`top-0 z-50 min-h-[4.6rem] w-full ${background} shadow-sm transition-transform duration-300 ease-in-out md:transform-none ${
+          isHeaderVisible ? 'transform translate-y-0' : 'transform -translate-y-full'
+        }`}
+        onMouseLeave={() => setOpen(false)}
+      >
+        <div className="flex items-center justify-between main-menu mx-1 px-4 py-4">
           <div className="flex items-center space-x-6">
-            <Link to="/" className="flex items-start gap-1 hover:contrast-125">
-              <img
-                src="/envoyce.svg"
-                alt="Envoyce Logo"
-                className="h-10 md:h-10 w-auto "
-              />
-              <span className="md:text-3xl text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
-                envoyce
-              </span>
-            </Link>
+            {showLogo && (
+              <Link to="/" className="flex items-start gap-1 hover:contrast-125">
+                <img
+                  src="/envoyce.svg"
+                  alt="Envoyce Logo"
+                  className="h-10 md:h-10 w-auto "
+                />
+                <span className="md:text-3xl text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+                  envoyce
+                </span>
+              </Link>
+            )}
           </div>
 
           {user && (

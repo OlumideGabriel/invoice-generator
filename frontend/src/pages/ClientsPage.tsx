@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
 import ClientModal from '../components/ClientModal';
+import Navbar from '../components/Navbar';
+import MainMenu from '../components/MainMenu';
 import {
   Search,
   Plus,
@@ -234,7 +236,15 @@ const ClientsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+      <>
+      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <MainMenu showLogo={false} />
+      </div>
+      <div className="md:hidden block">
+      <MainMenu />
+      </div>
+
+    <div className="">
       {/* Header */}
       <div className="bg-white shadow-sm border-b border-slate-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -265,7 +275,7 @@ const ClientsPage = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-40 lg:px-8 py-8">
         {/* Search and Actions */}
         <div className="rounded-xl py-3 mb-6">
           <div className="flex flex-col  sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
@@ -651,6 +661,8 @@ const ClientsPage = () => {
         />
       )}
     </div>
+    <Navbar />
+    </>
   );
 };
 

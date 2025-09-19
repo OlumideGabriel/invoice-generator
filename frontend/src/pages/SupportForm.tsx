@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Mail, Send, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Mail, Send, CheckCircle, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config/api';
+import Navbar from '../components/Navbar';
+import MainMenu from '../components/MainMenu';
 
 const SupportForm = () => {
   const { user } = useAuth();
@@ -14,6 +16,8 @@ const SupportForm = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const textareaRef = useRef(null);
 
   const issueTypes = [
     { value: '', label: 'Select an issue type' },
@@ -28,6 +32,14 @@ const SupportForm = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  // Auto-expand textarea when content changes
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto'; // reset height
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`; // expand to fit
+    }
+  }, [formData.details]);
 
   const handleDropdownSelect = (option) => {
     setFormData(prev => ({ ...prev, issueType: option.value }));
@@ -105,6 +117,14 @@ const SupportForm = () => {
   }
 
   return (
+    <>
+    <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <MainMenu showLogo={false} />
+      </div>
+      <div className="md:hidden block">
+      <MainMenu />
+      </div>
+
     <div className="py-8 px-4">
       <div className="max-w-md mx-auto">
         <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
@@ -165,17 +185,18 @@ const SupportForm = () => {
               {isDropdownOpen && <div className="fixed inset-0 z-0" onClick={() => setIsDropdownOpen(false)} />}
             </div>
 
-            {/* Details Textarea */}
+            {/* Details Auto-Expanding Textarea */}
             <textarea
+              ref={textareaRef}
               id="details"
               name="details"
               value={formData.details}
               onChange={handleInputChange}
               required
-              rows={4}
+              rows={1}
               placeholder="Please provide more details..."
-              className="w-full px-3 py-3 input rounded-md focus:ring-2 focus:ring-blue-500
-              focus:border-blue-500 outline-none resize-y transition-colors placeholder-gray-500 text-gray-900"
+              className="w-full min-h-40 px-3 py-3 input rounded-md focus:ring-2 focus:ring-blue-500
+              focus:border-blue-500 outline-none resize-none overflow-hidden transition-colors placeholder-gray-500 text-gray-900"
             />
 
             {/* Error Message */}
@@ -204,6 +225,8 @@ const SupportForm = () => {
         </div>
       </div>
     </div>
+    <Navbar />
+    </>
   );
 };
 

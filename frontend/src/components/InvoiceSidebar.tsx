@@ -94,7 +94,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
 
 
 
-    <div className="w-full min-w-40 hidden md:flex flex-col sticky top-8 z-10 self-start">
+    <div className="w-full min-w-40 hidden md:flex flex-col sticky top-[6.75rem] z-10 self-start">
       {/* Action Buttons */}
       <div className="flex flex-col gap-4 mb-8">
         <InvoiceButton loading={loading} onClick={onSubmit} />

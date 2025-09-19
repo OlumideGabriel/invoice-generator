@@ -14,7 +14,9 @@ import {
   UsersIcon as UsersOutline,
   Cog6ToothIcon as CogOutline,
   SquaresPlusIcon as SquaresPlusOutline,
-  ChatBubbleLeftIcon
+  ChatBubbleLeftIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon
 } from "@heroicons/react/24/outline";
 
 // Heroicons - Solid
@@ -86,6 +88,11 @@ const SideMenu: React.FC = () => {
     navigate(path);
   };
 
+  const toggleCollapsed = () => {
+    setCollapsed(!collapsed);
+    setExpandedItem(null); // Close any expanded submenus when toggling
+  };
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1120) {
@@ -102,14 +109,46 @@ const SideMenu: React.FC = () => {
 
   return (
     <>
-      <div className="bg-neutral-900 border-r border-gray-200 overflow-hidden">
+      <div className="bg-neutral-900 border-r z-30 border-gray-200">
+
+
         <div className="hidden md:flex relative items-stretch h-full">
+
           {/* Sidebar */}
           <aside
             className={`transition-all duration-500 delay-150 ease-in-out flex-1 justify-between ${
               collapsed ? "w-55" : "w-60"
             } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
           >
+          {/* Logo Section */}
+
+          <div className="flex items-center ml-1 -mt-3.5 space-x-6">
+            <Link to="/" className="flex items-start justify-center gap-1 hover:contrast-125">
+              <img
+                src="/envoyce.svg"
+                alt="Envoyce Logo"
+                className="h-10 md:h-10 w-auto "
+              />
+              {!collapsed && (
+              <span className="md:text-3xl text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+                envoyce
+              </span>
+                )}
+            </Link>
+          </div>
+
+            {/* Collapse Toggle Button */}
+            <button
+              onClick={toggleCollapsed}
+              className="absolute -right-3 top-1/2  bg-white rounded-full p-1 border !border-neutral-400 hover:bg-gray-100 transition-colors"
+            >
+              {collapsed ? (
+                <ChevronRightIcon className="h-4 w-4 text-neutral-400" />
+              ) : (
+                <ChevronLeftIcon className="h-4 w-4 text-neutral-400" />
+              )}
+            </button>
+
             <nav className="flex flex-col gap-1">
               {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu }) => {
                 const isActive = location.pathname === path;
@@ -127,7 +166,7 @@ const SideMenu: React.FC = () => {
                         submenu,
                       })
                     }
-                    className={`flex items-center gap-3 px-4 py-3 h-[3.2rem] max-h-[3.2rem] font-medium transition-colors duration-150 text-xl ${
+                    className={`flex items-center gap-3 px-4 py-3 h-[3rem] max-h-[3rem] font-medium transition-colors duration-150 text-xl ${
                       expandedItem === label
                         ? "text-black/100 bg-neutral-900"
                         : "text-gray-700"
@@ -149,7 +188,7 @@ const SideMenu: React.FC = () => {
                         submenu,
                       })
                     }
-                    className={`flex items-center gap-3 h-[3 rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
+                    className={`flex items-center gap-3 h-[3rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
                       isActive
                         ? "text-black bg-gray-100 hover:text-neutral-900"
                         : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
@@ -166,10 +205,13 @@ const SideMenu: React.FC = () => {
             <aside className="mt-auto">
               <UpgradeProCard />
             </aside>
-           {/* Advert Card */}
-            <aside className="mt-auto">
-              <Advert />
-            </aside>
+
+           {/* Advert Card - Only show when not collapsed */}
+            {!collapsed && (
+              <aside className="mt-auto">
+                <Advert />
+              </aside>
+            )}
 
             {/* Support button */}
             <button
@@ -213,31 +255,6 @@ const SideMenu: React.FC = () => {
                 ))}
             </div>
           )}
-        </div>
-
-        {/* Mobile Menubar */}
-        <div className="fixed md:hidden max-h-16 h-16 bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed z-40">
-          <nav className="flex justify-around items-center">
-            {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon }) => {
-              const isActive = location.pathname === path;
-              const Icon = isActive ? SolidIcon : OutlineIcon;
-
-              return (
-                <a
-                  key={label}
-                  href={path}
-                  onClick={(e) => handleNavigation(e, path, { path, label, outline: OutlineIcon, solid: SolidIcon })}
-                  className={`flex transition-all duration-300 delay-100 ease-in-out flex-col gap-1 w-1/6 py-2 px-3 text-xs border-t-4 border-transparent items-center cursor-pointer ${
-                    isActive
-                      ? "text-black/80 hover:text-black/80 border-black/80"
-                      : "text-gray-800 hover:text-black/80"
-                  }`}
-                >
-                  <Icon className="h-6 w-6" />
-                </a>
-              );
-            })}
-          </nav>
         </div>
       </div>
 
