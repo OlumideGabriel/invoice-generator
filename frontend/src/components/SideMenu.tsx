@@ -23,6 +23,7 @@ import {
   DocumentTextIcon as DocumentTextSolid,
   UsersIcon as UsersSolid,
   Cog6ToothIcon as CogSolid,
+  PlusIcon,
   SquaresPlusIcon as SquaresPlusSolid,
 } from "@heroicons/react/24/solid";
 
@@ -39,7 +40,7 @@ const menuItems: MenuItem[] = [
   { path: "/invoices", label: "Invoices", outline: DocumentTextOutline, solid: DocumentTextSolid },
   { path: "/clients", label: "Clients", outline: UsersOutline, solid: UsersSolid },
   { path: "/settings", label: "Settings", outline: CogOutline, solid: CogSolid },
-  { path: "/new", label: "Create", outline: SquaresPlusOutline, solid: SquaresPlusSolid },
+  { path: "/new", label: "Create", outline: PlusIcon, solid: PlusIcon },
 ];
 
 const SideMenu: React.FC = () => {

@@ -7,8 +7,9 @@
 :root {
   --primary: #6CDD82;
   --primary-1: #CFF4D6;
-  --primary-2: #39C454;
-  --primary-3: #179930;
+  --primary-2: #8eda91;
+  --primary-3: #0e423e;
+  --dark: #0e423e;
   --dark-hover: #DBDCDD;
   --dark-light: #808080;
   --gray: #989898;
@@ -132,9 +133,9 @@ h1 {
 .label-1 {
   font-weight: 500;
   background-color: var(--primary-1);
-  padding: 2px 8px;
+  padding: 3px 8px;
   color: var(--primary-3);
-  border-radius: 0.5rem;
+  border-radius: 0.3rem;
   border: 2px solid var(--primary-2);
   cursor: pointer;
 
@@ -147,18 +148,18 @@ h1 {
 .label-2 {
   font-weight: 500;
   background-color: var(--primary-2);
-  color: #fff;
-  border-radius: 0.5rem;
-  padding: 2px 8px;
+  color:var(--dark-1);
+  border-radius: 0.3rem;
+  padding: 3px 8px;
   border: 2px solid var(--primary-1);
   cursor: pointer;
 }
 
 .label-2:hover {
   font-weight: 500;
-  background-color: var(--primary-3);
-  color: #fff;
-  border-radius: 0.5rem;
+  background-color: var(--primary-2);
+    color: var(--dark-1);
+  border-radius: 0.3rem;
   border: 2px solid var(--primary-2);
 }
 
@@ -166,8 +167,8 @@ h1 {
   font-weight: 500;
   background-color: #fff;
   color: #000;
-  border-radius: 0.5rem;
-  padding: 2px 8px;
+  border-radius: 0.3rem;
+  padding: 3px 8px;
   border: 2px solid #000;
   cursor: pointer;
 }

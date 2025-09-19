@@ -1,12 +1,25 @@
 import React, { useState, useEffect } from 'react';
 import { X, Save } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config/api';
 
-const ClientModal = ({
+interface ClientModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  modalType?: 'create' | 'edit';
+  client?: any;
+  clientData?: any; // Alternative prop name for compatibility
+  data?: any; // Generic prop name for compatibility with PartyField
+  onSuccess: (message: string, type?: string) => void;
+}
+
+const ClientModal: React.FC<ClientModalProps> = ({
   isOpen,
   onClose,
   modalType = 'create',
-  client = null,
+  client,
+  clientData,
+  data,
   onSuccess
 }) => {
   const [formData, setFormData] = useState({
@@ -15,77 +28,123 @@ const ClientModal = ({
     address: '',
     phone: ''
   });
-  const [formErrors, setFormErrors] = useState({});
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
+  // Determine which client data to use (supports multiple prop names)
+  const clientToEdit = client || clientData || data;
+  const actualModalType = clientToEdit ? 'edit' : modalType;
+
   useEffect(() => {
-    if (modalType === 'edit' && client) {
+    if (actualModalType === 'edit' && clientToEdit) {
       setFormData({
-        name: client.name || '',
-        email: client.email || '',
-        address: client.address || '',
-        phone: client.phone || ''
+        name: clientToEdit.name || '',
+        email: clientToEdit.email || '',
+        address: clientToEdit.address || '',
+        phone: clientToEdit.phone || ''
       });
     } else {
       setFormData({ name: '', email: '', address: '', phone: '' });
     }
     setFormErrors({});
-  }, [modalType, client, isOpen]);
+    setIsSubmitting(false);
+  }, [actualModalType, clientToEdit, isOpen]);
 
   const validateForm = () => {
-    const errors = {};
-    if (!formData.name.trim()) errors.name = 'Name is required';
-    if (!formData.email) errors.email = 'Email is required';
-    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+    const errors: Record<string, string> = {};
+
+    if (!formData.name.trim()) {
+      errors.name = 'Name is required';
+    }
+
+    if (!formData.email.trim()) {
+      errors.email = 'Email is required';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Invalid email format';
     }
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!validateForm()) return;
+    if (!user?.id) {
+      onSuccess('User not authenticated', 'error');
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
-      const url = modalType === 'create'
+      const url = actualModalType === 'create'
         ? `${API_BASE_URL}/api/clients`
-        : `${API_BASE_URL}/api/clients/${client.id}`;
+        : `${API_BASE_URL}/api/clients/${clientToEdit.id}`;
 
-      const method = modalType === 'create' ? 'POST' : 'PUT';
-      const payload = modalType === 'create'
+      const method = actualModalType === 'create' ? 'POST' : 'PUT';
+      const payload = actualModalType === 'create'
         ? { ...formData, user_id: user.id }
         : formData;
 
       const response = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(payload)
       });
 
       const data = await response.json();
 
-      if (data.success) {
-        onSuccess(
-          modalType === 'create'
-            ? 'Client created successfully'
-            : 'Client updated successfully'
-        );
+      if (response.ok && data.success) {
+        const successMessage = actualModalType === 'create'
+          ? `Client "${formData.name}" has been created successfully`
+          : `Client "${formData.name}" has been updated successfully`;
+
+        onSuccess(successMessage);
         onClose();
       } else {
-        if (data.errors) {
-          const errors = {};
-          data.errors.forEach(error => {
-            if (error.includes('Name')) errors.name = error;
-            if (error.includes('email')) errors.email = error;
+        // Handle validation errors from server
+        if (data.errors && Array.isArray(data.errors)) {
+          const errors: Record<string, string> = {};
+          data.errors.forEach((error: string) => {
+            if (error.toLowerCase().includes('name')) {
+              errors.name = error;
+            } else if (error.toLowerCase().includes('email')) {
+              errors.email = error;
+            }
           });
-          setFormErrors(errors);
+
+          if (Object.keys(errors).length > 0) {
+            setFormErrors(errors);
+          } else {
+            onSuccess(data.errors.join(', '), 'error');
+          }
         } else {
-          onSuccess(data.error || 'Operation failed', 'error');
+          onSuccess(data.error || data.message || 'Operation failed', 'error');
         }
       }
     } catch (error) {
-      onSuccess('Network error occurred', 'error');
+      console.error('Client modal error:', error);
+      onSuccess('Network error occurred. Please try again.', 'error');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+
+    // Clear error when user starts typing
+    if (formErrors[field]) {
+      setFormErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
     }
   };
 
@@ -97,11 +156,12 @@ const ClientModal = ({
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">
-              {modalType === 'create' ? 'Add New Client' : 'Edit Client'}
+              {actualModalType === 'create' ? 'Add New Client' : 'Edit Client'}
             </h2>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors"
+              disabled={isSubmitting}
             >
               <X className="h-5 w-5" />
             </button>
@@ -115,11 +175,12 @@ const ClientModal = ({
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  formErrors.name ? 'border-red-300' : 'border-gray-300'
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  formErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Enter client name"
+                disabled={isSubmitting}
               />
               {formErrors.name && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.name}</p>
@@ -133,11 +194,12 @@ const ClientModal = ({
               <input
                 type="email"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                  formErrors.email ? 'border-red-300' : 'border-gray-300'
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  formErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Enter email address"
+                disabled={isSubmitting}
               />
               {formErrors.email && (
                 <p className="mt-1 text-sm text-red-600">{formErrors.email}</p>
@@ -151,9 +213,10 @@ const ClientModal = ({
               <input
                 type="tel"
                 value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter phone number"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -163,10 +226,11 @@ const ClientModal = ({
               </label>
               <textarea
                 value={formData.address}
-                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                onChange={(e) => handleInputChange('address', e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter client address"
+                disabled={isSubmitting}
               />
             </div>
 
@@ -174,16 +238,21 @@ const ClientModal = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isSubmitting}
               >
                 <Save className="h-4 w-4 mr-2" />
-                {modalType === 'create' ? 'Create Client' : 'Save Changes'}
+                {isSubmitting
+                  ? (actualModalType === 'create' ? 'Creating...' : 'Saving...')
+                  : (actualModalType === 'create' ? 'Create Client' : 'Save Changes')
+                }
               </button>
             </div>
           </form>

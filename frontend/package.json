@@ -33,6 +33,7 @@
     "react-datepicker": "^8.4.0",
     "react-day-picker": "^9.8.0",
     "react-dom": "^18.3.1",
+    "react-google-recaptcha": "^3.1.0",
     "react-hot-toast": "^2.5.2",
     "react-pdf": "^10.1.0",
     "react-router-dom": "^7.6.3",

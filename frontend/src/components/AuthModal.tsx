@@ -4,6 +4,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../lib/supabase';
 import Modal from './Modal';
+import ReCAPTCHA from "react-google-recaptcha";
+
 
 interface AuthModalProps {
   isOpen: boolean;

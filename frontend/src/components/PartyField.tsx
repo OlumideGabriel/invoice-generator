@@ -1,11 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
-import ClientModal from './ClientModal';
-import BusinessModal from './BusinessModal';
 import { useAuth } from '../context/AuthContext';
 import Spinner from './Spinner';
-
 
 interface PartyFieldProps {
   label: string;
@@ -13,20 +10,23 @@ interface PartyFieldProps {
   addLabel?: string;
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSelect?: (item: PartyItem) => void;
-  searchFunction?: (query: string, type: 'client' | 'business') => Promise<PartyItem[]>;
+  searchFunction?: (query: string, type: string) => Promise<PartyItem[]>;
   placeholder?: string;
   noResultsText?: string;
-  type?: 'client' | 'business';
+  type?: string; // Made more generic - can be 'client', 'business', 'vendor', etc.
   apiConfig?: {
     endpoint?: string;
     userId?: string;
     additionalParams?: Record<string, any>;
   };
-  // New prop for React Router modal integration
+  // React Router modal integration
   modalLink?: {
     create: string;
     edit: (id: string) => string;
   };
+  // Generic modal component support
+  ModalComponent?: React.ComponentType<any>;
+  modalProps?: Record<string, any>; // Additional props to pass to the modal
 }
 
 interface PartyItem {
@@ -37,9 +37,10 @@ interface PartyItem {
   phone?: string;
   logo?: string;
   description?: string;
-  type?: 'client' | 'business';
+  type?: string;
   tax_id?: string;
   invoice_count?: number;
+  [key: string]: any; // Allow additional properties
 }
 
 const PartyField: React.FC<PartyFieldProps> = ({
@@ -51,9 +52,11 @@ const PartyField: React.FC<PartyFieldProps> = ({
   searchFunction,
   placeholder = "Type to search",
   noResultsText = "No results found",
-  type = 'client',
+  type = 'item',
   apiConfig,
-  modalLink // New prop for React Router integration
+  modalLink,
+  ModalComponent, // Generic modal component
+  modalProps = {} // Additional props for the modal
 }) => {
   const [isHovering, setIsHovering] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
@@ -67,17 +70,22 @@ const PartyField: React.FC<PartyFieldProps> = ({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalType, setModalType] = useState('create');
-  const [selectedClient, setSelectedClient] = useState(null);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate(); // React Router navigation hook
+  const [selectedItem, setSelectedItem] = useState<PartyItem | null>(null);
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSuccess = (message, type = 'success') => {
-    console.log(`${type}: ${message}`);
-    // Refresh data or show notification
+  const handleSuccess = (message: string, successType = 'success') => {
+    console.log(`${successType}: ${message}`);
     setIsModalOpen(false);
+    // Refresh data
+    if (apiConfig?.endpoint && apiConfig.userId) {
+      fetchParties().then(parties => {
+        setAllParties(parties);
+      });
+    }
     // If using React Router, navigate back
     if (modalLink) {
-      navigate(-1); // Go back to previous page
+      navigate(-1);
     }
   };
 
@@ -85,23 +93,27 @@ const PartyField: React.FC<PartyFieldProps> = ({
     if (modalLink) {
       // Use React Router navigation
       navigate(modalLink.create);
-    } else {
-      // Fallback to local state modal
+    } else if (ModalComponent) {
+      // Use provided modal component
       setModalType('create');
-      setSelectedClient(null);
+      setSelectedItem(null);
       setIsModalOpen(true);
+    } else {
+      console.warn('No modal link or modal component provided');
     }
   };
 
-  const openEditModal = (client) => {
-    if (modalLink && client.id) {
+  const openEditModal = (item: PartyItem) => {
+    if (modalLink && item.id) {
       // Use React Router navigation
-      navigate(modalLink.edit(client.id));
-    } else {
-      // Fallback to local state modal
+      navigate(modalLink.edit(item.id));
+    } else if (ModalComponent) {
+      // Use provided modal component
       setModalType('edit');
-      setSelectedClient(client);
+      setSelectedItem(item);
       setIsModalOpen(true);
+    } else {
+      console.warn('No modal link or modal component provided');
     }
   };
 
@@ -113,28 +125,28 @@ const PartyField: React.FC<PartyFieldProps> = ({
       // Check if current path matches create pattern
       if (currentPath === modalLink.create) {
         setModalType('create');
-        setSelectedClient(null);
+        setSelectedItem(null);
         setIsModalOpen(true);
       }
 
       // Check if current path matches edit pattern
-      // This assumes edit URLs follow a pattern like /clients/edit/:id
-      const editPattern = /\/clients\/edit\/(.+)/;
+      // This assumes edit URLs follow a pattern like /{type}/edit/:id
+      const editPattern = new RegExp(`/${type}/edit/(.+)`);
       const match = currentPath.match(editPattern);
       if (match && match[1]) {
-        const clientId = match[1];
-        // Find the client in search results or allParties
-        const clientToEdit = [...searchResults, ...allParties].find(
-          party => party.id.toString() === clientId
+        const itemId = match[1];
+        // Find the item in search results or allParties
+        const itemToEdit = [...searchResults, ...allParties].find(
+          party => party.id.toString() === itemId
         );
-        if (clientToEdit) {
+        if (itemToEdit) {
           setModalType('edit');
-          setSelectedClient(clientToEdit);
+          setSelectedItem(itemToEdit);
           setIsModalOpen(true);
         }
       }
     }
-  }, [modalLink, searchResults, allParties]);
+  }, [modalLink, searchResults, allParties, type]);
 
   // Fetch parties from API
   const fetchParties = useCallback(async (query?: string): Promise<PartyItem[]> => {
@@ -164,19 +176,21 @@ const PartyField: React.FC<PartyFieldProps> = ({
             items = data.businesses;
           } else if (Array.isArray(data.clients)) {
             items = data.clients;
+          } else if (Array.isArray(data.vendors)) {
+            items = data.vendors;
           } else if (Array.isArray(data.data)) {
             items = data.data;
           } else if (Array.isArray(data)) {
             items = data;
-          } else if (data.invoices) {
-            // Handle case where data might be nested under invoices key
-            items = data.invoices;
+          } else if (data[type + 's']) {
+            // Dynamic key based on type (e.g., 'vendors', 'suppliers')
+            items = data[type + 's'];
           }
 
           // Transform data to match PartyItem interface
           return items.map((item: any) => ({
             id: item.id || item._id || '',
-            name: item.name || item.business_name || item.client_name || '',
+            name: item.name || item.business_name || item.client_name || item.vendor_name || '',
             email: item.email || item.contact_email || '',
             address: item.address || item.business_address || '',
             phone: item.phone || item.contact_phone || '',
@@ -184,7 +198,8 @@ const PartyField: React.FC<PartyFieldProps> = ({
             invoice_count: item.invoice_count || item.total_invoices || 0,
             logo: item.logo || item.name?.charAt(0).toUpperCase() || '?',
             description: `${item.email ? `Email: ${item.email}` : ''}${item.phone ? ` | Phone: ${item.phone}` : ''}${item.address ? ` | ${item.address}` : ''}${item.tax_id ? ` | Tax ID: ${item.tax_id}` : ''}`,
-            type: type
+            type: type,
+            ...item // Spread original item to preserve any additional properties
           }));
         } else {
           console.error(`Error fetching ${type}s:`, data.error);
@@ -326,13 +341,14 @@ const PartyField: React.FC<PartyFieldProps> = ({
 
   return (
     <>
-      {/* Modal for non-Router usage (fallback) */}
-      {isModalOpen && !modalLink && (
-        <ClientModal
+      {/* Generic Modal Component */}
+      {isModalOpen && !modalLink && ModalComponent && (
+        <ModalComponent
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           onSuccess={handleSuccess}
-          clientData={modalType === 'edit' ? selectedClient : null}
+          data={modalType === 'edit' ? selectedItem : null}
+          {...modalProps} // Spread additional props
         />
       )}
 
@@ -361,11 +377,11 @@ const PartyField: React.FC<PartyFieldProps> = ({
           {/* button that shows dropdown*/}
           <button
             type="button"
-            onClick={handlePlusClick}
-            className={`absolute hidden bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900
+            onClick={openCreateModal}
+            className={`absolute bg-gray-0 text-gray-700 hover:bg-gray-100 hover:text-gray-700
                 rounded-full p-0.5 right-2 top-2 transition-all duration-300 ease-in-out
-            ${isClicked ? "opacity-0 scale-95" : isHovering || isFocused ? "opacity-60 scale-105" : "opacity-60 md:opacity-0 scale-100"}
-            ${showDropdown ? 'rotate-45' : 'rotate-0'}`}
+            ${isClicked ? "opacity-30 scale-95" : isHovering || isFocused ? "opacity-80 scale-105" : "opacity-80 md:opacity-0 scale-100"}
+            ${showDropdown ? 'rotate-0' : 'rotate-0'}`}
             aria-label={`Add ${type}`}
           >
             <Plus size={18} />
@@ -382,7 +398,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
               aria-label={`${type} suggestions`}
             >
               <div className="py-2">
-                { searchResults.length > 0 ? (
+                {searchResults.length > 0 ? (
                   <div>
                     {searchResults.map((party) => (
                       <button
@@ -419,7 +435,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
                         rounded-md transition-colors cursor-pointer"
                       >
                         <Plus size={20} />
-                        {addLabel || `Add ${type === 'business' ? 'Business' : 'Client'}`}
+                        {addLabel || `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
                       </Link>
                     ) : (
                       // Fallback to button with local state
@@ -429,7 +445,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
                         rounded-md transition-colors cursor-pointer"
                       >
                         <Plus size={20} />
-                        {addLabel || `Add ${type === 'business' ? 'Business' : 'Client'}`}
+                        {addLabel || `Add ${type.charAt(0).toUpperCase() + type.slice(1)}`}
                       </button>
                     )}
                   </div>

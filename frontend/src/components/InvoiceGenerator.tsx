@@ -16,6 +16,8 @@ import CurrencySelector from './CurrencySelector';
 import Footer from './Footer';
 import { CircleAlert, X } from 'lucide-react';
 import Home from '../pages/Home';
+import ClientModal from './ClientModal';
+import BusinessModal from './BusinessModal';
 
 // Generate unique ID for items (same as in useInvoice hook)
 const generateId = () => {
@@ -549,33 +551,41 @@ const handlePreview = async () => {
         <header className="flex flex-col lg:flex-row items-end md:flex-nowrap justify-between gap-6 mb-10">
           <div className="flex flex-col lg:flex-row gap-4 w-full lg:w-auto">
             <PartyField
-          label="From"
-          value={from}
-          placeholder="Sender's name..."
-          noResultsText="Business not found"
-          onChange={(e) => setFrom(e.target.value)}
-          onSelect={(business) => setBusinessId(business?.id || null)}
-          apiConfig={{
-            endpoint: '/api/businesses',
-            userId: userId
-          }}
-          addLabel="Add New Business"
-        />
+        label="From"
+        value={from}
+        type="business"
+        placeholder="Sender's name..."
+        noResultsText="Business not found"
+        onChange={(e) => setFrom(e.target.value)}
+        onSelect={(business) => setBusinessId(business?.id || null)}
+        apiConfig={{
+          endpoint: '/api/businesses',
+          userId: userId
+        }}
+        addLabel="Add New Business"
+        ModalComponent={BusinessModal}
+        modalProps={{
+          // Any additional props specific to BusinessModal
+          someBusinessSpecificProp: 'value'
+        }}
+      />
 
         <PartyField
-          label="To"
-          value={to}
-          placeholder="Who is this invoice to?"
-          noResultsText="Client not found"
-          onChange={(e) => setTo(e.target.value)}
-          onSelect={(client) => setClientId(client?.id || null)}
-          apiConfig={{
-            endpoint: '/api/clients',
-            userId: userId
-          }}
-          addLabel="Add New Client"
-        />
+        label="To"
+        value={to}
+        type="client"
+        placeholder="Who is this invoice to?"
+        noResultsText="Client not found"
+        onChange={(e) => setTo(e.target.value)}
+        onSelect={(client) => setClientId(client?.id || null)}
+        apiConfig={{
+          endpoint: '/api/clients',
+          userId: userId
+        }}
+        addLabel="Add New Client"
+        ModalComponent={ClientModal}
 
+      />
           </div>
 
           <div className="lg:items-end w-full rounded-lg flex flex-col md:flex-row lg:flex-col gap-4">
