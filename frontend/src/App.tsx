@@ -93,6 +93,7 @@ const AppContent: React.FC = () => {
             <Route path="/clients/edit/:id" element={<ClientsPage />} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+            <Route path="/kalistus001" element={<ProtectedRoute><SupportForm /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
 
 

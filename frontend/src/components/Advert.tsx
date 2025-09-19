@@ -12,9 +12,9 @@ export default function Advert() {
 
   return (
       <a href="https://medium.com/@talktoolumide/it-started-with-a-familiar-pain-point-f33f26b85d3a" target="_blank" rel="noopener noreferrer" className="flex items-start z-10 w-full hover:contrast-125">
-    <div className="flex items-start z-10 w-full">
+    <div className="flex items-start z-10 w-full hidden xl:block">
       <div className="w-full">
-      <div className="bg-[#8eda91] hover:bg-[#8eda91] shadow-xs hidden xl:block p-4 transition-all duration-200 ease-in-out relative">
+      <div className="bg-[#8eda91] hover:bg-[#8eda91] shadow-xs p-4 transition-all duration-200 ease-in-out relative">
         {/* Close Button */}
         <button
           onClick={() => setIsVisible(false)}
@@ -26,7 +26,7 @@ export default function Advert() {
 
         {/* Header with icon */}
         <div className="flex items-center mb-1 pr-6">
-          <h3 className="font-medium text-3xl text-[#0e423e]">500</h3><Plus className="text-[#0e423e]" size={30}/>
+          <h3 className="font-medium text-3xl hidden md:block text-[#0e423e]">500</h3><Plus className="text-[#0e423e]" size={30}/>
         </div>
 
         {/* Single benefit */}
@@ -55,17 +55,6 @@ export default function Advert() {
       />
       </div>
 
-      {/* Upgrade Mobile */}
-      <div className="w-full flex xl:hidden justify-center items-center">
-          <button
-            onClick={() => navigate("/settings?section=billing")}
-            className="bg-[#d2fee1] shadow-xs py-2 w-full rounded-md hover:shadow-sm hover:bg-[#8eda91] transition-shadow
-             relative flex flex-col items-center justify-center"
-          >
-            <Crown className="text-[#0e423e]" size={20} />
-            <span className="text-xs font-medium mt-0.5 text-[#0e423e]">Pro</span>
-          </button>
-        </div>
 
 
     </div>

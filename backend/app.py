@@ -1,15 +1,12 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 import requests
+from message import send_email
 import json
+from support import support_bp
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
-import tempfile
-import ssl
-import certifi
 from dotenv import load_dotenv
-import os
-import logging
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
@@ -19,8 +16,9 @@ from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
 from io import BytesIO
-from pdf2image import convert_from_bytes
 import tempfile, os
+from pdf2image import convert_from_bytes
+import ssl, certifi, os, logging
 import jwt
 import uuid
 from functools import lru_cache
@@ -58,6 +56,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 
 # Create tables if they don't exist
@@ -275,12 +274,6 @@ def parse_invoice_data(data):
 #         logging.exception("Error in preview_invoice")
 #         return jsonify({'error': str(e)}), 500
 
-from flask import send_file, jsonify, request
-from io import BytesIO
-from weasyprint import HTML
-from pdf2image import convert_from_bytes
-import ssl, certifi, os, logging
-
 @app.route('/preview-invoice', methods=['POST'])
 def preview_invoice():
     temp_files = []  # Store temporary files to clean up later
@@ -430,44 +423,44 @@ def download_image_for_weasyprint(image_url):
 def get_user_profile():
     return Users.get_user_profile()
 
-# @app.route('/api/users/<uuid:user_id>', methods=['GET'])
-# def get_user(user_id):
-#     """Fetch user details by user_id"""
-#     try:
-#         from models import User
-#
-#         user = User.query.filter_by(id=user_id).first()
-#         if not user:
-#             return jsonify({
-#                 'success': False,
-#                 'error': 'User not found'
-#             }), 404
-#
-#         return jsonify({
-#             'success': True,
-#             'user': {
-#                 'id': str(user.id),
-#                 'email': user.email,
-#                 'first_name': user.first_name,
-#                 'last_name': user.last_name,
-#                 'google_id': user.google_id,
-#                 'auth_provider': user.auth_provider,
-#                 'auth_method': 'google' if user.google_id else 'native',
-#                 'is_guest': user.is_guest,
-#                 'profile_picture_url': user.profile_picture_url,
-#                 'email_verified': user.email_verified,
-#                 'data': user.data if user.data else {},
-#                 'created_at': user.created_at.isoformat() if user.created_at else None,
-#                 'updated_at': user.updated_at.isoformat() if user.updated_at else None
-#             }
-#         })
-#
-#     except Exception as e:
-#         app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
-#         return jsonify({
-#             'success': False,
-#             'error': 'Failed to fetch user'
-#         }), 500
+@app.route('/api/users/<uuid:user_id>', methods=['GET'])
+def get_user(user_id):
+    """Fetch user details by user_id"""
+    try:
+        from models import User
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'User not found'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'google_id': user.google_id,
+                'auth_provider': user.auth_provider,
+                'auth_method': 'google' if user.google_id else 'native',
+                'is_guest': user.is_guest,
+                'profile_picture_url': user.profile_picture_url,
+                'email_verified': user.email_verified,
+                'data': user.data if user.data else {},
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None
+            }
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch user'
+        }), 500
 
 
 @app.route('/api/invoices', methods=['GET'])
@@ -736,6 +729,76 @@ def update_invoice_status_legacy(invoice_id):
     return InvoiceOperations.update_invoice_status(str(invoice_id))
 
 
+@app.route('/support', methods=['POST'])
+def handle_support_request():
+    try:
+        # Check if request contains JSON
+        if not request.is_json:
+            return jsonify({'success': False, 'error': 'Request must be JSON'}), 400
+
+        data = request.get_json()
+
+        # Validate required fields
+        if not data or 'issueType' not in data or 'details' not in data:
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+
+        # Extract data from request
+        issue_type = data.get('issueType', 'Unknown')
+        details = data.get('details', 'No details provided')
+        name = data.get('name', 'Unknown User')
+        email = data.get('email', 'unknown@example.com')
+        user_id = data.get('userId', 'Not provided')
+
+        # Map issue types to readable labels
+        issue_labels = {
+            'payment-not-processed': 'Payment not processed',
+            'incorrect-amount': 'Incorrect invoice amount',
+            'missing-invoice': 'Missing invoice',
+            'duplicate-charge': 'Duplicate charge',
+            'refund-request': 'Refund request',
+            'billing-address': 'Billing address issue',
+            'tax-related': 'Tax-related question',
+            'other': 'Other invoice issue'
+        }
+
+        readable_issue_type = issue_labels.get(issue_type, issue_type)
+
+        # Create HTML email content
+        subject = f"Support Request: {readable_issue_type} from {name}"
+
+        plain_body = f"""
+        New Support Request Received:
+
+        Issue Type: {readable_issue_type}
+        User: {name} ({email})
+        User ID: {user_id}
+
+        Details:
+        {details}
+
+        ---
+        This message was sent from the Envoyce support form.
+        """
+
+        # Send email using your existing send_email function
+        email_result = send_email(to_email='talktoenvoyce@gmail.com', subject=subject, body=plain_body, from_email="support@envoyce.xyz",
+                   content_type="plain")
+
+        # Check if email was sent successfully
+        if not email_result.get('success'):
+            return jsonify({
+                'success': False,
+                'error': f"Failed to send email: {email_result.get('error', 'Unknown error')}"
+            }), 500
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        print(f"Error processing support request: {str(e)}")
+        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+
+
+
 @app.route('/api/auth/signup', methods=['POST'])
 def signup():
     try:
@@ -746,47 +809,37 @@ def signup():
         last_name = data.get('last_name')
 
         if not email or not password or not first_name or not last_name:
-            return jsonify({
-                'success': False,
-                'error': 'Email, password, first name, and last name required.'
-            }), 400
+            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
 
         from models import User
         existing = User.query.filter_by(email=email).first()
         if existing:
-            return jsonify({
-                'success': False,
-                'error': 'Email already registered.'
-            }), 409
+            return jsonify({'success': False, 'error': 'Email already registered.'}), 409
 
         pw_hash = generate_password_hash(password)
-        user = User(
-            email=email,
-            password_hash=pw_hash,
-            first_name=first_name,
-            last_name=last_name
-        )
+        user = User(email=email, password_hash=pw_hash, first_name=first_name, last_name=last_name)
         db.session.add(user)
         db.session.commit()
+
+        # ✅ Send welcome email
+        subject = "Welcome to Envoyce 🎉"
+        body = f"<h1>Hello {first_name},</h1><p>Thanks for signing up! 🚀</p>"
+        send_email(email, subject, body)
 
         return jsonify({
             'success': True,
             'user': {
-                'id': str(user.id),  # This is what your frontend expects as 'user_id'
+                'id': str(user.id),
                 'email': user.email,
                 'first_name': user.first_name,
-                'last_name': user.last_name,
-                'auth_method': 'native'
+                'last_name': user.last_name
             }
         })
 
     except Exception as e:
         db.session.rollback()
         app.logger.error(f"Signup error: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': 'An error occurred during signup'
-        }), 500
+        return jsonify({'success': False, 'error': 'An error occurred during signup'}), 500
 
 
 @lru_cache(maxsize=1)
@@ -813,6 +866,8 @@ def signin():
         return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
     return jsonify({'success': True, 'user': {'id': str(user.id), 'email': user.email, 'first_name': user.first_name,
                                               'last_name': user.last_name}})
+
+
 
 
 @app.route('/api/auth/status', methods=['GET'])
