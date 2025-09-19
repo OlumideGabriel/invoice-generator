@@ -729,73 +729,39 @@ def update_invoice_status_legacy(invoice_id):
     return InvoiceOperations.update_invoice_status(str(invoice_id))
 
 
-@app.route('/support', methods=['POST'])
-def handle_support_request():
+@app.route("/api/support", methods=["POST"])
+def support():
     try:
-        # Check if request contains JSON
-        if not request.is_json:
-            return jsonify({'success': False, 'error': 'Request must be JSON'}), 400
-
         data = request.get_json()
 
-        # Validate required fields
-        if not data or 'issueType' not in data or 'details' not in data:
-            return jsonify({'success': False, 'error': 'Missing required fields'}), 400
+        # Extract form data
+        user_name = data.get("name", "Unknown User")
+        user_email = data.get("email", "unknown@example.com")
+        user_id = data.get("userId")
+        issue_type = data.get("issueType", "Unspecified")
+        details = data.get("details", "")
 
-        # Extract data from request
-        issue_type = data.get('issueType', 'Unknown')
-        details = data.get('details', 'No details provided')
-        name = data.get('name', 'Unknown User')
-        email = data.get('email', 'unknown@example.com')
-        user_id = data.get('userId', 'Not provided')
+        # Subject line for clarity
+        subject = f"New Support Request – {issue_type.replace('-', ' ').title()}"
 
-        # Map issue types to readable labels
-        issue_labels = {
-            'payment-not-processed': 'Payment not processed',
-            'incorrect-amount': 'Incorrect invoice amount',
-            'missing-invoice': 'Missing invoice',
-            'duplicate-charge': 'Duplicate charge',
-            'refund-request': 'Refund request',
-            'billing-address': 'Billing address issue',
-            'tax-related': 'Tax-related question',
-            'other': 'Other invoice issue'
-        }
+        # Send email (to your support inbox)
+        result = send_email(
+            to_email="support@envoyce.xyz",  # where you want tickets delivered
+            subject=subject,
+            issue_type=issue_type,
+            details=details,
+            user_name=user_name,
+            user_email=user_email,
+            user_id=user_id
+        )
 
-        readable_issue_type = issue_labels.get(issue_type, issue_type)
-
-        # Create HTML email content
-        subject = f"Support Request: {readable_issue_type} from {name}"
-
-        plain_body = f"""
-        New Support Request Received:
-
-        Issue Type: {readable_issue_type}
-        User: {name} ({email})
-        User ID: {user_id}
-
-        Details:
-        {details}
-
-        ---
-        This message was sent from the Envoyce support form.
-        """
-
-        # Send email using your existing send_email function
-        email_result = send_email(to_email='talktoenvoyce@gmail.com', subject=subject, body=plain_body, from_email="support@envoyce.xyz",
-                   content_type="plain")
-
-        # Check if email was sent successfully
-        if not email_result.get('success'):
-            return jsonify({
-                'success': False,
-                'error': f"Failed to send email: {email_result.get('error', 'Unknown error')}"
-            }), 500
-
-        return jsonify({'success': True})
+        if result["success"]:
+            return jsonify({"success": True, "message": "Support request sent"})
+        else:
+            return jsonify({"success": False, "error": result["error"]}), 500
 
     except Exception as e:
-        print(f"Error processing support request: {str(e)}")
-        return jsonify({'success': False, 'error': 'Internal server error'}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 

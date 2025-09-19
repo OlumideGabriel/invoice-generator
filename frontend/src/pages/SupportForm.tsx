@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Mail, Send, CheckCircle, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Send, CheckCircle, AlertCircle, ArrowLeft, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const SupportForm = () => {
   const { user } = useAuth();
+
   const [formData, setFormData] = useState({
     issueType: '',
     details: ''
@@ -11,17 +12,15 @@ const SupportForm = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [error, setError] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const issueTypes = [
     { value: '', label: 'Select an issue type' },
-    { value: 'payment-not-processed', label: 'Payment not processed' },
-    { value: 'incorrect-amount', label: 'Incorrect invoice amount' },
-    { value: 'missing-invoice', label: 'Missing invoice' },
-    { value: 'duplicate-charge', label: 'Duplicate charge' },
-    { value: 'refund-request', label: 'Refund request' },
-    { value: 'billing-address', label: 'Billing address issue' },
-    { value: 'tax-related', label: 'Tax-related question' },
-    { value: 'other', label: 'Other invoice issue' }
+  { value: 'missing-invoice', label: 'Invoice not generated or missing' },
+  { value: 'duplicate-invoice', label: 'Duplicate invoice or charge' },
+  { value: 'layout-issue', label: 'Layout or formatting issue' },
+  { value: 'download-error', label: 'Download or Preview issue (PDF)' },
+  { value: 'other', label: 'Other issue' }
   ];
 
   const handleInputChange = (e) => {
@@ -30,6 +29,19 @@ const SupportForm = () => {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleDropdownSelect = (issueType) => {
+    setFormData(prev => ({
+      ...prev,
+      issueType: issueType.value
+    }));
+    setIsDropdownOpen(false);
+  };
+
+  const getSelectedIssueLabel = () => {
+    const selected = issueTypes.find(type => type.value === formData.issueType);
+    return selected ? selected.label : 'Select an issue type';
   };
 
   const handleSubmit = async (e) => {
@@ -41,45 +53,23 @@ const SupportForm = () => {
     setError(null);
 
     try {
-      const res = await fetch('/support', {
+      const res = await fetch('/api/support', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           issueType: formData.issueType,
           details: formData.details,
-          name: user?.name || 'Unknown User',
+          name: `${user?.first_name || ""} ${user?.last_name || ""}`.trim() || "User",
           email: user?.email || 'unknown@example.com',
           userId: user?.id
         })
       });
 
-      // Check if response is OK and has content
-      if (!res.ok) {
-        // Try to get error message from response
-        const errorText = await res.text();
-        let errorData;
-        try {
-          errorData = errorText ? JSON.parse(errorText) : {};
-        } catch {
-          errorData = { error: `Server error: ${res.status} ${res.statusText}` };
-        }
-        throw new Error(errorData.error || `Request failed with status ${res.status}`);
-      }
-
-      // Check if response has content before parsing as JSON
-      const contentType = res.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await res.json();
-        if (data.success) {
-          setIsSubmitted(true);
-        } else {
-          setError(data.error || 'Failed to send support request');
-        }
-      } else {
-        // If no JSON response but request was successful
+      const data = await res.json();
+      if (data.success) {
         setIsSubmitted(true);
+      } else {
+        setError(data.error || 'Failed to send support request');
       }
     } catch (err) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -96,19 +86,20 @@ const SupportForm = () => {
 
   if (isSubmitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
-        <div className="max-w-md mx-auto bg-white rounded-xl shadow-sm border border-slate-200 p-6 mt-8">
+      <div className=" py-8 px-4">
+        <div className="max-w-md mx-auto bg-white rounded-lg shadow-sm border border-slate-200 p-6 mt-8">
           <div className="text-center">
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">Support Request Sent</h2>
-            <p className="text-gray-600 mb-6">
-              Thanks {user?.name || 'there'}, we've received your request and will respond shortly.
+            <h2 className="text-xl font-semibold text-gray-900 mb-6">Support Request Sent</h2>
+            <p className="text-gray-600 mb-6 leading-relaxed">
+             Thanks, {user.first_name || 'friend'}! We’ve got your request and will hit up on&nbsp;
+             <span className="text-gray-800 font-semibold" >{user.email}</span> soon!
             </p>
             <button
               onClick={handleReset}
-              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="w-full bg-gray-100 hidden text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               Submit Another Request
             </button>
@@ -119,50 +110,78 @@ const SupportForm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 py-8 px-4">
+    <div className=" py-8 px-4 ">
       <div className="max-w-md mx-auto">
-        <button
-          onClick={() => window.history.back()}
-          className="inline-flex items-center px-3 py-2 mb-4 bg-white hover:bg-gray-100 rounded-lg text-gray-600 hover:text-gray-800 transition-colors shadow-sm border border-slate-200"
-        >
-          <ArrowLeft size={16} className="mr-2" />
-          Back
-        </button>
-
-        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-          <div className="text-center mb-6">
+        <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
+          <div className="text-center mb-8">
             <div className="w-12 h-12 bg-[#d2fee1] rounded-full flex items-center justify-center mx-auto mb-3">
               <Mail className="h-6 w-6 text-[#0e423e]" />
             </div>
-            <h1 className="text-3xl font-semibold text-gray-900 mb-2">Invoice Support</h1>
-            <p className="text-gray-600">We're here to help with any invoice issues</p>
+            <h1 className="text-3xl font-semibold text-gray-900 mb-2">Support</h1>
+            <p className="text-gray-600">We're here to help with any issues</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <div onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="issueType" className="block text-sm font-medium text-gray-700 mb-2">
-                Issue Type *
-              </label>
-              <select
-                id="issueType"
-                name="issueType"
-                value={formData.issueType}
-                onChange={handleInputChange}
-                required
-                className="w-full px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
-              >
-                {issueTypes.map((type) => (
-                  <option key={type.value} value={type.value} disabled={type.value === ''}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <div className="bg-white border border-gray-300 shadow-sm rounded-md cursor-pointer select-none">
+                  {/* Trigger Button */}
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        setIsDropdownOpen(!isDropdownOpen);
+                      }
+                    }}
+                    className={`w-full py-2.5 px-3 pr-10 text-left rounded-md hover:bg-gray-50 transition-colors ${
+                      formData.issueType ? 'text-gray-900' : 'text-gray-500'
+                    }`}
+                    aria-haspopup="listbox"
+                    aria-expanded={isDropdownOpen}
+                  >
+                    {getSelectedIssueLabel()}
+                  </div>
+                  {/* Chevron Icon */}
+                  <ChevronDown
+                    size={20}
+                    className={`absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-600 pointer-events-none transition-transform duration-200 ${
+                      isDropdownOpen ? 'rotate-180' : ''
+                    }`}
+                  />
+                  {/* Dropdown Menu */}
+                  {isDropdownOpen && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-md p-1 shadow-md z-10">
+                      <div className="max-h-40 overflow-y-auto">
+                        {issueTypes.map((option) => (
+                          <button
+                            key={option.value}
+                            type="button"
+                            onClick={() => handleDropdownSelect(option)}
+                            className={`w-full px-3 py-2.5 mb-1 text-left text-md hover:bg-gray-100 rounded-md transition-colors ${
+                              formData.issueType === option.value ? 'bg-gray-100 font-medium text-gray-900' : 'text-gray-600'
+                            }`}
+                          >
+                            {option.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Overlay to close dropdown when clicking outside */}
+                {isDropdownOpen && (
+                  <div
+                    className="fixed inset-0 z-0"
+                    onClick={() => setIsDropdownOpen(false)}
+                  />
+                )}
+              </div>
             </div>
 
             <div>
-              <label htmlFor="details" className="block text-sm font-medium text-gray-700 mb-2">
-                More Details *
-              </label>
               <textarea
                 id="details"
                 name="details"
@@ -170,30 +189,32 @@ const SupportForm = () => {
                 onChange={handleInputChange}
                 required
                 rows={4}
-                placeholder="Please provide more details about your invoice issue..."
-                className="w-full min-h-32 max-h-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y transition-colors"
+                placeholder="Please provide more details..."
+                className="w-full min-h-32 max-h-32 px-3 py-3 input rounded-md focus:ring-2 focus:ring-blue-500
+                focus:border-blue-500 outline-none resize-y transition-colors placeholder-gray-500 text-gray-900 "
               />
             </div>
 
             {error && (
-              <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-red-700 text-sm">
+              <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-700 text-sm">
                 {error}
               </div>
             )}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+            <div className="bg-blue-50 border hidden border-blue-200 rounded-md p-3">
               <div className="flex items-start">
                 <AlertCircle className="h-4 w-4 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                 <p className="text-sm text-blue-800">
-                  Your request will be sent to <strong>talktoenvoyce@gmail.com</strong>.
+                  We would get back to you on <strong>{user.email}</strong>.
                 </p>
               </div>
             </div>
 
             <button
               type="submit"
+              onClick={handleSubmit}
               disabled={isSubmitting || !formData.issueType || !formData.details.trim()}
-              className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center"
+              className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium flex items-center justify-center"
             >
               {isSubmitting ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -202,7 +223,7 @@ const SupportForm = () => {
               )}
               {isSubmitting ? 'Sending...' : 'Send Support Request'}
             </button>
-          </form>
+          </div>
 
           <div className="mt-4 text-center">
             <p className="text-xs text-gray-500">We typically respond within 24 hours</p>
