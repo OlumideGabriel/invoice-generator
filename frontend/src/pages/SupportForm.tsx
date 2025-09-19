@@ -94,7 +94,7 @@ const SupportForm = () => {
             </p>
             <button
               onClick={handleReset}
-              className="w-full bg-gray-100 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
+              className="w-full bg-gray-100 hidden text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium"
             >
               Submit Another Request
             </button>
