@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { API_BASE_URL } from '../config/api';
@@ -39,6 +39,9 @@ const ClientsPage = () => {
   const [notification, setNotification] = useState(null);
   const [dropdownOpen, setDropdownOpen] = useState(null);
 
+  // Add refs for dropdown positioning like in Invoices page
+  const dropdownRefs = useRef({});
+
   // Form state
   const [formData, setFormData] = useState({
     name: '',
@@ -50,6 +53,23 @@ const ClientsPage = () => {
 
   const { user } = useAuth();
   const userId = user.id;
+
+  // Add click outside handler like in Invoices page
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownOpen && dropdownRefs.current[dropdownOpen]) {
+        const dropdownElement = dropdownRefs.current[dropdownOpen];
+        if (dropdownElement && !dropdownElement.contains(event.target)) {
+          setDropdownOpen(null);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
 
   useEffect(() => {
     fetchClients();
@@ -139,8 +159,8 @@ const ClientsPage = () => {
 
     try {
       const url = modalType === 'create'
-        ? '/api/clients'
-        : `/api/clients/${selectedClient.id}`;
+        ? `${API_BASE_URL}/api/clients`
+        : `${API_BASE_URL}/api/clients/${selectedClient.id}`;
 
       const method = modalType === 'create' ? 'POST' : 'PUT';
       const payload = modalType === 'create'
@@ -184,7 +204,7 @@ const ClientsPage = () => {
     try {
       if (selectedClients.length > 0) {
         // Bulk delete
-        const response = await fetch('${API_BASE_URL}/api/clients/bulk-delete', {
+        const response = await fetch(`${API_BASE_URL}/api/clients/bulk-delete`, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ client_ids: selectedClients })
@@ -235,6 +255,11 @@ const ClientsPage = () => {
     }
   };
 
+  // Add toggle dropdown function like in Invoices page
+  const toggleDropdown = (clientId) => {
+    setDropdownOpen(dropdownOpen === clientId ? null : clientId);
+  };
+
   return (
       <>
       <div className="md:block hidden sticky top-0 left-0 w-full z-30">
@@ -243,6 +268,49 @@ const ClientsPage = () => {
       <div className="md:hidden block">
       <MainMenu />
       </div>
+
+      {/* Dropdown Portals - Rendered outside table to avoid clipping (like in Invoices page) */}
+      {dropdownOpen && (
+        <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}>
+          {(() => {
+            const buttonElement = document.querySelector(`[data-dropdown-button="${dropdownOpen}"]`);
+            if (!buttonElement) return null;
+
+            const rect = buttonElement.getBoundingClientRect();
+
+            return (
+              <div
+                ref={(el) => {
+                  dropdownRefs.current[dropdownOpen] = el;
+                }}
+                className="absolute w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                style={{
+                  top: rect.bottom + window.scrollY + 8,
+                  left: rect.right + window.scrollX - 192, // 192px = w-48
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="py-1">
+                  <button
+                    onClick={() => handleEditClient(clients.find(c => c.id === dropdownOpen))}
+                    className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                  >
+                    <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
+                    Edit Client
+                  </button>
+                  <button
+                    onClick={() => handleDeleteClient(clients.find(c => c.id === dropdownOpen))}
+                    className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                  >
+                    <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+                    Delete Client
+                  </button>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
+      )}
 
     <div className="">
       {/* Header */}
@@ -415,40 +483,17 @@ const ClientsPage = () => {
                       <td className="px-6 py-4 text-sm text-gray-500">
                         {new Date(client.created_at).toLocaleDateString()}
                       </td>
-                      <td className="px-6 py-4 text-right">
-                      <div className="relative inline-block text-left">
-                        <button
-                          onClick={() => setDropdownOpen(dropdownOpen === client.id ? null : client.id)}
-                          className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-
-                        {dropdownOpen === client.id && (
-                          <div
-                            className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
-                            style={{ position: 'fixed' }}
+                      <td className="px-6 py-4 text-right relative">
+                        <div className="relative inline-block text-left">
+                          <button
+                            onClick={() => toggleDropdown(client.id)}
+                            data-dropdown-button={client.id}
+                            className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                           >
-                            <div className="py-1">
-                              <button
-                                onClick={() => handleEditClient(client)}
-                                className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                              >
-                                <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
-                                Edit Client
-                              </button>
-                              <button
-                                onClick={() => handleDeleteClient(client)}
-                                className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                              >
-                                <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
-                                Delete Client
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </td>
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -649,16 +694,14 @@ const ClientsPage = () => {
               <AlertCircle className="h-5 w-5 mr-3 text-red-600" />
             )}
             <span className="text-sm font-medium">{notification.message}</span>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-3 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-4 w-4" />
+            </button>
           </div>
         </div>
-      )}
-
-      {/* Click outside handler for dropdowns */}
-      {dropdownOpen && (
-        <div
-          className="fixed inset-0 z-0"
-          onClick={() => setDropdownOpen(null)}
-        />
       )}
     </div>
     <Navbar />
