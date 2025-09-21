@@ -207,14 +207,15 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       </div>
 
       {/* Remove button */}
-      <div className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
-           cursor-pointer
-      ml-2 p-1 rounded-lg cursor-pointer ${itemsLength > 1 ? 'small-icon transition-colors' : 'hidden'}`}
-        onClick={() => onRemove(index)}
-        aria-label="Remove item"
-      >
-        <X size={18} />
-      </div>
+        <div
+         className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
+         ml-2 p-1 rounded-lg cursor-pointer transition-all duration-200
+         ${itemsLength > 1 ? 'md:opacity-0 group-hover:opacity-90 hover:opacity-100 md:flex' : 'hidden'}`}
+         onClick={() => onRemove(index)}
+         aria-label="Remove item"
+        >
+         <X size={18} />
+        </div>
     </div>
   );
 };

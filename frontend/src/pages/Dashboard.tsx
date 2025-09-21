@@ -230,8 +230,8 @@ const Dashboard = () => {
 
             <div className="">
                 {/* Header Skeleton */}
-                <div className="bg-white shadow-sm border-b border-slate-200">
-                    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="bg-white border-b border-gray-300">
+                    <div className="max-w-7xl mx-auto px-8">
                         <div className="flex justify-between items-center py-6">
                             <div className="flex items-center space-x-3 gap-6">
                                 <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
@@ -246,11 +246,11 @@ const Dashboard = () => {
                 </div>
 
                 {/* Main Content Skeleton */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                <div className="max-w-7xl mx-auto px-8 py-8">
                     {/* Metrics Cards Skeleton */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         {[...Array(4)].map((_, i) => (
-                            <div key={i} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div key={i} className="bg-white rounded-xl border border-gray-300 p-6">
                                 <div className="flex items-center justify-between">
                                     <div className="w-full">
                                         <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse mb-2"></div>
@@ -265,16 +265,16 @@ const Dashboard = () => {
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Recent Invoices Skeleton */}
                         <div className="lg:col-span-2">
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-200">
+                            <div className="bg-white rounded-xl border border-gray-300 overflow-hidden">
+                                <div className="px-8 py-4 border-b border-gray-300">
                                     <div className="flex items-center justify-between">
                                         <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse"></div>
                                         <div className="h-6 w-16 bg-gray-200 rounded-md animate-pulse"></div>
                                     </div>
                                 </div>
-                                <div className="divide-y divide-gray-200">
+                                <div className="divide-y divide-gray-300">
                                     {[...Array(4)].map((_, i) => (
-                                        <div key={i} className="px-6 py-4">
+                                        <div key={i} className="px-8 py-4">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-3">
                                                     <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse"></div>
@@ -300,7 +300,7 @@ const Dashboard = () => {
                         {/* Quick Stats & Actions Skeleton */}
                         <div className="space-y-6">
                             {/* Status Summary Skeleton */}
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div className="bg-white rounded-xl border border-gray-300 p-6">
                                 <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse mb-4"></div>
                                 <div className="space-y-3">
                                     {[...Array(2)].map((_, i) => (
@@ -316,7 +316,7 @@ const Dashboard = () => {
                             </div>
 
                             {/* Quick Actions Skeleton */}
-                            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                            <div className="bg-white rounded-xl border border-gray-300 p-6">
                                 <div className="h-6 w-40 bg-gray-200 rounded-md animate-pulse mb-4"></div>
                                 <div className="space-y-3">
                                     {[...Array(3)].map((_, i) => (
@@ -364,38 +364,39 @@ const Dashboard = () => {
 
         <div className="">
             {/* Header */}
-            <div className="bg-white shadow-sm border-b border-slate-200">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="bg-white border-b border-gray-300">
+                <div className="max-w-7xl mx-auto px-8">
                     <div className="flex justify-between items-center py-6">
                         {/* Back button and title */}
-                        <div className="flex items-center space-x-3 gap-6">
+                        <div className="flex items-center gap-6">
                             <button
                                 onClick={() => window.history.back()}
-                                className="inline-flex hidden items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg
+                                className="inline-flex hidden items-center px-3 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg
                                 text-gray-400 hover:text-gray-800 transition-colors"
                             >
                                 <ArrowLeft size={20} />
                             </button>
 
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-                                <p className="mt-2 text-gray-600">Welcome back, {user?.first_name || 'Guest'}!</p>
+                                <h1 className="text-3xl font-semibold text-gray-900">Dashboard</h1>
+                                <p className="text-gray-600 hidden">Welcome back, {user?.first_name || 'Guest'}!</p>
                             </div>
                         </div>
 
                         {/* New Invoice Button */}
                         <button
                             onClick={() => navigate('/new')}
-                            className="lg:inline-flex hidden items-center px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                            className="lg:inline-flex hidden items-center px-4 py-3 bg-black/90 text-white rounded-lg
+                             hover:bg-neutral-800 transition-colors duration-200"
                         >
-                            <Plus className="h-4 w-4 mr-2" />
+                            <Plus className="mr-2" size={19} />
                             New Invoice
                         </button>
 
                         {/* Mobile floating button */}
                         <button
                             onClick={() => navigate('/new')}
-                            className="inline-flex lg:hidden items-center gap-2 px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
+                            className="inline-flex lg:hidden items-center gap-2 px-4 py-3 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors duration-200"
                         >
                             <Plus size={20} />
                              New Invoice
@@ -405,10 +406,11 @@ const Dashboard = () => {
             </div>
 
             {/* Main Content */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-40 lg:px-8 py-8">
+            <div className="max-w-7xl mx-auto px-8 mb-40 py-8">
+            <div className="text-gray-600 text-xl mb-6">Welcome back, {user?.first_name || 'Guest'}!</div>
                 {/* Metrics Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div className="bg-white rounded-xl border border-gray-300 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
@@ -416,37 +418,37 @@ const Dashboard = () => {
                                     {formatCurrency(metrics.totalRevenue, '£')}
                                 </p>
                             </div>
-                            <div className="bg-green-100 p-3 rounded-full">
+                            <div className="bg-green-100 p-3 rounded-lg">
                                 <DollarSign className="h-6 w-6 text-green-600" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div className="bg-white rounded-xl border border-gray-300 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Invoices</p>
                                 <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
                             </div>
-                            <div className="bg-blue-100 p-3 rounded-full">
+                            <div className="bg-blue-100 p-3 rounded-lg">
                                 <FileText className="h-6 w-6 text-blue-600" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div className="bg-white rounded-xl border border-gray-300 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Unique Clients</p>
                                 <p className="text-2xl font-bold text-gray-900">{metrics.uniqueClients}</p>
                             </div>
-                            <div className="bg-purple-100 p-3 rounded-full">
+                            <div className="bg-purple-100 p-3 rounded-lg">
                                 <Users className="h-6 w-6 text-purple-600" />
                             </div>
                         </div>
                     </div>
 
-                    <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                    <div className="bg-white rounded-xl border border-gray-300 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
@@ -454,7 +456,7 @@ const Dashboard = () => {
                                     {formatCurrency(metrics.avgInvoiceValue, '£')}
                                 </p>
                             </div>
-                            <div className="bg-orange-100 p-3 rounded-full">
+                            <div className="bg-orange-100 p-3 rounded-lg">
                                 <TrendingUp className="h-6 w-6 text-orange-600" />
                             </div>
                         </div>
@@ -464,8 +466,8 @@ const Dashboard = () => {
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     {/* Recent Invoices */}
                     <div className="lg:col-span-2">
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                            <div className="px-6 py-4 border-b border-gray-200">
+                        <div className="bg-white rounded-xl border border-gray-300 overflow-hidden">
+                            <div className="px-8 py-4 border-b border-gray-300">
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-medium text-gray-900">Recent Invoices</h3>
                                     <button
@@ -476,7 +478,7 @@ const Dashboard = () => {
                                     </button>
                                 </div>
                             </div>
-                            <div className="divide-y divide-gray-200">
+                            <div className="divide-y divide-gray-300">
                                 {metrics.recentInvoices.length > 0 ? (
                                     metrics.recentInvoices.map((invoice) => {
                                         const statusConfig = getStatusConfig(invoice.status);
@@ -485,7 +487,7 @@ const Dashboard = () => {
                                         const customerInitials = getCustomerInitials(customerName);
 
                                         return (
-                                            <div key={invoice.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
+                                            <div key={invoice.id} className="px-8 py-4 hover:bg-gray-50 transition-colors">
                                                 <div className="flex items-center justify-between">
                                                     <div className="flex items-center space-x-3">
                                                         <div className="flex-shrink-0 h-8 w-8">
@@ -527,7 +529,7 @@ const Dashboard = () => {
                                         );
                                     })
                                 ) : (
-                                    <div className="px-6 py-8 text-center">
+                                    <div className="px-8 py-8 text-center">
                                         <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                                         <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices yet</h3>
                                         <p className="text-gray-500 mb-4">Get started by creating your first invoice.</p>
@@ -547,7 +549,7 @@ const Dashboard = () => {
                     {/* Quick Stats & Actions */}
                     <div className="space-y-6">
                         {/* Status Summary */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                        <div className="bg-white rounded-xl border border-gray-300 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Status</h3>
                             <div className="space-y-3">
                                 <div className="flex items-center justify-between">
@@ -568,7 +570,7 @@ const Dashboard = () => {
                         </div>
 
                         {/* Quick Actions */}
-                        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+                        <div className="bg-white rounded-xl border border-gray-300 p-6">
                             <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
                             <div className="space-y-3">
                                 <button
@@ -597,8 +599,8 @@ const Dashboard = () => {
                     </div>
                 </div>
             </div>
+            <Navbar />
         </div>
-        <Navbar />
         </>
     );
 };

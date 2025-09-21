@@ -82,9 +82,10 @@ const Navbar: React.FC = () => {
                 key={label}
                 href={path}
                 onClick={(e) => handleNavigation(e, path)}
-                className={`flex transition-all duration-300 delay-100 ease-in-out flex-col gap-1 w-1/6 py-2 px-3 text-xs border-t-4 border-transparent items-center cursor-pointer ${
+                className={`flex transition-all duration-300 delay-100 ease-in-out flex-col gap-1 w-1/6 py-2 px-3
+                    text-xs border-neutral-50 hover:text-neutral-800 border-t-4 items-center cursor-pointer ${
                   isActive
-                    ? "text-black/80 hover:text-black/80 border-black/80"
+                    ? "text-black/90 border-t  !border-neutral-800"
                     : "text-gray-800 hover:text-black/80"
                 }`}
               >

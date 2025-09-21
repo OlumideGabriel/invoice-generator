@@ -50,14 +50,14 @@ const BusinessCard: React.FC<{
   onDelete: (id: string) => void;
   onEdit: (business: Business) => void;
 }> = ({ business, onDelete, onEdit }) => (
-  <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6 transition-shadow">
+  <div className="bg-white hover:border-gray-400 border border-gray-300 rounded-lg p-6 transition-shadow hover:shadow-sm">
     <div className="flex items-start justify-between mb-4">
       <div className="flex items-center space-x-3">
-        <Building className="w-8 h-8 text-blue-700" />
+        <Building className="w-8 h-8 text-teal-600" />
         <div>
-          <h3 className="font-semibold text-gray-900">{business.name}</h3>
+          <h3 className="text-lg font-medium text-gray-900">{business.name}</h3>
           {business.email && (
-            <p className="text-sm text-gray-600 flex items-center">
+            <p className="text-sm text-gray-500 flex items-center mt-1">
               <Mail className="w-3 h-3 mr-1" />
               {business.email}
             </p>
@@ -67,20 +67,20 @@ const BusinessCard: React.FC<{
       <div className="flex space-x-1">
         <button
           onClick={() => onEdit(business)}
-          className="p-2 text-gray-400 hover:!text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
+          className="p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-50 rounded-lg transition-colors"
         >
           <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={() => onDelete(business.id)}
-          className="p-2 text-gray-400 hover:!text-red-600 hover:bg-red-100 rounded-lg transition-colors"
+          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
         >
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
 
-    <div className="space-y-2 text-sm text-gray-600">
+    <div className="space-y-2 text-sm text-gray-500">
       {business.address && (
         <p className="flex items-center">
           <MapPin className="w-3 h-3 mr-2 flex-shrink-0" />
@@ -101,12 +101,12 @@ const BusinessCard: React.FC<{
       )}
     </div>
 
-    <div className="mt-4 pt-4 border-t border-gray-100">
+    <div className="mt-4 pt-4 border-t border-gray-200">
       <div className="flex items-center justify-between text-xs text-gray-500">
-        <span className="px-2 py-0.5 bg-blue-100 rounded-full text-blue-500">
+        <span className="px-2 py-0.5 bg-teal-100 rounded-full text-teal-700">
           {business.invoice_count || 0} invoices
         </span>
-        <span className="px-2 py-0.5 bg-blue-100 rounded-full text-blue-500">
+        <span className="px-2 py-0.5 bg-gray-100 rounded-full text-gray-600">
           Created {new Date(business.created_at).toLocaleDateString()}
         </span>
       </div>
@@ -114,12 +114,21 @@ const BusinessCard: React.FC<{
   </div>
 );
 
-const BusinessFormModal: React.FC<{
+interface BusinessFormModalProps {
   business?: Business;
   onSubmit: (data: BusinessFormData) => void;
   onCancel: () => void;
   isEditing?: boolean;
-}> = ({ business, onSubmit, onCancel, isEditing = false }) => {
+  loading?: boolean;
+}
+
+const BusinessFormModal: React.FC<BusinessFormModalProps> = ({
+  business,
+  onSubmit,
+  onCancel,
+  isEditing = false,
+  loading = false
+}) => {
   const [formData, setFormData] = useState<BusinessFormData>({
     name: business?.name || '',
     email: business?.email || '',
@@ -133,8 +142,7 @@ const BusinessFormModal: React.FC<{
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!formData.name.trim()) return;
     onSubmit(formData);
   };
@@ -142,8 +150,8 @@ const BusinessFormModal: React.FC<{
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+        <div className="flex items-center justify-between p-8 border-b border-gray-300">
+          <h3 className="text-2xl font-semibold text-gray-900">
             {isEditing ? 'Edit Business' : 'Add New Business'}
           </h3>
           <button
@@ -154,7 +162,7 @@ const BusinessFormModal: React.FC<{
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <div className="p-8 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Business Name *
@@ -164,7 +172,7 @@ const BusinessFormModal: React.FC<{
               name="name"
               value={formData.name}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-teal-500 transition-colors"
               placeholder="Enter business name"
               required
             />
@@ -179,7 +187,7 @@ const BusinessFormModal: React.FC<{
               name="email"
               value={formData.email}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-teal-500 transition-colors"
               placeholder="business@example.com"
             />
           </div>
@@ -193,7 +201,7 @@ const BusinessFormModal: React.FC<{
               name="address"
               value={formData.address}
               onChange={handleInputChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-teal-500 transition-colors"
               placeholder="Business address"
             />
           </div>
@@ -208,7 +216,7 @@ const BusinessFormModal: React.FC<{
                 name="phone"
                 value={formData.phone}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-teal-500 transition-colors"
                 placeholder="+1 (555) 000-0000"
               />
             </div>
@@ -222,28 +230,37 @@ const BusinessFormModal: React.FC<{
                 name="tax_id"
                 value={formData.tax_id}
                 onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full px-4 py-3 bg-gray-100 border-0 rounded-xl focus:ring-2 focus:ring-teal-500 transition-colors"
                 placeholder="Tax identification number"
               />
             </div>
           </div>
 
-          <div className="flex space-x-3 pt-6 border-t border-gray-200">
+          <div className="flex space-x-3 pt-6 border-t border-gray-300">
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              className="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium"
             >
               Cancel
             </button>
             <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              type="button"
+              onClick={() => {
+                if (!formData.name.trim()) {
+                  showNotification('Business name is required', 'error');
+                  return;
+                }
+                console.log('Form submission with data:', formData);
+                onSubmit(formData);
+              }}
+              disabled={loading || !formData.name.trim()}
+              className="flex-1 px-4 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-500 transition-colors font-medium disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {isEditing ? 'Update Business' : 'Add Business'}
+              {loading ? 'Processing...' : (isEditing ? 'Update Business' : 'Add Business')}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
@@ -259,12 +276,13 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
 
   // Helpers for cache
   const saveToCache = (data: Business[]) => {
-    localStorage.setItem('businesses', JSON.stringify(data));
+    // localStorage.setItem('businesses', JSON.stringify(data));
   };
 
   const loadFromCache = () => {
-    const cached = localStorage.getItem('businesses');
-    return cached ? (JSON.parse(cached) as Business[]) : [];
+    // const cached = localStorage.getItem('businesses');
+    // return cached ? (JSON.parse(cached) as Business[]) : [];
+    return [];
   };
 
   // Monitor online/offline status
@@ -308,20 +326,38 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
       setLoading(true);
       setFetchError(false);
 
-      const response = await fetch(`/api/businesses?user_id=${user.id}`);
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+      console.log('Fetching businesses for user:', user.id);
+
+      const response = await fetch(`/api/businesses?user_id=${user.id}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Fetch response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Fetch error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
 
       const data = await response.json();
+      console.log('Fetched businesses data:', data);
+
       if (data.success) {
-        setBusinesses(data.businesses);
-        saveToCache(data.businesses);
+        setBusinesses(data.businesses || []);
+        saveToCache(data.businesses || []);
       } else {
-        showNotification('Failed to fetch businesses', 'error');
+        console.error('API returned success: false', data);
+        showNotification(data.error || data.message || 'Failed to fetch businesses', 'error');
         setFetchError(true);
       }
     } catch (err) {
       console.error('Error fetching businesses:', err);
-      showNotification('Error fetching businesses', 'error');
+      showNotification(`Error fetching businesses: ${err.message}`, 'error');
       setFetchError(true);
     } finally {
       setLoading(false);
@@ -332,22 +368,44 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     if (!isOnline) return showNotification('No internet connection', 'error');
 
     try {
+      setLoading(true);
+
+      console.log('Adding business with data:', { ...formData, user_id: user.id });
+
       const response = await fetch('/api/businesses', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({ ...formData, user_id: user.id })
       });
 
-      const data = await response.json();
-      if (data.success) {
-        showNotification('Business added successfully');
-        setShowModal(false);
-        fetchBusinesses();
-      } else {
-        showNotification(data.error || 'Failed to add business', 'error');
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API Error Response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
-    } catch {
-      showNotification('Error adding business', 'error');
+
+      const data = await response.json();
+      console.log('API Response:', data);
+
+      if (data.success) {
+        showNotification('Business added successfully', 'success');
+        setShowModal(false);
+        await fetchBusinesses(); // Refresh the list
+      } else {
+        console.error('API returned success: false', data);
+        showNotification(data.error || data.message || 'Failed to add business', 'error');
+      }
+    } catch (error) {
+      console.error('Error adding business:', error);
+      showNotification(`Error adding business: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -356,23 +414,44 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     if (!isOnline) return showNotification('No internet connection', 'error');
 
     try {
+      setLoading(true);
+
+      console.log('Updating business:', editingBusiness.id, 'with data:', formData);
+
       const response = await fetch(`/api/businesses/${editingBusiness.id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(formData)
       });
 
+      console.log('Update response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Update error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
       const data = await response.json();
+      console.log('Update response:', data);
+
       if (data.success) {
-        showNotification('Business updated successfully');
+        showNotification('Business updated successfully', 'success');
         setEditingBusiness(null);
         setShowModal(false);
-        fetchBusinesses();
+        await fetchBusinesses(); // Refresh the list
       } else {
-        showNotification(data.error || 'Failed to update business', 'error');
+        console.error('Update API returned success: false', data);
+        showNotification(data.error || data.message || 'Failed to update business', 'error');
       }
-    } catch {
-      showNotification('Error updating business', 'error');
+    } catch (error) {
+      console.error('Error updating business:', error);
+      showNotification(`Error updating business: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -381,16 +460,41 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     if (!window.confirm('Are you sure you want to delete this business?')) return;
 
     try {
-      const response = await fetch(`/api/businesses/${businessId}`, { method: 'DELETE' });
-      const data = await response.json();
-      if (data.success) {
-        showNotification('Business deleted successfully');
-        fetchBusinesses();
-      } else {
-        showNotification(data.error || 'Failed to delete business', 'error');
+      setLoading(true);
+
+      console.log('Deleting business:', businessId);
+
+      const response = await fetch(`/api/businesses/${businessId}`, {
+        method: 'DELETE',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        }
+      });
+
+      console.log('Delete response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Delete error response:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
-    } catch {
-      showNotification('Error deleting business', 'error');
+
+      const data = await response.json();
+      console.log('Delete response:', data);
+
+      if (data.success) {
+        showNotification('Business deleted successfully', 'success');
+        await fetchBusinesses(); // Refresh the list
+      } else {
+        console.error('Delete API returned success: false', data);
+        showNotification(data.error || data.message || 'Failed to delete business', 'error');
+      }
+    } catch (error) {
+      console.error('Error deleting business:', error);
+      showNotification(`Error deleting business: ${error.message}`, 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -417,37 +521,43 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     setEditingBusiness(null);
   };
 
-  const Card: React.FC<{ title: string; subtitle: string; children: React.ReactNode }> = ({ title, subtitle, children }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
-        <div className="flex items-center justify-between">
+  return (
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Main Business Section */}
+      <div className="bg-white rounded-xl p-8 border border-gray-300">
+        <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-            {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
+            <h2 className="text-2xl font-semibold text-gray-900">Businesses</h2>
+            <p className="text-gray-500 text-sm mt-1">Manage your business information and settings</p>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center space-x-3">
             {isOnline ? (
-              <Wifi className="w-5 h-5 hidden text-green-500" title="Online" />
+              <Wifi className="w-5 h-5 text-green-500" title="Online" />
             ) : (
-              <WifiOff className="w-5 h-5 hidden text-red-500" title="Offline" />
+              <WifiOff className="w-5 h-5 text-red-500" title="Offline" />
             )}
+            <button
+              onClick={handleAddNewBusiness}
+              disabled={!isOnline}
+              className={`px-6 py-4 min-w-32 text-white rounded-md transition-colors text-md font-medium ${
+                isOnline
+                  ? 'bg-teal-600 hover:bg-teal-500'
+                  : 'bg-gray-300 cursor-not-allowed'
+              }`}
+            >
+              <Plus className="w-4 h-4 mr-2 inline" />
+              Add Business
+            </button>
           </div>
         </div>
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  );
 
-  return (
-    <>
-      <Card title="Businesses" subtitle="Manage your business information and settings">
         {loading ? (
-          <div className="text-center py-8">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
             <p className="text-gray-500 mt-4">Loading businesses...</p>
           </div>
         ) : fetchError ? (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500 mb-4">
               {isOnline ? 'Failed to load businesses' : 'No internet connection'}
@@ -455,9 +565,9 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
             <button
               onClick={fetchBusinesses}
               disabled={!isOnline}
-              className={`mt-4 inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-3 rounded-md transition-colors font-medium ${
                 isOnline
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-teal-600 text-white hover:bg-teal-500'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
@@ -465,59 +575,35 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
             </button>
           </div>
         ) : businesses.length === 0 ? (
-          <div className="text-center py-8">
+          <div className="text-center py-12">
             <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No businesses added yet</p>
+            <p className="text-gray-500 mb-4">No businesses added yet</p>
             <button
               onClick={handleAddNewBusiness}
               disabled={!isOnline}
-              className={`mt-4 inline-flex items-center px-4 py-2 rounded-lg transition-colors ${
+              className={`px-4 py-3 rounded-md transition-colors font-medium ${
                 isOnline
-                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  ? 'bg-teal-600 text-white hover:bg-teal-500'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Business
+              <Plus className="w-4 h-4 mr-2 inline" />
+              Add Your First Business
             </button>
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {businesses.map((business) => (
-                <BusinessCard
-                  key={business.id}
-                  business={business}
-                  onDelete={handleDeleteBusiness}
-                  onEdit={handleEditBusiness}
-                />
-              ))}
-
-              <button
-                onClick={handleAddNewBusiness}
-                disabled={!isOnline}
-                className={`inline-flex items-center px-4 py-2 justify-center rounded-lg transition-colors border-2 border-dashed ${
-                  isOnline
-                    ? 'text-neutral-400 bg-gray-50 hover:bg-gray-100 border-gray-300'
-                    : 'text-gray-300 bg-gray-100 border-gray-200 cursor-not-allowed'
-                }`}
-              >
-                <Plus size={20} className="mr-
-2" />
-                Add Business
-              </button>
-            </div>
-
-            <button
-              onClick={handleAddNewBusiness}
-              className="inline-flex hidden items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Add Another Business
-            </button>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {businesses.map((business) => (
+              <BusinessCard
+                key={business.id}
+                business={business}
+                onDelete={handleDeleteBusiness}
+                onEdit={handleEditBusiness}
+              />
+            ))}
           </div>
         )}
-      </Card>
+      </div>
 
       {showModal && (
         <BusinessFormModal
@@ -525,9 +611,10 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
           onSubmit={handleFormSubmit}
           onCancel={handleCancelForm}
           isEditing={!!editingBusiness}
+          loading={loading}
         />
       )}
-    </>
+    </div>
   );
 };
 

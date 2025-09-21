@@ -5,6 +5,7 @@ import BusinessSection from '../components/BusinessSection';
 import ProfileSection from '../components/ProfileSection';
 import MainMenu from '../components/MainMenu';
 import Navbar from '../components/Navbar';
+import TemplatesSection from '../components/TemplatesSection';
 import {
   User,
   Mail,
@@ -33,17 +34,13 @@ const SettingsPage = () => {
     setSearchParams({ section: id });
   };
 
-  // Sync activeSection with URL changes
   useEffect(() => {
     const section = searchParams.get("section") || "profile";
-    if (section !== activeSection) {
-      setActiveSection(section);
-    }
-  }, [searchParams, activeSection]);
+    setActiveSection(section);
+  }, [searchParams]);
 
   const sidebarItems = [
-    { id: 'profile', label: 'My Profile', icon: User },
-    { id: 'notifications', label: 'Notifications', icon: Bell },
+    { id: 'profile', label: 'Profile Settings', icon: User },
     { id: 'templates', label: 'Invoice Templates', icon: FileText },
     { id: 'business', label: 'Businesses', icon: BriefcaseBusiness },
     { id: 'billing', label: 'Billing', icon: CreditCard },
@@ -54,134 +51,66 @@ const SettingsPage = () => {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const Card = ({ title, subtitle, children, headerAction }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
-        </div>
-        {headerAction}
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  );
-
-  const NotificationToggle = ({ icon: Icon, title, description, defaultChecked = false }) => (
-    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-      <div className="flex items-center">
-        <Icon className="h-5 w-5 text-gray-400 mr-3" />
-        <div>
-          <h4 className="font-medium text-gray-900">{title}</h4>
-          <p className="text-sm text-gray-600">{description}</p>
-        </div>
-      </div>
-      <input
-        type="checkbox"
-        className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-        defaultChecked={defaultChecked}
-      />
-    </div>
-  );
-
-  const NotificationsSection = () => (
-    <Card title="Notification Preferences" subtitle="Choose how you want to be notified about updates">
-      <div className="space-y-4">
-        <NotificationToggle
-          icon={Mail}
-          title="Email Notifications"
-          description="Receive email updates about invoices and payments"
-          defaultChecked={true}
-        />
-        <NotificationToggle
-          icon={Phone}
-          title="SMS Notifications"
-          description="Get text messages for important updates"
-        />
-      </div>
-    </Card>
-  );
-
-  const TemplateCard = ({ title, description, isActive = false, onSelect }) => (
-    <div className={`p-4 border-2 rounded-lg transition-colors cursor-pointer ${
-      isActive
-        ? 'border-blue-200 bg-blue-50'
-        : 'border-gray-200 hover:border-blue-300 hover:bg-gray-50'
-    }`}>
-      <FileText className={`h-8 w-8 mb-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-      <h4 className="font-medium text-gray-900">{title}</h4>
-      <p className="text-sm text-gray-600 mt-1">{description}</p>
-      <button
-        onClick={onSelect}
-        className={`mt-3 px-3 py-1 rounded text-sm transition-colors ${
-          isActive
-            ? 'bg-blue-600 text-white'
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        }`}
-      >
-        {isActive ? 'Current' : 'Select'}
-      </button>
-    </div>
-  );
-
-  const TemplatesSection = () => (
-    <Card title="Invoice Templates" subtitle="Choose your preferred invoice template design">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <TemplateCard
-          title="Modern Template"
-          description="Clean and professional design"
-          isActive={true}
-          onSelect={() => showNotification('Template updated')}
-        />
-        <TemplateCard
-          title="Classic Template"
-          description="Traditional business style"
-          onSelect={() => showNotification('Template updated')}
-        />
-        <TemplateCard
-          title="Minimal Template"
-          description="Simple and elegant"
-          onSelect={() => showNotification('Template updated')}
-        />
-      </div>
-    </Card>
-  );
 
   const BusinessSectionWrapper = () => (
     <BusinessSection user={user} showNotification={showNotification} />
   );
 
   const BillingSection = () => (
-    <Card title="Billing Information" subtitle="Manage your subscription and billing details">
-      <div className="space-y-6">
-        <div className="bg-gradient-to-r from-blue-50 to-purple-50 p-6 rounded-lg border border-blue-100">
-          <div className="flex items-center justify-between">
-            <div>
-              <h4 className="font-semibold text-gray-900 mb-1">Current Plan</h4>
-              <p className="text-2xl font-bold text-blue-600">Free Plan</p>
-              <p className="text-sm hidden text-gray-600 mt-1">5 invoices per month</p>
-            </div>
-            <CreditCard className="h-12 w-12 text-blue-500" />
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="bg-white rounded-xl p-8 border border-gray-300">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">Billing Information</h2>
+            <p className="text-gray-500 text-sm mt-1">Manage your subscription and billing details</p>
           </div>
         </div>
 
-        <div className="border rounded-lg p-6">
-          <h4 className="font-medium text-gray-900 mb-4">Billing History</h4>
-          <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No billing history available</p>
+        <div className="space-y-6">
+          <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-6 rounded-lg border border-teal-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-lg font-medium text-gray-900 mb-1">Current Plan</h4>
+                <p className="text-2xl font-bold text-teal-600">Free Plan</p>
+                <p className="text-sm text-gray-600 mt-1">5 invoices per month included</p>
+              </div>
+              <CreditCard className="h-12 w-12 text-teal-500" />
+            </div>
+            <div className="mt-4">
+              <button className="px-4 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-500 transition-colors font-medium">
+                Upgrade Plan
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-300 rounded-lg p-6">
+            <h4 className="text-lg font-medium text-gray-900 mb-4">Billing History</h4>
+            <div className="text-center py-8">
+              <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">No billing history available</p>
+              <p className="text-sm text-gray-400">Your transaction history will appear here once you make a purchase</p>
+            </div>
+          </div>
+
+          <div className="bg-white border border-gray-300 rounded-lg p-6">
+            <h4 className="text-lg font-medium text-gray-900 mb-4">Payment Method</h4>
+            <div className="text-center py-8">
+              <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 mb-4">No payment method added</p>
+              <button className="px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium">
+                Add Payment Method
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
-
 
   const renderActiveSection = () => {
     const sections = {
       profile: () => <ProfileSection showNotification={showNotification} />,
-      notifications: NotificationsSection,
-      templates: TemplatesSection,
+      templates: () => <TemplatesSection showNotification={showNotification} />,
       business: BusinessSectionWrapper,
       billing: BillingSection,
     };
@@ -207,12 +136,17 @@ const SettingsPage = () => {
     </div>
   );
 
+  const getSectionTitle = (id) => {
+    const item = sidebarItems.find((i) => i.id === id);
+    return item ? item.label : "Profile Settings";
+  };
+
   // Show loading state if user data is not yet available
   if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-4 border-teal-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading user data...</p>
         </div>
       </div>
@@ -220,74 +154,73 @@ const SettingsPage = () => {
   }
 
   return (
-      <>
+    <>
       <div className="md:block hidden sticky top-0 left-0 w-full z-30">
-      <MainMenu showLogo={false} />
+        <MainMenu showLogo={false} />
       </div>
       <div className="md:hidden block">
-      <MainMenu />
+        <MainMenu />
       </div>
 
-    <div className="">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-start gap-6 items-center py-6">
-            <button
-              onClick={() => window.history.back()}
-              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
+      <div className="">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-start gap-6 items-center py-6">
+              <button
+                onClick={() => window.history.back()}
+                className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
+              >
+                <ArrowLeft size={20} />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">{getSectionTitle(activeSection)}</h1>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 mb-40 sm:px-6 lg:px-8 py-8">
-        <div className="flex flex-col gap-8">
-          {/* Navigation Tabs */}
-          <div className="w-full">
-            <div className="rounded-xl py-3 ">
-              <nav className="flex flex-row  overflow-x-auto gap-2.5">
-                {sidebarItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeSection === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSetSection(item.id)}
-                      className={`flex items-center px-4 py-2 rounded-full text-sm min-w-fit transition-colors ${
-                        isActive
-                          ? "bg-gray-900 text-neutral-50 font-medium"
-                          : item.danger
-                            ? "text-red-600 hover:bg-red-50 bg-red-50 border border-red-600"
-                            : "text-gray-700 bg-transparent border border-gray-400 font-medium"
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
-                      <span className="truncate whitespace-nowrap">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 mb-40 sm:px-6 lg:px-8 py-8">
+          <div className="rounded-xl py-3 mb-6">
+            {/* Navigation Tabs */}
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+              <div className="w-full">
+                <nav className="flex flex-row overflow-x-auto gap-2.5">
+                  {sidebarItems.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = activeSection === item.id;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleSetSection(item.id)}
+                        className={`flex items-center px-4 py-2.5 rounded-full border-2 border-gray-600 hover:border-gray-900
+                            transition-colors text-sm min-w-fit ${
+                          isActive
+                            ? 'bg-gray-900 text-white font-medium '
+                            : 'hover:bg-gray-900 hover:text-white'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
+                        <span className="truncate whitespace-nowrap">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </div>
+            </div>
+
+            {/* Content Area */}
+            <div className="flex-1 py-10 min-w-0">
+              {renderActiveSection()}
             </div>
           </div>
-
-          {/* Content Area */}
-          <div className="flex-1 min-w-0">
-            {renderActiveSection()}
-          </div>
         </div>
-      </div>
 
-      {/* Notification */}
-      {notification && <Notification {...notification} />}
-    </div>
-    <Navbar />
+        {/* Notification */}
+        {notification && <Notification {...notification} />}
+      </div>
+      <Navbar />
     </>
   );
 };

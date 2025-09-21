@@ -5,11 +5,10 @@ import {
   User,
   Mail,
   Lock,
+  Bell,
   Save,
   Camera,
   Edit2,
-  Phone,
-  MapPin,
   X,
   Trash2,
   AlertTriangle
@@ -22,12 +21,11 @@ const ProfileSection = ({ showNotification }) => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
 
   const [formData, setFormData] = useState({
     first_name: '',
-    last_name: '',
-    email: '',
-    phone: ''
+    email: ''
   });
 
   const [passwords, setPasswords] = useState({
@@ -41,18 +39,14 @@ const ProfileSection = ({ showNotification }) => {
     if (user) {
       setFormData({
         first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || ''
+        email: user.email || ''
       });
     }
   }, [user]);
 
   const getInitials = (u) => {
     if (!u) return 'U';
-    const first = u.first_name?.[0]?.toUpperCase() || '';
-    const last = u.last_name?.[0]?.toUpperCase() || '';
-    return first || last ? `${first}${last}` : u.email?.[0]?.toUpperCase() || 'U';
+    return u.first_name?.[0]?.toUpperCase() || u.email?.[0]?.toUpperCase() || 'U';
   };
 
   const handleInputChange = (e) => {
@@ -68,30 +62,28 @@ const ProfileSection = ({ showNotification }) => {
   const handleSaveProfile = async () => {
     setIsLoading(true);
     try {
-      // Only send non-email fields for update
-      const updateData = {
-        first_name: formData.first_name,
-        last_name: formData.last_name,
-        phone: formData.phone
-      };
-
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await fetch('/api/users/profile', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(updateData),
+        body: JSON.stringify({
+          user_id: user.id,
+          first_name: formData.first_name
+        }),
       });
 
       const result = await response.json();
 
       if (result.success) {
-        updateProfile(updateData);
+        updateProfile({
+          first_name: formData.first_name
+        });
         setIsEditing(false);
         showNotification('Profile updated successfully');
         await refreshUser();
       } else {
-        showNotification(result.message || 'Failed to update profile', 'error');
+        showNotification(result.error || 'Failed to update profile', 'error');
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -105,9 +97,7 @@ const ProfileSection = ({ showNotification }) => {
     if (user) {
       setFormData({
         first_name: user.first_name || '',
-        last_name: user.last_name || '',
-        email: user.email || '',
-        phone: user.phone || ''
+        email: user.email || ''
       });
     }
     setIsEditing(false);
@@ -125,8 +115,8 @@ const ProfileSection = ({ showNotification }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/users/${user.id}/change-password`, {
-        method: 'POST',
+      const response = await fetch('/api/users/password', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -144,7 +134,7 @@ const ProfileSection = ({ showNotification }) => {
         setShowPasswordModal(false);
         showNotification('Password updated successfully');
       } else {
-        showNotification(result.message || 'Failed to update password', 'error');
+        showNotification(result.error || 'Failed to update password', 'error');
       }
     } catch (error) {
       console.error('Error updating password:', error);
@@ -162,7 +152,7 @@ const ProfileSection = ({ showNotification }) => {
 
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/users/${user.id}`, {
+      const response = await fetch('/api/users/delete', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -181,7 +171,7 @@ const ProfileSection = ({ showNotification }) => {
         setDeletePassword('');
         logout();
       } else {
-        showNotification(result.message || 'Failed to delete account', 'error');
+        showNotification(result.error || 'Failed to delete account', 'error');
       }
     } catch (error) {
       console.error('Error deleting account:', error);
@@ -205,14 +195,14 @@ const ProfileSection = ({ showNotification }) => {
     <>
       <button
         onClick={resetPasswordForm}
-        className="px-4 py-2 lg:w-1/2 h-10 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
         disabled={isLoading}
       >
         Cancel
       </button>
       <button
         onClick={handlePasswordSubmit}
-        className="px-4 py-2 lg:w-1/2 h-10 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isLoading}
       >
         {isLoading ? 'Updating...' : 'Update Password'}
@@ -224,14 +214,14 @@ const ProfileSection = ({ showNotification }) => {
     <>
       <button
         onClick={resetDeleteForm}
-        className="px-4 py-2 lg:w-1/2 h-10 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
         disabled={isLoading}
       >
         Keep Account
       </button>
       <button
         onClick={handleDeleteAccount}
-        className="px-4 py-2 lg:w-1/2 h-10 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         disabled={isLoading}
       >
         {isLoading ? 'Deleting...' : 'Delete Forever'}
@@ -239,169 +229,125 @@ const ProfileSection = ({ showNotification }) => {
     </>
   );
 
-  const FormField = ({ label, name, type = 'text', icon: Icon, value, readOnly = false, placeholder }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
-      {isEditing && !readOnly ? (
-        <div className="relative">
-          {Icon && <Icon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />}
-          <input
-            type={type}
-            name={name}
-            value={value}
-            onChange={handleInputChange}
-            className={`w-full ${Icon ? 'pl-10' : 'pl-3'} pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-            placeholder={placeholder}
-          />
-        </div>
-      ) : (
-        <div className="flex items-center px-3 py-2 bg-gray-50 rounded-lg">
-          {Icon && <Icon className="h-4 w-4 text-gray-400 mr-2" />}
-          <span className="text-gray-900">{value || 'Not set'}</span>
-        </div>
-      )}
-    </div>
-  );
-
-  const Card = ({ title, subtitle, children, headerAction }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
-          {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
-        </div>
-        {headerAction}
-      </div>
-      <div className="p-6">{children}</div>
-    </div>
-  );
-
   return (
-    <div className="space-y-6">
-      {/* Profile Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border border-blue-100">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-6 sm:space-y-0">
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <div className=" h-20 w-20 bg-gradient-to-r from-blue-500 to-blue-400 rounded-full flex items-center justify-center text-xl font-bold text-white">
-                {user?.profile_picture_url ? (
-                  <img src={user.profile_picture_url} alt="Profile" className="w-full p-2 rounded-full object-cover" />
-                ) : (
-                  <span>{getInitials(user)}</span>
-                )}
-              </div>
-              <button className="absolute -bottom-1 -right-1 bg-white hover:bg-gray-50 text-gray-600 p-1.5 rounded-full shadow-lg border transition-colors">
-                <Edit2 className="w-3 h-3" />
+    <div className="max-w-7xl mx-auto space-y-6">
+      {/* Profile Information */}
+      <div className="bg-white rounded-xl p-8 border border-gray-300">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-semibold text-gray-900">Profile</h2>
+          {isEditing ? (
+            <div className="flex space-x-3">
+              <button
+                onClick={handleSaveProfile}
+                className="px-4 py-3 text-white min-w-32 bg-teal-600 rounded-md hover:bg-teal-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Saving...' : 'Save'}
               </button>
             </div>
+          ) : (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="px-4 py-3 text-white min-w-32  bg-teal-600 rounded-md hover:bg-teal-500 transition-colors"
+            >
+              Edit
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-start space-x-6">
+          <div className="relative">
+            <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-green-400 rounded-full flex items-center justify-center text-2xl font-bold text-gray-800">
+              {user?.profile_picture_url ? (
+                <img src={user.profile_picture_url} alt="Profile" className="w-full h-full rounded-full object-cover" />
+              ) : (
+                <span>{getInitials(user)}</span>
+              )}
+            </div>
+            <button className="absolute -top-1 -right-1 w-6 h-6 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+              <Camera className="w-3 h-3" />
+            </button>
+          </div>
+
+          <div className="flex-1 space-y-4">
             <div>
-              <h2 className="text-xl font-bold text-gray-900">
-                {user?.first_name || user?.last_name
-                  ? `${user.first_name || ''} ${user.last_name || ''}`.trim()
-                  : 'User'}
-              </h2>
-              <div className="flex items-center text-gray-500 text-sm mt-1">
-                <MapPin className="w-3 h-3 mr-1" />
-                <span>Joined since {new Date(user?.created_at || Date.now()).getFullYear()}</span>
-              </div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <input
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleInputChange}
+                onClick={() => !isEditing && setIsEditing(true)}
+                className={`px-4 py-3 w-full input max-w-md bg-gray-100 rounded-xl border-0 text-gray-900 transition-colors ${
+                  isEditing
+                    ? 'bg-white border border-gray-300 focus:ring-2 focus:ring-teal-500 cursor-text'
+                    : 'bg-gray-100 cursor-pointer hover:bg-gray-200'
+                }`}
+                placeholder="Enter your name"
+                readOnly={!isEditing}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Notifications */}
+      <div className="bg-white rounded-xl p-8 border border-gray-300">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Notifications</h2>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Email Notifications</h3>
+              <p className="text-gray-500 text-sm mt-1">Receive email updates about invoices and payments.</p>
+            </div>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={notificationsEnabled}
+              onChange={() => setNotificationsEnabled(!notificationsEnabled)}
+            />
+            <div className={`w-12 h-6 rounded-full peer ${notificationsEnabled ? 'bg-teal-500' : 'bg-gray-300'} peer-checked:after:translate-x-6 after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all`}></div>
+          </label>
+        </div>
+      </div>
+
+      {/* Security Section */}
+      <div className="bg-white rounded-xl p-8 border border-gray-300">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Security</h2>
+
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Password</h3>
+              <p className="text-gray-500 text-sm mt-1">Change your password to keep your account secure.</p>
             </div>
           </div>
           <button
-            onClick={() => isEditing ? handleCancelEdit() : setIsEditing(true)}
-            className="inline-flex min-w-40 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700
-            transition-colors duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isLoading}
+            onClick={() => setShowPasswordModal(true)}
+            className="px-4 py-3 text-blue-600 border-2 border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
           >
-            <Edit2 className="w-4 h-4 mr-2" />
-            {isEditing ? 'Cancel' : 'Edit Profile'}
+            Change Password
           </button>
         </div>
       </div>
 
-      {/* Personal Information */}
-      <Card title="Personal Information">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField label="First Name" name="first_name" value={formData.first_name} />
-          <FormField label="Last Name" name="last_name" value={formData.last_name} />
-          <FormField
-            label="Email Address"
-            name="email"
-            type="email"
-            icon={Mail}
-            value={formData.email}
-            readOnly={true}
-          />
-          <FormField label="Phone Number" name="phone" type="tel" icon={Phone} value={formData.phone} />
-        </div>
+      {/* Delete Account */}
+      <div className="bg-red-50 rounded-xl p-8 border border-red-300">
+        <h2 className="text-2xl font-semibold text-red-900 mb-4">Delete account</h2>
 
-        {isEditing && (
-          <div className="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleCancelEdit}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoading}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveProfile}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <div className="w-4 h-4 mr-2 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                <Save className="w-4 h-4 mr-2" />
-              )}
-              {isLoading ? 'Saving...' : 'Save Changes'}
-            </button>
-          </div>
-        )}
-      </Card>
-
-      {/* Security */}
-      <Card title="Security">
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row items-start justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center">
-              <Lock className="h-5 w-5 self-start text-gray-400 mr-3" />
-              <div>
-                <h4 className="font-medium text-gray-900">Password</h4>
-                <p className="text-sm text-gray-600">Update your account password</p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowPasswordModal(true)}
-              className="px-4 w-full mt-3 md:mt-0 md:w-auto min-w-40 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-            >
-              Change Password
-            </button>
-          </div>
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <p className="text-red-800 flex-1">Once you delete your account, there is no going back. Please be certain.</p>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="px-4 py-3 border-2 border-red-500 text-white whitespace-nowrap rounded-md bg-red-600 hover:bg-red-500 transition-colors text-md font-medium"
+          >
+            Delete account
+          </button>
         </div>
-      </Card>
-
-      {/* Account Management */}
-      <Card title="Account Management">
-        <div className="space-y-4">
-          <div className="flex flex-col md:flex-row items-start justify-between p-4 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center">
-              <Trash2 className="h-5 w-5 self-start text-red-600 mr-3" />
-              <div>
-                <h4 className="font-medium text-red-800">Delete Account</h4>
-                <p className="text-sm text-red-600">
-                  Permanently delete your account and all associated data
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={() => setShowDeleteModal(true)}
-              className="px-4 w-full mt-3 md:mt-0 min-w-40 md:w-auto py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-            >
-              Delete Account
-            </button>
-          </div>
-        </div>
-      </Card>
+      </div>
 
       {/* Password Change Modal */}
       <AlertModal
@@ -414,6 +360,7 @@ const ProfileSection = ({ showNotification }) => {
       >
         <div className="space-y-4">
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Current Password</label>
             <input
               type="password"
               name="current_password"
@@ -424,6 +371,7 @@ const ProfileSection = ({ showNotification }) => {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">New Password</label>
             <input
               type="password"
               name="new_password"
@@ -434,6 +382,7 @@ const ProfileSection = ({ showNotification }) => {
             />
           </div>
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Confirm New Password</label>
             <input
               type="password"
               name="confirm"
@@ -468,14 +417,14 @@ const ProfileSection = ({ showNotification }) => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Enter <strong>DELETE</strong> to confirm account deletion
+              Enter your password to confirm account deletion
             </label>
             <input
               type="password"
               value={deletePassword}
               onChange={(e) => setDeletePassword(e.target.value)}
               className="w-full px-3 py-2 border !bg-gray-100 !border-transparent rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              placeholder=""
+              placeholder="Enter your password"
             />
           </div>
         </div>

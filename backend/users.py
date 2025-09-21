@@ -76,6 +76,54 @@ class Users:
             logging.error(f"Error deleting user: {str(e)}", exc_info=True)
             return jsonify({'success': False, 'error': 'Failed to delete user'}), 500
 
+
+    @staticmethod
+    def update_profile():
+        """Update user profile information"""
+        try:
+            data = request.get_json()
+            user_id = data.get('user_id')
+
+            if not user_id:
+                return jsonify({'success': False, 'error': 'user_id is required'}), 400
+
+            if not Users.validate_uuid(user_id):
+                return jsonify({'success': False, 'error': 'Invalid user ID format'}), 400
+
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+
+            # Update allowed fields (name only, no phone)
+            if 'first_name' in data:
+                user.first_name = data['first_name']
+            if 'last_name' in data:
+                user.last_name = data['last_name']
+
+            user.updated_at = datetime.utcnow()
+            db.session.commit()
+
+            return jsonify({
+                'success': True,
+                'user': {
+                    'id': str(user.id),
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    'google_id': user.google_id,
+                    'auth_method': 'google' if user.google_id else 'native',
+                    'updated_at': user.updated_at.isoformat()
+                }
+            })
+
+        except Exception as e:
+            db.session.rollback()
+            logging.error(f"Profile update error: {str(e)}", exc_info=True)
+            return jsonify({
+                'success': False,
+                'error': 'Failed to update profile'
+            }), 500
+
     @staticmethod
     def update_password():
         """Update user password"""

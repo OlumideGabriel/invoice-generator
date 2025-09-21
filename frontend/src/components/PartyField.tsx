@@ -48,7 +48,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
   addLabel,
   value,
   onChange,
-  onSelect,
+  onSelect = 'name',
   searchFunction,
   placeholder = "Type to search",
   noResultsText = "No results found",

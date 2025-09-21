@@ -21,6 +21,7 @@ import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsOfServicePage from './pages/TermsOfServicePage';
 import SupportForm from './pages/SupportForm';
 import ComingSoon from './pages/ComingSoon';
+import Notifications from './pages/Notifications'
 
 
 const App: React.FC = () => {
@@ -95,6 +96,7 @@ const AppContent: React.FC = () => {
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
             <Route path="/kalistus001" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><SupportForm /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
 
 
             {/* Public routes */}

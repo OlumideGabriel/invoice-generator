@@ -24,7 +24,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
   const headerRef = useRef<HTMLHeadElement>(null);
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [count, setCount] = useState(3);
+  const [alert, setAlert] = useState(3);
   const lastScrollY = useRef(0);
 
   // Scroll behavior for mobile
@@ -151,15 +151,16 @@ const MainMenu: React.FC<MainMenuProps> = ({
 
           {user ? (
             <div className="hidden md:flex relative z-100" ref={menuRef}>
-              <span className="flex hidden items-center justify-center mr-7">
-                <span className=" absolute top-0 left-4 bg-red-500 text-white text-sm font-bold px-1 py-1 rounded-full
-                min-w-[20px] h-4 flex items-center justify-center">
-                  {count > 99 ? '99+' : count}
+              <Link to='/notifications'
+              className="flex items-center justify-center mr-5">
+                <span className=" absolute top-[0.3rem] hidden left-[1.2rem] bg-red-500 text-white text-sm font-bold border rounded-full
+                 h-3 w-3 flex items-center justify-center">
+                  {alert > 99 ? '99+' : setAlert}
                 </span>
 
-                <Bell className="self-center w-9 h-9 p-1.5 rounded-full text-gray-400
-                hover:text-gray-200 hover:bg-neutral-200 cursor-pointer transition-colors duration-150" />
-              </span>
+                <Bell className="self-center w-10 h-10 p-2 rounded-full text-gray-400
+                hover:text-gray-200 hover:bg-neutral-100 cursor-pointer transition-colors duration-150" />
+              </Link>
 
               <a
                 onClick={() => setOpen(!open)}
@@ -172,7 +173,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
                     <img
                       src={user.profile_picture_url}
                       alt="User Avatar"
-                      className="h-10 w-10 rounded-full"
+                      className="h-11 w-11 rounded-full"
                     />
                   ) : (
                     <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
@@ -271,7 +272,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
                         console.error('Logout failed');
                       }
                     }}
-                    className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md !text-red-600
+                    className="flex items-center mr-2 ml-2 rounded-md px-3 py-3 mb-2 text-md text-gray-700 hover:text-red-600
                     hover:bg-red-50"
                   >
                     <LogOut className="w-5 h-5 mr-2" />
@@ -392,7 +393,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
                 </Link>
                 <button
                   onClick={handleMobileLogout}
-                  className="flex items-center px-4 py-3 !text-red-600 rounded-lg hover:bg-red-50 hover:text-gray-900
+                  className="flex items-center hidden px-4 py-3 text-red-600 rounded-lg hover:bg-red-50 hover:text-gray-900
                   transition-colors w-full duration-150"
                 >
                   <LogOut className="w-5 h-5 mr-3" />
@@ -404,12 +405,12 @@ const MainMenu: React.FC<MainMenuProps> = ({
                 <div className="flex w-full rounded-lg items-center py-6 mt-4 px-2 justify-between">
                 <div className="flex items-center">
                   <span className="flex flex-row items-center text-lg block text-md text-gray-900 font-medium">
-                    {user?.user_metadata?.avatar_url ? (
-                      <img
-                        src={user.user_metadata.avatar_url}
-                        alt="User Avatar"
-                        className="h-12 w-12 mr-4 rounded-full"
-                      />
+                    {user?.profile_picture_url ? (
+                    <img
+                      src={user.profile_picture_url}
+                      alt="User Avatar"
+                      className="h-12 w-12 mr-2 rounded-full"
+                    />
                     ) : (
                       <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 mr-2 rounded-full justify-center items-center">
                         {getInitials(user) || <User className="w-6 h-6" />}
@@ -427,7 +428,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
                   {/* Sign Out Button */}
                   <button
                   onClick={handleMobileLogout}
-                  className="flex items-center p-4 text-gray-700 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-gray-900
+                  className="flex items-center p-4 text-gray-500 rounded-lg bg-gray-100 hover:bg-gray-200 hover:text-gray-900
                   transition-colors duration-150"
                 >
                   <LogOut className="w-5 h-5" />

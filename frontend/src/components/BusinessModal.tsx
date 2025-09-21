@@ -180,7 +180,7 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
                 type="text"
                 value={formData.name}
                 onChange={(e) => handleInputChange('name', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                className={`w-full input px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   formErrors.name ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Enter business name"
@@ -199,7 +199,7 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange('email', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                className={`w-full input px-3 py-2.5 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   formErrors.email ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Enter business email"
@@ -218,7 +218,7 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => handleInputChange('phone', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full input px-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter business phone"
                 disabled={isSubmitting}
               />
@@ -232,7 +232,7 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
                 type="text"
                 value={formData.tax_id}
                 onChange={(e) => handleInputChange('tax_id', e.target.value)}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                className={`w-full input px-3 py-2.5 border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
                   formErrors.tax_id ? 'border-red-300 bg-red-50' : 'border-gray-300'
                 }`}
                 placeholder="Enter tax identification number"
@@ -251,7 +251,7 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
                 value={formData.address}
                 onChange={(e) => handleInputChange('address', e.target.value)}
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full input px-3 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="Enter business address"
                 disabled={isSubmitting}
               />
@@ -261,20 +261,20 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 w-1/2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
                 disabled={isSubmitting}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center w-1/2 px-4 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
               >
                 <Save className="h-4 w-4 mr-2" />
                 {isSubmitting
                   ? (actualModalType === 'create' ? 'Creating...' : 'Saving...')
-                  : (actualModalType === 'create' ? 'Create Business' : 'Save Changes')
+                  : (actualModalType === 'create' ? 'Add Business' : 'Save Changes')
                 }
               </button>
             </div>

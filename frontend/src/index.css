@@ -135,7 +135,7 @@ h1 {
   background-color: var(--primary-1);
   padding: 3px 8px;
   color: var(--primary-3);
-  border-radius: 0.3rem;
+  border-radius: 0.4rem;
   border: 2px solid var(--primary-2);
   cursor: pointer;
 
@@ -149,7 +149,7 @@ h1 {
   font-weight: 500;
   background-color: var(--primary-2);
   color:var(--dark-1);
-  border-radius: 0.3rem;
+  border-radius: 0.4rem;
   padding: 3px 8px;
   border: 2px solid var(--primary-1);
   cursor: pointer;
@@ -159,7 +159,7 @@ h1 {
   font-weight: 500;
   background-color: var(--primary-2);
     color: var(--dark-1);
-  border-radius: 0.3rem;
+  border-radius: 0.4rem;
   border: 2px solid var(--primary-2);
 }
 
@@ -167,7 +167,7 @@ h1 {
   font-weight: 500;
   background-color: #fff;
   color: #000;
-  border-radius: 0.3rem;
+  border-radius: 0.4rem;
   padding: 3px 8px;
   border: 2px solid #000;
   cursor: pointer;
@@ -358,3 +358,4 @@ nav::-webkit-scrollbar {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;             /* Chrome/Safari/Webkit */
 }
+

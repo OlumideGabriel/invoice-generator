@@ -529,7 +529,7 @@ const InvoicesPage = () => {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             {/* Status Filter Buttons */}
             <div className="w-full">
-              <nav className="flex flex-row h-9 overflow-x-auto gap-2.5">
+              <nav className="flex flex-row overflow-x-auto gap-2.5">
                 {STATUS_OPTIONS.map((status) => {
                   const isActive = statusFilter === status.value;
 

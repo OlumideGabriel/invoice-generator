@@ -419,48 +419,48 @@ def download_image_for_weasyprint(image_url):
         tmp_file.write(response.content)
         return tmp_file.name
 
-@app.route('/api/users/profile', methods=['GET'])
-def get_user_profile():
-    return Users.get_user_profile()
-
-@app.route('/api/users/<uuid:user_id>', methods=['GET'])
-def get_user(user_id):
-    """Fetch user details by user_id"""
-    try:
-        from models import User
-
-        user = User.query.filter_by(id=user_id).first()
-        if not user:
-            return jsonify({
-                'success': False,
-                'error': 'User not found'
-            }), 404
-
-        return jsonify({
-            'success': True,
-            'user': {
-                'id': str(user.id),
-                'email': user.email,
-                'first_name': user.first_name,
-                'last_name': user.last_name,
-                'google_id': user.google_id,
-                'auth_provider': user.auth_provider,
-                'auth_method': 'google' if user.google_id else 'native',
-                'is_guest': user.is_guest,
-                'profile_picture_url': user.profile_picture_url,
-                'email_verified': user.email_verified,
-                'data': user.data if user.data else {},
-                'created_at': user.created_at.isoformat() if user.created_at else None,
-                'updated_at': user.updated_at.isoformat() if user.updated_at else None
-            }
-        })
-
-    except Exception as e:
-        app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': 'Failed to fetch user'
-        }), 500
+# @app.route('/api/users/profile', methods=['GET'])
+# def get_user_profile():
+#     return Users.get_user_profile()
+#
+# @app.route('/api/users/<uuid:user_id>', methods=['GET'])
+# def get_user(user_id):
+#     """Fetch user details by user_id"""
+#     try:
+#         from models import User
+#
+#         user = User.query.filter_by(id=user_id).first()
+#         if not user:
+#             return jsonify({
+#                 'success': False,
+#                 'error': 'User not found'
+#             }), 404
+#
+#         return jsonify({
+#             'success': True,
+#             'user': {
+#                 'id': str(user.id),
+#                 'email': user.email,
+#                 'first_name': user.first_name,
+#                 'last_name': user.last_name,
+#                 'google_id': user.google_id,
+#                 'auth_provider': user.auth_provider,
+#                 'auth_method': 'google' if user.google_id else 'native',
+#                 'is_guest': user.is_guest,
+#                 'profile_picture_url': user.profile_picture_url,
+#                 'email_verified': user.email_verified,
+#                 'data': user.data if user.data else {},
+#                 'created_at': user.created_at.isoformat() if user.created_at else None,
+#                 'updated_at': user.updated_at.isoformat() if user.updated_at else None
+#             }
+#         })
+#
+#     except Exception as e:
+#         app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
+#         return jsonify({
+#             'success': False,
+#             'error': 'Failed to fetch user'
+#         }), 500
 
 
 @app.route('/api/invoices', methods=['GET'])
@@ -1056,13 +1056,64 @@ def bulk_delete_businesses():
     return Businesses.bulk_delete_businesses()
 
 # User routes
-@app.route('/api/users/delete', methods=['DELETE'])
-def delete_user():
-    return Users.delete_user()
+# In app.py, replace the existing profile-related routes with these:
+
+# User profile routes
+@app.route('/api/users/profile', methods=['GET'])
+def get_user_profile():
+    return Users.get_user_profile()
+
+@app.route('/api/users/profile', methods=['PUT'])
+def update_user_profile():
+    return Users.update_profile()
 
 @app.route('/api/users/password', methods=['PUT'])
 def update_password():
     return Users.update_password()
+
+@app.route('/api/users/delete', methods=['DELETE'])
+def delete_user():
+    return Users.delete_user()
+
+# Keep this route for getting user by ID (it's different from profile)
+@app.route('/api/users/<uuid:user_id>', methods=['GET'])
+def get_user(user_id):
+    """Fetch user details by user_id"""
+    try:
+        from models import User
+
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            return jsonify({
+                'success': False,
+                'error': 'User not found'
+            }), 404
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'google_id': user.google_id,
+                'auth_provider': user.auth_provider,
+                'auth_method': 'google' if user.google_id else 'native',
+                'is_guest': user.is_guest,
+                'profile_picture_url': user.profile_picture_url,
+                'email_verified': user.email_verified,
+                'data': user.data if user.data else {},
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None
+            }
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error fetching user {user_id}: {str(e)}", exc_info=True)
+        return jsonify({
+            'success': False,
+            'error': 'Failed to fetch user'
+        }), 500
 
 
 @app.route('/', methods=['GET'])
