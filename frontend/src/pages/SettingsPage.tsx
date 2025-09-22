@@ -72,12 +72,12 @@ const SettingsPage = () => {
               <div>
                 <h4 className="text-lg font-medium text-gray-900 mb-1">Current Plan</h4>
                 <p className="text-2xl font-bold text-teal-600">Free Plan</p>
-                <p className="text-sm text-gray-600 mt-1">5 invoices per month included</p>
+                <p className="text-sm hidden text-gray-600 mt-1">5 invoices per month included</p>
               </div>
               <CreditCard className="h-12 w-12 text-teal-500" />
             </div>
             <div className="mt-4">
-              <button className="px-4 py-3 bg-teal-600 text-white rounded-md hover:bg-teal-500 transition-colors font-medium">
+              <button className="px-4 py-3 bg-teal-600 hidden text-white rounded-md hover:bg-teal-500 transition-colors font-medium">
                 Upgrade Plan
               </button>
             </div>
@@ -92,7 +92,7 @@ const SettingsPage = () => {
             </div>
           </div>
 
-          <div className="bg-white border border-gray-300 rounded-lg p-6">
+          <div className="bg-white border border-gray-300 hidden rounded-lg p-6">
             <h4 className="text-lg font-medium text-gray-900 mb-4">Payment Method</h4>
             <div className="text-center py-8">
               <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />

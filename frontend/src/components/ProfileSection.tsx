@@ -269,14 +269,14 @@ const ProfileSection = ({ showNotification }) => {
                 <span>{getInitials(user)}</span>
               )}
             </div>
-            <button className="absolute -top-1 -right-1 w-6 h-6 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
+            <button className="absolute hidden -top-1 -right-1 w-6 h-6 bg-gray-600 text-white rounded-full flex items-center justify-center hover:bg-gray-700 transition-colors">
               <Camera className="w-3 h-3" />
             </button>
           </div>
 
           <div className="flex gap-3 justify-center ">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
               <input
                 type="text"
                 name="first_name"

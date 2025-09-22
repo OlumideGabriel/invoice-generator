@@ -268,7 +268,7 @@ const BusinessModal: React.FC<BusinessModalProps> = ({
               </button>
               <button
                 type="submit"
-                className="inline-flex items-center w-1/2 px-4 py-2.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="inline-flex items-center justify-center w-1/2 px-4 py-2.5 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 disabled={isSubmitting}
               >
                 <Save className="h-4 w-4 mr-2" />

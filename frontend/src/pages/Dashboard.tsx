@@ -443,10 +443,10 @@ const Dashboard = () => {
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Total Revenue</p>
                                 <p className="text-2xl font-bold text-gray-900">
-                                    {formatCurrency(metrics.totalRevenue, '£')}
+                                    {metrics.totalRevenue}
                                 </p>
                             </div>
-                            <div className="bg-green-100 p-3 rounded-lg">
+                            <div className="bg-green-100 p-3 hidden rounded-lg">
                                 <DollarSign className="h-6 w-6 text-green-600" />
                             </div>
                         </div>
@@ -458,7 +458,7 @@ const Dashboard = () => {
                                 <p className="text-sm font-medium text-gray-600">Total Invoices</p>
                                 <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
                             </div>
-                            <div className="bg-blue-100 p-3 rounded-lg">
+                            <div className="bg-blue-100 p-3 hidden rounded-lg">
                                 <FileText className="h-6 w-6 text-blue-600" />
                             </div>
                         </div>
@@ -468,25 +468,30 @@ const Dashboard = () => {
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Unique Clients</p>
-                                <p className="text-2xl font-bold text-gray-900">{metrics.uniqueClients}</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                    {metrics.uniqueClients}
+                                </p>
                             </div>
-                            <div className="bg-purple-100 p-3 rounded-lg">
-                                <Users className="h-6 w-6 text-purple-600" />
+                            <div className="bg-green-100 p-3 hidden rounded-lg">
+                                <DollarSign className="h-6 w-6 text-green-600" />
                             </div>
                         </div>
                     </div>
+
+
 
                     <div className="bg-white rounded-xl border border-gray-300 p-6">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
                                 <p className="text-2xl font-bold text-gray-900">
-                                    {formatCurrency(metrics.avgInvoiceValue, '£')}
+                                    {metrics.avgInvoiceValue}
                                 </p>
                             </div>
-                            <div className="bg-orange-100 p-3 rounded-lg">
+                            <div className="bg-orange-100 p-3 hidden rounded-lg">
                                 <TrendingUp className="h-6 w-6 text-orange-600" />
                             </div>
+
                         </div>
                     </div>
                 </div>

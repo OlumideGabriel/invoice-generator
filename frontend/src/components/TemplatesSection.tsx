@@ -29,14 +29,6 @@ const TemplatesSection = ({ showNotification }) => {
       color: 'gray',
       preview: 'Stripped-down design emphasizing clarity and simplicity'
     },
-    {
-      id: 'creative',
-      title: 'Creative Template',
-      description: 'Unique design for creative professionals',
-      icon: Palette,
-      color: 'purple',
-      preview: 'Artistic layout with creative elements and modern flair'
-    }
   ];
 
   const TemplateCard = ({ template, isActive, onSelect }) => {
@@ -47,7 +39,7 @@ const TemplatesSection = ({ showNotification }) => {
         className={`bg-white border border-gray-300 rounded-lg p-6 transition-all duration-200 cursor-pointer hover:shadow-sm ${
           isActive ? 'ring-2 ring-teal-500 border-teal-300' : 'hover:border-gray-400'
         }`}
-        onClick={onSelect}
+        /* onClick={onSelect} */
       >
         <div className="flex items-start justify-between mb-4">
           <div className={`p-3 rounded-lg ${
@@ -79,15 +71,13 @@ const TemplatesSection = ({ showNotification }) => {
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               isActive
                 ? 'bg-teal-600 text-white cursor-default'
-                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-200'
             }`}
             disabled={isActive}
           >
-            {isActive ? 'Current Template' : 'Select Template'}
+            {isActive ? 'Current Template' : 'Coming Soon'}
           </button>
-          <button className="text-teal-600 text-sm font-medium hover:text-teal-700 transition-colors">
-            Preview
-          </button>
+
         </div>
       </div>
     );
@@ -131,7 +121,7 @@ const TemplatesSection = ({ showNotification }) => {
       </div>
 
       {/* Template Customization Section */}
-      <div className="bg-white rounded-xl p-8 border border-gray-300">
+      <div className="bg-white rounded-xl hidden p-8 border border-gray-300">
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">Template Customization</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

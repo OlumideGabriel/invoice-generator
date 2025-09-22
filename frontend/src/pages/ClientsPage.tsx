@@ -262,7 +262,7 @@ const ClientsPage = () => {
 
   return (
       <>
-      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <div className="md:block  hidden sticky top-0 left-0 w-full z-30">
       <MainMenu showLogo={false} />
       </div>
       <div className="md:hidden block">
@@ -271,7 +271,7 @@ const ClientsPage = () => {
 
       {/* Dropdown Portals - Rendered outside table to avoid clipping (like in Invoices page) */}
       {dropdownOpen && (
-        <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(null)}>
+        <div className="fixed inset-0  z-40" onClick={() => setDropdownOpen(null)}>
           {(() => {
             const buttonElement = document.querySelector(`[data-dropdown-button="${dropdownOpen}"]`);
             if (!buttonElement) return null;
