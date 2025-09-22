@@ -63,15 +63,6 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
 
-# Create tables if they don't exist
-with app.app_context():
-    try:
-        db.create_all()
-        print("Database tables created successfully")
-    except Exception as e:
-        print(f"Error creating database tables: {e}")
-
-
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
