@@ -54,7 +54,9 @@ from models import User, Client, Invoice, Business
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
-CORS(app, resources={r"/*": {"origins": "*"}})
+# Allow requests from your frontend domain
+CORS(app, resources={r"/api/*": {"origins": "https://envoyce.xyz"}})
+
 
 UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
