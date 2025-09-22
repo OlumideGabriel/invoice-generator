@@ -25,6 +25,7 @@ const ProfileSection = ({ showNotification }) => {
 
   const [formData, setFormData] = useState({
     first_name: '',
+    last_name: '',
     email: ''
   });
 
@@ -39,6 +40,7 @@ const ProfileSection = ({ showNotification }) => {
     if (user) {
       setFormData({
         first_name: user.first_name || '',
+        last_name: user.last_name || '',
         email: user.email || ''
       });
     }
@@ -69,7 +71,8 @@ const ProfileSection = ({ showNotification }) => {
         },
         body: JSON.stringify({
           user_id: user.id,
-          first_name: formData.first_name
+          first_name: formData.first_name,
+          last_name: formData.last_name
         }),
       });
 
@@ -77,7 +80,8 @@ const ProfileSection = ({ showNotification }) => {
 
       if (result.success) {
         updateProfile({
-          first_name: formData.first_name
+          first_name: formData.first_name,
+          last_name: formData.last_name
         });
         setIsEditing(false);
         showNotification('Profile updated successfully');
@@ -97,6 +101,7 @@ const ProfileSection = ({ showNotification }) => {
     if (user) {
       setFormData({
         first_name: user.first_name || '',
+        last_name: user.last_name || '',
         email: user.email || ''
       });
     }
@@ -269,7 +274,7 @@ const ProfileSection = ({ showNotification }) => {
             </button>
           </div>
 
-          <div className="flex-1 space-y-4">
+          <div className="flex gap-3 justify-center ">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
               <input
@@ -284,6 +289,23 @@ const ProfileSection = ({ showNotification }) => {
                     : 'bg-gray-100 cursor-pointer hover:bg-gray-200'
                 }`}
                 placeholder="Enter your name"
+                readOnly={!isEditing}
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+              <input
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleInputChange}
+                onClick={() => !isEditing && setIsEditing(true)}
+                className={`px-4 py-3 w-full input max-w-md bg-gray-100 rounded-xl border-0 text-gray-900 transition-colors ${
+                  isEditing
+                    ? 'bg-white border border-gray-300 focus:ring-2 focus:ring-teal-500 cursor-text'
+                    : 'bg-gray-100 cursor-pointer hover:bg-gray-200'
+                }`}
+                placeholder="Enter Last name"
                 readOnly={!isEditing}
               />
             </div>
@@ -318,7 +340,7 @@ const ProfileSection = ({ showNotification }) => {
       <div className="bg-white rounded-xl p-8 border border-gray-300">
         <h2 className="text-2xl font-semibold text-gray-900 mb-6">Security</h2>
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="flex items-center">
             <div>
               <h3 className="text-lg font-medium text-gray-900">Password</h3>
@@ -327,7 +349,7 @@ const ProfileSection = ({ showNotification }) => {
           </div>
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="px-4 py-3 text-blue-600 border-2 border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+            className="px-4 py-3 text-blue-600 whitespace-nowrap border-2 border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
           >
             Change Password
           </button>

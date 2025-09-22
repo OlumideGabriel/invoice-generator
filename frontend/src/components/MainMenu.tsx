@@ -117,7 +117,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
     <>
       <header
         ref={headerRef}
-        className={`top-0 z-50 min-h-[4.6rem] w-full ${background} shadow-sm transition-transform duration-300 ease-in-out md:transform-none ${
+        className={`top-0 z-40 min-h-[4.6rem] w-full ${background} shadow-sm transition-transform duration-300 ease-in-out md:transform-none ${
           isHeaderVisible ? 'transform translate-y-0' : 'transform -translate-y-full'
         }`}
         onMouseLeave={() => setOpen(false)}

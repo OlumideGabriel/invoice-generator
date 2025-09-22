@@ -153,28 +153,28 @@ const Dashboard = () => {
             case 'draft':
                 return {
                     label: 'Draft',
-                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                    className: 'bg-[#e6e6e6]/70 text-[#404040]'
                 };
             case 'sent':
             case 'in progress':
                 return {
                     label: 'Sent',
-                    className: 'bg-blue-50 text-blue-600 border border-blue-200'
+                    className: 'bg-[#dce7ff]/70 text-[#2323ff]'
                 };
             case 'paid':
                 return {
                     label: 'Paid',
-                    className: 'bg-green-50 text-green-600 border border-green-200'
+                    className: 'bg-[#d4edbc]/70 text-[#2e7230]'
                 };
             case 'overdue':
                 return {
                     label: 'Overdue',
-                    className: 'bg-red-50 text-red-600 border border-red-200'
+                    className: 'bg-[#ffcfc9]/70 text-[#bc2d20]'
                 };
             default:
                 return {
                     label: status.charAt(0).toUpperCase() + status.slice(1),
-                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                    className: 'bg-[#e6e6e6] text-[#404040]'
                 };
         }
     };
@@ -227,27 +227,54 @@ const Dashboard = () => {
       <div className="md:hidden block">
       <MainMenu />
       </div>
+      {/* Header */}
+            <div className="bg-white border-b border-gray-300">
+                <div className="max-w-7xl mx-auto px-8">
+                    <div className="flex justify-between items-center py-6">
+                        {/* Back button and title */}
+                        <div className="flex items-center gap-6">
+                            <button
+                                onClick={() => window.history.back()}
+                                className="inline-flex hidden items-center px-3 py-3 bg-gray-100 hover:bg-gray-200 rounded-lg
+                                text-gray-400 hover:text-gray-800 transition-colors"
+                            >
+                                <ArrowLeft size={20} />
+                            </button>
 
-            <div className="">
-                {/* Header Skeleton */}
-                <div className="bg-white border-b border-gray-300">
-                    <div className="max-w-7xl mx-auto px-8">
-                        <div className="flex justify-between items-center py-6">
-                            <div className="flex items-center space-x-3 gap-6">
-                                <div className="h-10 w-10 bg-gray-200 rounded-lg animate-pulse"></div>
-                                <div>
-                                    <div className="h-8 w-48 bg-gray-200 rounded-md animate-pulse mb-2"></div>
-                                    <div className="h-4 w-64 bg-gray-200 rounded-md animate-pulse"></div>
-                                </div>
+                            <div>
+                                <h1 className="text-3xl font-semibold text-gray-900">Dashboard</h1>
+                                <p className="text-gray-600 hidden">Welcome back, {user?.first_name || 'Guest'}!</p>
                             </div>
-                            <div className="h-12 w-40 bg-gray-200 rounded-lg animate-pulse"></div>
                         </div>
+
+                        {/* New Invoice Button */}
+                        <button
+                            onClick={() => navigate('/new')}
+                            className="lg:inline-flex hidden items-center px-4 py-3 bg-black/90 text-white rounded-lg
+                             hover:bg-neutral-800 transition-colors duration-200"
+                        >
+                            <Plus className="mr-2" size={19} />
+                            New Invoice
+                        </button>
+
+                        {/* Mobile floating button */}
+                        <button
+                            onClick={() => navigate('/new')}
+                            className="inline-flex lg:hidden items-center gap-2 px-4 py-3 bg-neutral-900 text-white rounded-lg hover:bg-neutral-800 transition-colors duration-200"
+                        >
+                            <Plus size={20} />
+                             New Invoice
+                        </button>
                     </div>
                 </div>
+            </div>
+
+            <div className="">
 
                 {/* Main Content Skeleton */}
                 <div className="max-w-7xl mx-auto px-8 py-8">
                     {/* Metrics Cards Skeleton */}
+                    <div className="h-6 w-64 bg-gray-200 rounded-md animate-pulse mb-6"></div>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                         {[...Array(4)].map((_, i) => (
                             <div key={i} className="bg-white rounded-xl border border-gray-300 p-6">
@@ -256,7 +283,7 @@ const Dashboard = () => {
                                         <div className="h-4 w-24 bg-gray-200 rounded-md animate-pulse mb-2"></div>
                                         <div className="h-8 w-32 bg-gray-200 rounded-md animate-pulse"></div>
                                     </div>
-                                    <div className="h-12 w-12 bg-gray-200 rounded-full animate-pulse"></div>
+                                    <div className="h-10 w-12 bg-gray-200 rounded-lg animate-pulse"></div>
                                 </div>
                             </div>
                         ))}
@@ -283,13 +310,14 @@ const Dashboard = () => {
                                                         <div className="h-3 w-24 bg-gray-200 rounded-md animate-pulse"></div>
                                                     </div>
                                                 </div>
-                                                <div className="text-right">
-                                                    <div className="h-4 w-20 bg-gray-200 rounded-md animate-pulse mb-2"></div>
-                                                    <div className="flex items-center space-x-2 mt-1">
-                                                        <div className="h-6 w-16 bg-gray-200 rounded-md animate-pulse"></div>
-                                                        <div className="h-4 w-16 bg-gray-200 rounded-md animate-pulse"></div>
-                                                    </div>
+                                                <div className="flex flex-col items-end self-end justify-end">
+                                                  <div className="h-4 w-14 bg-gray-200 rounded-md animate-pulse"></div>
+                                                  <div className="flex items-center space-x-2 mt-1">
+                                                    <div className="h-4 w-6 bg-gray-200 rounded-md animate-pulse"></div>
+                                                    <div className="h-4 w-16 bg-gray-200 rounded-md animate-pulse"></div>
+                                                  </div>
                                                 </div>
+
                                             </div>
                                         </div>
                                     ))}
@@ -516,7 +544,7 @@ const Dashboard = () => {
                                                             )}
                                                         </p>
                                                         <div className="flex items-center space-x-2 mt-1">
-                                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-md ${statusConfig.className}`}>
+                                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
                                                                 {statusConfig.label}
                                                             </span>
                                                             <span className="text-xs text-gray-500">

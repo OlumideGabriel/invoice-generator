@@ -69,4 +69,18 @@ class Invoice(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 
+class Notification(db.Model):
+    __tablename__ = 'notifications'
+    id = db.Column(db.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = db.Column(db.UUID(as_uuid=True), db.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    title = db.Column(db.String(255), nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    type = db.Column(db.String(50), default='info')  # 'info', 'success', 'warning', 'error'
+    is_read = db.Column(db.Boolean, default=False)
+    related_entity_type = db.Column(db.String(50), nullable=True)  # 'invoice', 'client', etc.
+    related_entity_id = db.Column(db.UUID(as_uuid=True), nullable=True)  # ID of the related entity
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationship
+    user = db.relationship('User', backref=db.backref('notifications', lazy=True, cascade="all, delete-orphan"))
 

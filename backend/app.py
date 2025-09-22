@@ -15,6 +15,8 @@ from clients import Clients
 from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
+from notifications import Notifications
+from utils import create_notification, create_invoice_notification, create_client_notification, create_user_notification
 from io import BytesIO
 import tempfile, os
 from pdf2image import convert_from_bytes
@@ -928,6 +930,12 @@ def update_profile():
         user.updated_at = datetime.utcnow()
         db.session.commit()
 
+        # After profile update
+        create_user_notification(
+            user_id=user_id,
+            action='profile_updated'
+        )
+
         return jsonify({
             'success': True,
             'user': {
@@ -1114,6 +1122,34 @@ def get_user(user_id):
             'success': False,
             'error': 'Failed to fetch user'
         }), 500
+
+# Notification routes
+@app.route('/api/notifications', methods=['GET', 'POST'])
+def handle_notifications():
+    if request.method == 'GET':
+        return Notifications.get_notifications()
+    elif request.method == 'POST':
+        return Notifications.create_notification()
+
+@app.route('/api/notifications/unread-count', methods=['GET'])
+def handle_unread_count():
+    return Notifications.get_unread_count()
+
+@app.route('/api/notifications/read-all', methods=['PUT'])
+def handle_mark_all_read():
+    return Notifications.mark_all_as_read()
+
+@app.route('/api/notifications/<notification_id>/read', methods=['PUT'])
+def handle_mark_as_read(notification_id):
+    return Notifications.mark_as_read(notification_id)
+
+@app.route('/api/notifications/<notification_id>', methods=['DELETE'])
+def handle_delete_notification(notification_id):
+    return Notifications.delete_notification(notification_id)
+
+@app.route('/api/notifications/bulk-delete', methods=['POST'])
+def handle_bulk_delete_notifications():
+    return Notifications.bulk_delete_notifications()
 
 
 @app.route('/', methods=['GET'])

@@ -112,7 +112,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
           }}
           disabled={loading}
           className="w-full px-8 py-4 text-md hidden bg-[white] hover:bg-gray-100 h-[3.5rem] whitespace-nowrap font-medium rounded-xl
-          flex items-center justify-center gap-2 text-black border-2 border-gray-300 transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
+          flex items-center justify-center gap-2 text-black border-2 border-gray-900 transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
         >
           <Send size={16} />
           Send
@@ -124,7 +124,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
           onClick={onPreview}
           disabled={previewLoading}
           className="w-40 px-8 py-4 text-lg bg-transparent border-2 hover:bg-[#0f131a] h-[3.5rem] whitespace-nowrap font-medium rounded-xl
-          flex items-center justify-center gap-2 text-black hover:text-white transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
+          flex items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition ease-in-out duration-200 hover:scale-[1.02] hover:shadow-md"
         >
           {previewLoading ? (
             <Spinner size="md" color="current" />

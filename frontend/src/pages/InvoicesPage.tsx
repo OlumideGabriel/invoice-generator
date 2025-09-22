@@ -356,28 +356,28 @@ const InvoicesPage = () => {
             case 'draft':
                 return {
                     label: 'Draft',
-                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                    className: 'bg-[#e6e6e6]/70 text-[#404040]'
                 };
             case 'sent':
             case 'in progress':
                 return {
                     label: 'Sent',
-                    className: 'bg-blue-50 text-blue-600 border border-blue-200'
+                    className: 'bg-[#dce7ff]/70 text-[#2323ff]'
                 };
             case 'paid':
                 return {
                     label: 'Paid',
-                    className: 'bg-green-50 text-green-600 border border-green-200'
+                    className: 'bg-[#d4edbc]/70 text-[#2e7230]'
                 };
             case 'overdue':
                 return {
                     label: 'Overdue',
-                    className: 'bg-red-50 text-red-600 border border-red-200'
+                    className: 'bg-[#ffcfc9]/70 text-[#bc2d20]'
                 };
             default:
                 return {
                     label: status.charAt(0).toUpperCase() + status.slice(1),
-                    className: 'bg-gray-100 text-gray-700 border border-gray-200'
+                    className: 'bg-[#e6e6e6] text-[#404040]'
                 };
         }
     };
@@ -523,45 +523,46 @@ const InvoicesPage = () => {
       )}
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 mb-40 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 mb-40 sm:px-6 lg:px-8 lg:py-8 py-4">
         {/* Search and Filters */}
         <div className="rounded-xl py-3 mb-6">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-            {/* Status Filter Buttons */}
-            <div className="w-full">
-              <nav className="flex flex-row overflow-x-auto gap-2.5">
-                {STATUS_OPTIONS.map((status) => {
-                  const isActive = statusFilter === status.value;
+          <div className="flex flex-col lg:flex-row justify-between gap-8 lg:items-center">
+  {/* Status Filter Buttons */}
+  <div className="w-full order-last lg:order-first">
+    <nav className="flex flex-row overflow-x-auto gap-2.5">
+      {STATUS_OPTIONS.map((status) => {
+        const isActive = statusFilter === status.value;
 
-                  return (
-                    <button
-                      key={status.value}
-                      onClick={() => handleStatusFilter(status.value)}
-                      className={`flex items-center px-4 py-2.5 rounded-full transition-colors text-sm min-w-fit ${
-                        isActive
-                          ? 'bg-gray-900 text-neutral-50 font-medium'
-                          : 'text-gray-700 hover:bg-white bg-transparent border'
-                      }`}
-                    >
-                      <span className="truncate whitespace-nowrap">{status.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
+        return (
+          <button
+            key={status.value}
+            onClick={() => handleStatusFilter(status.value)}
+            className={`flex items-center px-4 py-2.5 rounded-full transition-colors text-md min-w-fit ${
+              isActive
+                ? 'bg-gray-900 text-neutral-50 font-medium'
+                : 'text-gray-900 hover:bg-white bg-transparent border'
+            }`}
+          >
+            <span className="truncate whitespace-nowrap">{status.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  </div>
 
-            {/* Search Bar */}
-            <div className="relative w-full lg:w-auto lg:min-w-80">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-              <input
-                type="text"
-                placeholder="Search"
-                className="w-full !bg-gray-150 pl-10 pr-4 py-3 !rounded-xl border-2 !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                value={searchTerm}
-                onChange={handleSearch}
-              />
-            </div>
-          </div>
+  {/* Search Bar */}
+  <div className="relative w-full order-first lg:order-last lg:w-auto lg:min-w-80">
+    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+    <input
+      type="text"
+      placeholder="Search"
+      className="w-full !bg-gray-150 pl-10 pr-4 py-3 !rounded-xl border-2 !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+      value={searchTerm}
+      onChange={handleSearch}
+    />
+  </div>
+</div>
+
         </div>
 
         {/* Invoices Table */}

@@ -194,11 +194,11 @@ const SettingsPage = () => {
                       <button
                         key={item.id}
                         onClick={() => handleSetSection(item.id)}
-                        className={`flex items-center px-4 py-2.5 rounded-full border-2 border-gray-600 hover:border-gray-900
-                            transition-colors text-sm min-w-fit ${
+                        className={`flex items-center px-4 py-3 rounded-full border border-gray-600 hover:border-gray-900
+                            transition-colors text-md min-w-fit ${
                           isActive
-                            ? 'bg-gray-900 text-white font-medium '
-                            : 'hover:bg-gray-900 hover:text-white'
+                            ? 'bg-gray-900 text-white '
+                            : 'hover:bg-white hover:text-gray-900'
                         }`}
                       >
                         <Icon className="w-4 h-4 mr-3 flex-shrink-0" />
