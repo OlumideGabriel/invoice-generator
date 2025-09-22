@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 import requests
 from message import send_email
+import os
 import json
 from support import support_bp
 from flask_migrate import Migrate
@@ -1177,5 +1178,6 @@ def home():
     })
 
 
-if __name__ == '__main__':
-    app.run(port=5000, debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))  # 5000 for local, $PORT on Render
+    app.run(host="0.0.0.0", port=port, debug=True)
