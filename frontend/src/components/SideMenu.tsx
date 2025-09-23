@@ -144,7 +144,7 @@ const SideMenu: React.FC = () => {
               className={`absolute top-[1.13rem]  rounded-xl p-[0.5rem] border-2 !border-white
 
                 ${collapsed ? "left-[1.26rem] translate-x-0 bg-[#0e423e] text-[#8eda91] opacity-0 hover:opacity-100"
-                    : "right-0 text-[#0e423e]/80 translate-x-0 opacity-100"}`}
+                    : "right-0 text-[#0e423e]/40 hover:text-[#0e423e]/70 translate-x-0 opacity-100"}`}
             >
               <PanelLeft className="" size={20} />
             </button>
