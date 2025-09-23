@@ -54,9 +54,19 @@ from models import User, Client, Invoice, Business
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
 
-# Allow both your production and local frontend
+# Detect environment (default to "development")
+ENV = os.getenv("FLASK_ENV", "development")
+
 CORS(app, resources={
-    r"/api/*": {"origins": ["https://envoyce.xyz", "http://localhost:5173"]}
+    r"/*": {
+        "origins": [
+            "https://envoyce.xyz",   # your frontend domain
+            "http://localhost:5173", # dev
+            "http://127.0.0.1:5173"  # dev alt
+        ],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type", "Authorization"]
+    }
 })
 
 
@@ -280,7 +290,7 @@ def preview_invoice():
         app.logger.debug(f"[PREVIEW] Received data: {data}")
         template_data = parse_invoice_data(data)
 
-        # ✅ Download and replace external logo URLs with local file paths
+        # Download and replace external logo URLs with local file paths
         if 'logo_url' in template_data and template_data['logo_url']:
             try:
                 logo_path = download_image_for_weasyprint(template_data['logo_url'])
@@ -291,7 +301,7 @@ def preview_invoice():
                 app.logger.warning(f"Failed to download logo: {e}")
                 # Keep original URL as fallback
 
-        # ✅ Render HTML template into PDF (intermediate step)
+        # Render HTML template into PDF (intermediate step)
         html = render_template('invoice_template4.html', **template_data)
 
         ssl_context = ssl.create_default_context(cafile=certifi.where())

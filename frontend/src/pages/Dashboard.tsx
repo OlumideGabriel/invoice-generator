@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { User, Mail, Lock, Save, Camera, ArrowLeft, Edit2, Check, X, CreditCard,
-    Trash2, FileText, Bell, DollarSign, Users, Calendar, TrendingUp, Clock, AlertCircle, Plus } from 'lucide-react';
+    Trash2, FileText, Bell, DollarSign, Users, Calendar, TrendingUp, Clock, AlertCircle, Plus, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -16,6 +16,11 @@ const Dashboard = () => {
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [forexRates, setForexRates] = useState(null);
+    const [selectedBaseCurrency, setSelectedBaseCurrency] = useState('USD');
+    const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
+    const [showRevenueCurrencyDropdown, setShowRevenueCurrencyDropdown] = useState(false);
+    const [forexLoading, setForexLoading] = useState(false);
 
     // Helper for avatar initials
     const getInitials = (u) => {
@@ -87,6 +92,61 @@ const Dashboard = () => {
         }
 
         return Math.max(0, total); // Ensure total is never negative
+    };
+
+    // Fetch forex rates
+    const fetchForexRates = async () => {
+        try {
+            setForexLoading(true);
+            const response = await fetch('https://api.exchangerate.host/latest?base=USD');
+            if (!response.ok) {
+                throw new Error('Failed to fetch exchange rates');
+            }
+            const data = await response.json();
+            setForexRates(data.rates);
+        } catch (err) {
+            console.error('Error fetching forex rates:', err);
+            // Set fallback rates for common currencies
+            setForexRates({
+                'USD': 1,
+                'EUR': 0.85,
+                'GBP': 0.73,
+                '£': 0.73,
+                '$': 1,
+                '€': 0.85
+            });
+        } finally {
+            setForexLoading(false);
+        }
+    };
+
+    // Convert currency to base currency
+    const convertToBaseCurrency = (amount, fromCurrency, toCurrency) => {
+        if (!forexRates || fromCurrency === toCurrency) return amount;
+
+        // Normalize currency symbols to codes
+        const currencyMap = {
+            '$': 'USD',
+            '£': 'GBP',
+            '€': 'EUR',
+            'USD': 'USD',
+            'GBP': 'GBP',
+            'EUR': 'EUR'
+        };
+
+        const fromCode = currencyMap[fromCurrency] || fromCurrency;
+        const toCode = currencyMap[toCurrency] || toCurrency;
+
+        if (fromCode === toCode) return amount;
+
+        const fromRate = forexRates[fromCode] || 1;
+        const toRate = forexRates[toCode] || 1;
+
+        // Convert to USD first, then to target currency
+        const usdAmount = amount / fromRate;
+        const convertedAmount = usdAmount * toRate;
+
+        return convertedAmount;
     };
 
     // Get dashboard metrics - updated to handle mixed currencies properly
@@ -176,30 +236,29 @@ const Dashboard = () => {
         return `${formatCurrency(metrics.totalRevenue, dominantCurrency)} *`;
     };
 
-    // Format average invoice value using the dominant currency from actual revenue
-    const formatAverageInvoiceValue = (metrics) => {
-        if (!metrics || metrics.avgInvoiceValue === null || metrics.avgInvoiceValue === undefined) {
-            return formatCurrency(0, currency?.symbol);
+    // Calculate converted average invoice value
+    const getConvertedAverageInvoiceValue = (metrics) => {
+        if (!metrics || !forexRates || Object.keys(metrics.currencyBreakdown).length === 0) {
+            return { amount: 0, currency: selectedBaseCurrency };
         }
 
-        if (metrics.avgInvoiceValue === 0) {
-            return formatCurrency(0, currency?.symbol);
-        }
+        let totalConverted = 0;
+        let totalInvoices = 0;
 
-        const currencies = Object.keys(metrics.currencyBreakdown || {});
+        // Convert each currency's revenue to base currency and sum up
+        Object.entries(metrics.currencyBreakdown).forEach(([currency, amount]) => {
+            const converted = convertToBaseCurrency(amount, currency, selectedBaseCurrency);
+            totalConverted += converted;
+        });
 
-        if (currencies.length === 0) {
-            return formatCurrency(metrics.avgInvoiceValue, currency?.symbol);
-        }
+        // Count total paid invoices for average calculation
+        totalInvoices = metrics.totalInvoices || 1;
 
-        // Use the dominant currency from the actual revenue data
-        const dominantCurrency = currencies.reduce((a, b) =>
-            metrics.currencyBreakdown[a] > metrics.currencyBreakdown[b] ? a : b
-        );
-
-        return formatCurrency(metrics.avgInvoiceValue, dominantCurrency);
+        return {
+            amount: totalConverted / totalInvoices,
+            currency: selectedBaseCurrency
+        };
     };
-
 
     // Format date - updated to match InvoicesPage
     const formatDate = (dateString) => {
@@ -285,6 +344,24 @@ const Dashboard = () => {
 
         fetchDashboardData();
     }, [user]);
+
+    // Fetch forex rates on component mount
+    useEffect(() => {
+        fetchForexRates();
+    }, []);
+
+    // Set default base currency when currencies are detected
+    useEffect(() => {
+        if (dashboardData && !loading) {
+            const invoices = dashboardData?.invoices || [];
+            const metrics = getDashboardMetrics(invoices);
+            const currencies = Object.keys(metrics.currencyBreakdown);
+
+            if (currencies.length > 0 && !selectedBaseCurrency) {
+                setSelectedBaseCurrency(currencies[0]);
+            }
+        }
+    }, [dashboardData, loading]);
 
     // Skeleton Loading Component
     const SkeletonLoader = () => {
@@ -425,6 +502,7 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
+                    <Navbar />
                 </div>
             </>
         );
@@ -447,6 +525,9 @@ const Dashboard = () => {
     // Use the same data structure as InvoicesPage
     const invoices = dashboardData?.invoices || [];
     const metrics = getDashboardMetrics(invoices);
+    const currencies = Object.keys(metrics.currencyBreakdown);
+    const hasMultipleCurrencies = currencies.length > 1;
+    const convertedAvg = getConvertedAverageInvoiceValue(metrics);
 
     return (
         <>
@@ -503,17 +584,77 @@ const Dashboard = () => {
                 {/* Main Content */}
                 <div className="max-w-7xl mx-auto px-8 mb-40 py-8">
                     <div className="text-gray-600 text-xl mb-6">Welcome back, {user?.first_name || 'Guest'}!</div>
+
+                    {/* Forex Status Banner */}
+                    {hasMultipleCurrencies && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                            <div className="flex items-center space-x-2">
+                                <TrendingUp className="h-5 w-5 text-blue-600" />
+                                <div className="flex-1">
+                                    <p className="text-sm text-blue-800 font-medium">Multi-Currency Analysis Active</p>
+                                    <p className="text-xs text-blue-600">
+                                        {forexLoading ? 'Loading exchange rates...' :
+                                         forexRates ? 'Live forex rates applied for accurate conversions' :
+                                         'Using fallback exchange rates'}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* Metrics Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div className="bg-white rounded-xl border border-gray-300 p-6">
+                        {/* Total Revenue Card - Always shown */}
+                        <div className="bg-white rounded-xl border border-gray-300 p-6 relative">
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-sm font-medium text-gray-600">Total Revenue</p>
+                                        {hasMultipleCurrencies && (
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowRevenueCurrencyDropdown(!showRevenueCurrencyDropdown)}
+                                                    className="flex items-center space-x-1 text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                                                >
+                                                    <span>{selectedBaseCurrency}</span>
+                                                    <ChevronDown className="h-3 w-3" />
+                                                </button>
+                                                {showRevenueCurrencyDropdown && (
+                                                    <div className="absolute right-0 top-8 mt-1 w-20 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                                                        {currencies.concat(['USD', 'EUR', 'GBP']).filter((c, i, arr) => arr.indexOf(c) === i).map(curr => (
+                                                            <button
+                                                                key={curr}
+                                                                onClick={() => {
+                                                                    setSelectedBaseCurrency(curr);
+                                                                    setShowRevenueCurrencyDropdown(false);
+                                                                }}
+                                                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 ${
+                                                                    selectedBaseCurrency === curr ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                                                                }`}
+                                                            >
+                                                                {curr}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                     <p className="text-2xl font-bold text-gray-900">
-                                        {formatTotalRevenue(metrics)}
+                                        {hasMultipleCurrencies && forexRates ?
+                                            formatCurrency(
+                                                Object.entries(metrics.currencyBreakdown).reduce((total, [currency, amount]) => {
+                                                    return total + convertToBaseCurrency(amount, currency, selectedBaseCurrency);
+                                                }, 0),
+                                                selectedBaseCurrency
+                                            ) :
+                                            formatTotalRevenue(metrics)
+                                        }
                                     </p>
-                                    {Object.keys(metrics.currencyBreakdown).length > 1 && (
-                                        <p className="text-xs text-gray-500 mt-1">* Mixed currencies</p>
+                                    {hasMultipleCurrencies && (
+                                        <p className="text-xs text-gray-500 mt-1">
+                                            {forexRates ? '* Forex converted' : '* Mixed currencies'}
+                                        </p>
                                     )}
                                 </div>
                                 <div className="bg-green-100 p-3 hidden rounded-lg">
@@ -522,41 +663,105 @@ const Dashboard = () => {
                             </div>
                         </div>
 
-                        <div className="bg-white rounded-xl border border-gray-300 p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Total Invoices</p>
-                                    <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
-                                </div>
-                                <div className="bg-blue-100 p-3 hidden rounded-lg">
-                                    <FileText className="h-6 w-6 text-blue-600" />
+                        {/* Individual Currency Revenue Cards - Only if multiple currencies */}
+                        {hasMultipleCurrencies && currencies.map((currencySymbol, index) => (
+                            <div key={currencySymbol} className="bg-white rounded-xl border border-gray-300 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">
+                                            Revenue ({currencySymbol})
+                                        </p>
+                                        <p className="text-2xl font-bold text-gray-900">
+                                            {formatCurrency(metrics.currencyBreakdown[currencySymbol], currencySymbol)}
+                                        </p>
+                                    </div>
+                                    <div className={`p-3 rounded-lg ${
+                                        index === 0 ? 'bg-emerald-100' :
+                                        index === 1 ? 'bg-blue-100' :
+                                        'bg-purple-100'
+                                    } hidden`}>
+                                        <DollarSign className={`h-6 w-6 ${
+                                            index === 0 ? 'text-emerald-600' :
+                                            index === 1 ? 'text-blue-600' :
+                                            'text-purple-600'
+                                        }`} />
+                                    </div>
                                 </div>
                             </div>
-                        </div>
+                        ))}
 
-                        <div className="bg-white rounded-xl border border-gray-300 p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Unique Clients</p>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {metrics.uniqueClients}
-                                    </p>
+                        {/* Fill remaining slots with other metrics */}
+                        {!hasMultipleCurrencies && (
+                            <>
+                                <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                                            <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
+                                        </div>
+                                        <div className="bg-blue-100 p-3 hidden rounded-lg">
+                                            <FileText className="h-6 w-6 text-blue-600" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="bg-green-100 p-3 hidden rounded-lg">
-                                    <DollarSign className="h-6 w-6 text-green-600" />
-                                </div>
-                            </div>
-                        </div>
 
-                        <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-600">Unique Clients</p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                {metrics.uniqueClients}
+                                            </p>
+                                        </div>
+                                        <div className="bg-green-100 p-3 hidden rounded-lg">
+                                            <Users className="h-6 w-6 text-green-600" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
+
+                        {/* Average Invoice Value with Currency Selector */}
+                        <div className="bg-white rounded-xl border border-gray-300 p-6 relative">
                             <div className="flex items-center justify-between">
-                                <div>
-                                    <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
+                                <div className="flex-1">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
+                                        {hasMultipleCurrencies && (
+                                            <div className="relative">
+                                                <button
+                                                    onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                                                    className="flex items-center space-x-1 text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
+                                                >
+                                                    <span>{selectedBaseCurrency}</span>
+                                                    <ChevronDown className="h-3 w-3" />
+                                                </button>
+                                                {showCurrencyDropdown && (
+                                                    <div className="absolute right-0 top-8 mt-1 w-20 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                                                        {currencies.concat(['USD', 'EUR', 'GBP']).filter((c, i, arr) => arr.indexOf(c) === i).map(curr => (
+                                                            <button
+                                                                key={curr}
+                                                                onClick={() => {
+                                                                    setSelectedBaseCurrency(curr);
+                                                                    setShowCurrencyDropdown(false);
+                                                                }}
+                                                                className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 ${
+                                                                    selectedBaseCurrency === curr ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                                                                }`}
+                                                            >
+                                                                {curr}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
                                     <p className="text-2xl font-bold text-gray-900">
-                                        {formatAverageInvoiceValue(metrics)}
+                                        {formatCurrency(convertedAvg.amount, convertedAvg.currency)}
                                     </p>
-                                    {Object.keys(metrics.currencyBreakdown).length > 1 && (
-                                        <p className="text-xs text-gray-500 mt-1">* Based on dominant currency</p>
+                                    {hasMultipleCurrencies && forexRates && (
+                                        <p className="text-xs text-gray-500 mt-1">* Forex converted</p>
                                     )}
                                 </div>
                                 <div className="bg-orange-100 p-3 hidden rounded-lg">
@@ -565,7 +770,82 @@ const Dashboard = () => {
                             </div>
                         </div>
 
+                        {/* Additional metrics if space available */}
+                        {hasMultipleCurrencies && currencies.length === 2 && (
+                            <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                                        <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
+                                    </div>
+                                    <div className="bg-blue-100 p-3 hidden rounded-lg">
+                                        <FileText className="h-6 w-6 text-blue-600" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {hasMultipleCurrencies && currencies.length === 1 && (
+                            <>
+                                <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                                            <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
+                                        </div>
+                                        <div className="bg-blue-100 p-3 hidden rounded-lg">
+                                            <FileText className="h-6 w-6 text-blue-600" />
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <p className="text-sm font-medium text-gray-600">Unique Clients</p>
+                                            <p className="text-2xl font-bold text-gray-900">
+                                                {metrics.uniqueClients}
+                                            </p>
+                                        </div>
+                                        <div className="bg-green-100 p-3 hidden rounded-lg">
+                                            <Users className="h-6 w-6 text-green-600" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
+                        )}
                     </div>
+
+                    {/* Secondary Metrics Row - Only show if not displayed above */}
+                    {hasMultipleCurrencies && currencies.length > 2 && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                            <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Total Invoices</p>
+                                        <p className="text-2xl font-bold text-gray-900">{metrics.totalInvoices}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Unique Clients</p>
+                                        <p className="text-2xl font-bold text-gray-900">{metrics.uniqueClients}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
+                                        <p className="text-sm text-gray-500">
+                                            {forexRates ? `1 ${currencies[0]} = ${forexRates[selectedBaseCurrency]?.toFixed(4) || 'N/A'} ${selectedBaseCurrency}` : 'Loading...'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         {/* Recent Invoices */}
@@ -576,7 +856,7 @@ const Dashboard = () => {
                                         <h3 className="text-lg font-medium text-gray-900">Recent Invoices</h3>
                                         <button
                                             onClick={() => navigate('/invoices')}
-                                            className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                            className="text-neutral-900 bg-gray-100 hover:bg-gray-200 rounded-md px-2 py-1 hover:text-neutral-800 text-sm font-medium cursor-pointer"
                                         >
                                             View all
                                         </button>
@@ -614,6 +894,14 @@ const Dashboard = () => {
                                                         <div className="text-right">
                                                             <p className="text-sm font-medium text-gray-900">
                                                                 {formatCurrency(totalAmount, invoiceCurrency)}
+                                                                {hasMultipleCurrencies && forexRates && (
+                                                                    <span className="text-xs text-gray-500 block">
+                                                                        ≈ {formatCurrency(
+                                                                            convertToBaseCurrency(totalAmount, invoiceCurrency, selectedBaseCurrency),
+                                                                            selectedBaseCurrency
+                                                                        )}
+                                                                    </span>
+                                                                )}
                                                             </p>
                                                             <div className="flex items-center space-x-2 mt-1">
                                                                 <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
@@ -648,6 +936,41 @@ const Dashboard = () => {
 
                         {/* Quick Stats & Actions */}
                         <div className="space-y-6">
+                            {/* Currency Breakdown - Only show if multiple currencies */}
+                            {hasMultipleCurrencies && (
+                                <div className="bg-white rounded-xl border border-gray-300 p-6">
+                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Currency Breakdown</h3>
+                                    <div className="space-y-3">
+                                        {Object.entries(metrics.currencyBreakdown).map(([currency, amount]) => (
+                                            <div key={currency} className="flex items-center justify-between">
+                                                <div className="flex items-center space-x-2">
+                                                    <div className="h-3 w-3 bg-blue-500 rounded-full"></div>
+                                                    <span className="text-sm font-medium text-gray-700">{currency}</span>
+                                                </div>
+                                                <div className="text-right">
+                                                    <div className="text-sm font-medium text-gray-900">
+                                                        {formatCurrency(amount, currency)}
+                                                    </div>
+                                                    {forexRates && (
+                                                        <div className="text-xs text-gray-500">
+                                                            ≈ {formatCurrency(
+                                                                convertToBaseCurrency(amount, currency, selectedBaseCurrency),
+                                                                selectedBaseCurrency
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    {forexRates && (
+                                        <div className="mt-4 pt-3 border-t border-gray-200 text-xs text-gray-500">
+                                            Exchange rates updated: {new Date().toLocaleDateString()}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
                             {/* Status Summary */}
                             <div className="bg-white rounded-xl border border-gray-300 p-6">
                                 <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Status</h3>
