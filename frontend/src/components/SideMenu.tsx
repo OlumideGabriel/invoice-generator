@@ -6,6 +6,7 @@ import Advert from "./Advert";
 import { useCurrency } from "../context/CurrencyContext";
 import Tooltip from "./Tooltip";
 import AuthModal from "./AuthModal";
+import { PanelLeft} from 'lucide-react';
 
 // Heroicons - Outline
 import {
@@ -140,14 +141,15 @@ const SideMenu: React.FC = () => {
             {/* Collapse Toggle Button */}
             <button
               onClick={toggleCollapsed}
-              className="absolute -right-3 top-1/2  bg-white rounded-full p-1 border !border-neutral-400 hover:bg-gray-100 transition-colors"
+              className={`absolute top-[1.13rem]  rounded-xl p-[0.5rem] border-2 !border-white
+
+                ${collapsed ? "left-[1.26rem] translate-x-0 bg-[#0e423e] text-[#8eda91] opacity-0 hover:opacity-100"
+                    : "right-0 text-[#0e423e]/80 translate-x-0 opacity-100"}`}
             >
-              {collapsed ? (
-                <ChevronRightIcon className="h-4 w-4 text-neutral-400" />
-              ) : (
-                <ChevronLeftIcon className="h-4 w-4 text-neutral-400" />
-              )}
+              <PanelLeft className="" size={20} />
             </button>
+
+
 
             <nav className="flex flex-col gap-1">
               {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu }) => {
