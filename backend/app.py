@@ -1,8 +1,6 @@
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 import requests
 from message import send_email
-import json
-from support import support_bp
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
@@ -16,15 +14,18 @@ from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
 from notifications import Notifications
-from utils import create_notification, create_invoice_notification, create_client_notification, create_user_notification
+from utils import create_user_notification
 from io import BytesIO
-import tempfile, os
+import tempfile
 from pdf2image import convert_from_bytes
 import ssl, certifi, os, logging
-import jwt
 import uuid
 from functools import lru_cache
 from supabase import create_client, Client
+# Register the blueprint in your main app
+from routes.dashboard import dashboard_bp
+
+
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
@@ -49,7 +50,7 @@ db.init_app(app)
 def shutdown_session(exception=None):
     db.session.remove()
 
-from models import User, Client, Invoice, Business
+from models import User, Invoice
 
 # Initialize Flask-Migrate
 migrate = Migrate(app, db)
@@ -64,7 +65,7 @@ CORS(app, resources={
             "http://localhost:5173", # dev
             "http://127.0.0.1:5173"  # dev alt
         ],
-        "methods": ["GET", "POST", "OPTIONS"],
+        "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
         "allow_headers": ["Content-Type", "Authorization"]
     }
 })
@@ -72,6 +73,8 @@ CORS(app, resources={
 
 UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.register_blueprint(dashboard_bp)
 
 
 
@@ -492,11 +495,12 @@ def get_invoices():
             'id': str(inv.id),
             'user_id': str(inv.user_id),
             'client_id': str(inv.client_id),
+            'business_id': str(inv.business_id),
             'data': inv.data,
             'issued_date': inv.issued_date,
             'due_date': inv.due_date,
             'status': inv.status,
-            'currency': inv.data.get('currency', 'USD') if isinstance(inv.data, dict) else 'USD',
+            'currency': inv.data.get('currency')
         }
         for inv in invoices
     ]
@@ -511,7 +515,9 @@ def save_invoice():
     invoice_data = data.get('data')  # All invoice details as JSON
     issued_date = data.get('issued_date')
     due_date = data.get('due_date')
-    status = data.get('status', 'draft')
+    business_id = data.get('business_id')
+    status = data.get('status', 'draft'),
+    currency = data.get('currency')
 
     # Validate required fields
     if not user_id or not invoice_data:
@@ -532,98 +538,100 @@ def save_invoice():
         data=invoice_data,
         issued_date=issued_date,
         due_date=due_date,
-        status=status
+        status=status,
+        business_id=business_id,
+        currency=currency
     )
     db.session.add(invoice)
     db.session.commit()
     return jsonify({'success': True, 'invoice_id': str(invoice.id)})
 
 
-@app.route('/api/dashboard', methods=['GET'])
-def get_dashboard_data():
-    user_id = request.args.get('user_id')
-    if not user_id:
-        return jsonify({'error': 'user_id is required'}), 400
-
-    try:
-        # Check if user exists
-        user = db.session.get(User, user_id)
-        if not user:
-            return jsonify({'error': 'User not found'}), 404
-
-        # Get all invoices for the user
-        invoices = db.session.query(Invoice).filter_by(user_id=user_id).all()
-
-        # Initialize stats
-        stats = {
-            'total_revenue': 0.0,
-            'pending_amount': 0.0,
-            'total_invoices': len(invoices),
-            'total_clients': 0,
-            'paid_invoices': 0,
-            'overdue_invoices': 0,
-            'monthly_growth': 0.0
-        }
-
-        # Track unique clients
-        client_ids = set()
-
-        for invoice in invoices:
-            if invoice.client_id:
-                client_ids.add(str(invoice.client_id))
-
-            # Get amount from invoice data
-            amount = 0.0
-            if isinstance(invoice.data, dict):
-                try:
-                    amount = float(invoice.data.get('amount', 0))
-                except (ValueError, TypeError):
-                    pass
-
-            # Update stats based on status
-            if invoice.status == 'paid':
-                stats['total_revenue'] += amount
-                stats['paid_invoices'] += 1
-            elif invoice.status == 'overdue':
-                stats['pending_amount'] += amount
-                stats['overdue_invoices'] += 1
-            elif invoice.status == 'sent':
-                stats['pending_amount'] += amount
-
-        stats['total_clients'] = len(client_ids)
-
-        # Get recent invoices (last 5)
-        recent_invoices = []
-        for inv in sorted(invoices, key=lambda x: x.created_at, reverse=True)[:5]:
-            recent_invoices.append({
-                'id': str(inv.id),
-                'invoice_number': inv.data.get('invoice_number', '') if isinstance(inv.data, dict) else '',
-                'client_name': inv.data.get('to', '') if isinstance(inv.data, dict) else '',
-                'client_email': inv.data.get('email', '') if isinstance(inv.data, dict) else '',
-                'amount': float(inv.data.get('amount', 0)) if isinstance(inv.data, dict) else 0.0,
-                'status': inv.status,
-                'created_date': inv.created_at.isoformat() if inv.created_at else None,
-                'due_date': inv.due_date.isoformat() if inv.due_date else None,
-                'description': ', '.join([item.get('name', '') for item in inv.data.get('items', [])])
-                if isinstance(inv.data, dict) and isinstance(inv.data.get('items'), list)
-                else ''
-            })
-
-        return jsonify({
-            'success': True,
-            'data': {
-                'stats': stats,
-                'recent_invoices': recent_invoices
-            }
-        })
-
-    except Exception as e:
-        app.logger.error(f"Error in get_dashboard_data: {str(e)}", exc_info=True)
-        return jsonify({
-            'success': False,
-            'error': 'Failed to fetch dashboard data',
-            'message': str(e)
-        }), 500
+# @app.route('/api/dashboard', methods=['GET'])
+# def get_dashboard_data():
+#     user_id = request.args.get('user_id')
+#     if not user_id:
+#         return jsonify({'error': 'user_id is required'}), 400
+#
+#     try:
+#         # Check if user exists
+#         user = db.session.get(User, user_id)
+#         if not user:
+#             return jsonify({'error': 'User not found'}), 404
+#
+#         # Get all invoices for the user
+#         invoices = db.session.query(Invoice).filter_by(user_id=user_id).all()
+#
+#         # Initialize stats
+#         stats = {
+#             'total_revenue': 0.0,
+#             'pending_amount': 0.0,
+#             'total_invoices': len(invoices),
+#             'total_clients': 0,
+#             'paid_invoices': 0,
+#             'overdue_invoices': 0,
+#             'monthly_growth': 0.0
+#         }
+#
+#         # Track unique clients
+#         client_ids = set()
+#
+#         for invoice in invoices:
+#             if invoice.client_id:
+#                 client_ids.add(str(invoice.client_id))
+#
+#             # Get amount from invoice data
+#             amount = 0.0
+#             if isinstance(invoice.data, dict):
+#                 try:
+#                     amount = float(invoice.data.get('amount', 0))
+#                 except (ValueError, TypeError):
+#                     pass
+#
+#             # Update stats based on status
+#             if invoice.status == 'paid':
+#                 stats['total_revenue'] += amount
+#                 stats['paid_invoices'] += 1
+#             elif invoice.status == 'overdue':
+#                 stats['pending_amount'] += amount
+#                 stats['overdue_invoices'] += 1
+#             elif invoice.status == 'sent':
+#                 stats['pending_amount'] += amount
+#
+#         stats['total_clients'] = len(client_ids)
+#
+#         # Get recent invoices (last 5)
+#         recent_invoices = []
+#         for inv in sorted(invoices, key=lambda x: x.created_at, reverse=True)[:5]:
+#             recent_invoices.append({
+#                 'id': str(inv.id),
+#                 'invoice_number': inv.data.get('invoice_number', '') if isinstance(inv.data, dict) else '',
+#                 'client_name': inv.data.get('to', '') if isinstance(inv.data, dict) else '',
+#                 'client_email': inv.data.get('email', '') if isinstance(inv.data, dict) else '',
+#                 'amount': float(inv.data.get('amount', 0)) if isinstance(inv.data, dict) else 0.0,
+#                 'status': inv.status,
+#                 'created_date': inv.created_at.isoformat() if inv.created_at else None,
+#                 'due_date': inv.due_date.isoformat() if inv.due_date else None,
+#                 'description': ', '.join([item.get('name', '') for item in inv.data.get('items', [])])
+#                 if isinstance(inv.data, dict) and isinstance(inv.data.get('items'), list)
+#                 else ''
+#             })
+#
+#         return jsonify({
+#             'success': True,
+#             'data': {
+#                 'stats': stats,
+#                 'recent_invoices': recent_invoices
+#             }
+#         })
+#
+#     except Exception as e:
+#         app.logger.error(f"Error in get_dashboard_data: {str(e)}", exc_info=True)
+#         return jsonify({
+#             'success': False,
+#             'error': 'Failed to fetch dashboard data',
+#             'message': str(e)
+#         }), 500
 
 
 # Additional helper routes you might need
