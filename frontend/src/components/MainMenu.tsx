@@ -117,7 +117,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
     <>
       <header
         ref={headerRef}
-        className={`top-0 z-40 min-h-[4.6rem] w-full ${background} shadow-sm transition-transform duration-300 ease-in-out md:transform-none ${
+        className={`top-0 z-50 min-h-[4.6rem] w-full ${background} shadow-sm transition-transform duration-300 ease-in-out md:transform-none ${
           isHeaderVisible ? 'transform translate-y-0' : 'transform -translate-y-full'
         }`}
         onMouseLeave={() => setOpen(false)}
@@ -150,7 +150,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
           )}
 
           {user ? (
-            <div className="hidden md:flex relative z-100" ref={menuRef}>
+            <div className="hidden md:flex relative z-50" ref={menuRef}>
               <Link to='/notifications'
               className="flex items-center justify-center mr-5">
                 <span className=" absolute top-[0.3rem] hidden left-[1.2rem] bg-red-500 text-white text-sm font-bold border rounded-full
@@ -313,7 +313,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
         {/* Off-canvas menu with slide transition */}
         <div
           ref={mobileMenuRef}
-          className={`fixed top-0 right-0 h-full w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
+          className={`fixed top-0 right-0 h-full z-50 w-full max-w-sm bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'}`}
         >
           <div className="flex flex-col h-full justify-between">
             {/* Header with Logo */}

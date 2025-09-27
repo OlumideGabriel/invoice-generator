@@ -15,6 +15,7 @@ import AuthCallback from './pages/AuthCallback';
 import Dashboard from './pages/Dashboard';
 import SettingsPage from './pages/SettingsPage';
 import InvoicesPage from './pages/InvoicesPage';
+import InvoicePage from './pages/InvoicePage';
 import ClientsPage from './pages/ClientsPage';
 import Home from './pages/Home';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -94,6 +95,7 @@ const AppContent: React.FC = () => {
             <Route path="/clients/edit/:id" element={<ClientsPage />} />
             <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
             <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+            <Route path="/invoice/:id" element={<InvoicePage />} />
             <Route path="/kalistus001" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
             <Route path="/support" element={<ProtectedRoute><SupportForm /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />

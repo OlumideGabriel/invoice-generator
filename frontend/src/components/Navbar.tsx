@@ -71,7 +71,7 @@ const Navbar: React.FC = () => {
   return (
     <>
       {/* Mobile Navbar */}
-      <div className="fixed md:hidden max-h-16 h-16 bottom-0 left-0 right-0 bg-neutral-50 border-t border-t-1 border-t-gray-200 border-t-dashed">
+      <div className="fixed md:hidden max-h-16 h-16 bottom-0 left-0 right-0 bg-neutral-50 z-40 border-t border-t-1 border-t-gray-200 border-t-dashed">
         <nav className="flex justify-around items-center">
           {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon }) => {
             const isActive = location.pathname === path;

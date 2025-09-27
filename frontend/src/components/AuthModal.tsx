@@ -168,8 +168,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
           </button>
 
           <div className="relative text-center text-gray-500 text-xs my-4">
-            <span className="relative z-10 px-2 bg-white">or</span>
-            <div className="absolute left-0 top-1/2 w-full border-t border-gray-200 -z-10" style={{ transform: 'translateY(-50%)' }}></div>
+            <span className="relative  px-2 bg-white">or</span>
+            <div className="absolute left-0 top-1/2 w-full border-t border-gray-200 " style={{ transform: 'translateY(-50%)' }}></div>
           </div>
 
           <button

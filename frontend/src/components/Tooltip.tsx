@@ -1,301 +1,165 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 
 interface TooltipProps {
-  message: string;
-  children: React.ReactNode;
-  position?: 'top' | 'bottom' | 'left' | 'right' | 'center';
-  delay?: number;
-  hideDelay?: number;
-  disabled?: boolean;
-  className?: string;
-  arrowClassName?: string;
-  maxWidth?: string;
-  trigger?: 'hover' | 'click' | 'focus' | 'manual';
-  visible?: boolean;
-  onVisibilityChange?: (visible: boolean) => void;
-  offset?: number;
-  zIndex?: number;
-  animation?: 'fade' | 'scale' | 'slide' | 'none';
-  theme?: 'dark' | 'light' | 'custom';
-  interactive?: boolean;
+    content: string;
+    children: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+    placement?: 'top' | 'bottom' | 'left' | 'right'; // Add this for compatibility
+    disabled?: boolean; // Add disabled prop
+    delay?: number;
 }
 
 const Tooltip: React.FC<TooltipProps> = ({
-  message,
-  children,
-  position = 'bottom',
-  delay = 500,
-  hideDelay = 200,
-  disabled = false,
-  className = '',
-  arrowClassName = '',
-  maxWidth = 'max-w-xs',
-  trigger = 'hover',
-  visible,
-  onVisibilityChange,
-  offset = 8,
-  zIndex = 50,
-  animation = 'scale',
-  theme = 'dark',
-  interactive = false
+    content,
+    children,
+    position = 'top',
+    placement, // Support both position and placement props
+    disabled = false,
+    delay = 200
 }) => {
-  const [internalVisible, setInternalVisible] = useState(false);
-  const showTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const [isClicked, setIsClicked] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [coords, setCoords] = useState({ top: 0, left: 0 });
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const triggerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
 
-  // Use controlled or uncontrolled visibility
-  const isVisible = visible !== undefined ? visible : internalVisible;
+    // Use placement if provided, otherwise use position
+    const tooltipPosition = placement || position;
 
-  const updateVisibility = useCallback((newVisible: boolean) => {
-    if (visible === undefined) {
-      setInternalVisible(newVisible);
-    }
-    onVisibilityChange?.(newVisible);
-  }, [visible, onVisibilityChange]);
+    const updatePosition = () => {
+        if (!triggerRef.current || !tooltipRef.current || !isVisible) return;
 
-  const showTooltip = useCallback(() => {
-    if (disabled || (trigger === 'manual' && visible === undefined)) return;
+        const triggerRect = triggerRef.current.getBoundingClientRect();
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const offset = 8;
 
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-      hideTimeoutRef.current = null;
-    }
+        let top = 0;
+        let left = 0;
 
-    if (showTimeoutRef.current) {
-      clearTimeout(showTimeoutRef.current);
-    }
+        switch (tooltipPosition) {
+            case 'top':
+                top = triggerRect.top - tooltipRect.height - offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+            case 'bottom':
+                top = triggerRect.bottom + offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+            case 'left':
+                top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+                left = triggerRect.left - tooltipRect.width - offset;
+                break;
+            case 'right':
+                top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
+                left = triggerRect.right + offset;
+                break;
+            default:
+                top = triggerRect.top - tooltipRect.height - offset;
+                left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
+                break;
+        }
 
-    showTimeoutRef.current = setTimeout(() => {
-      updateVisibility(true);
-    }, delay);
-  }, [disabled, delay, trigger, visible, updateVisibility]);
+        // Ensure tooltip doesn't go off-screen
+        const viewport = {
+            width: window.innerWidth,
+            height: window.innerHeight
+        };
 
-  const hideTooltip = useCallback(() => {
-    if (trigger === 'manual' && visible === undefined) return;
+        // Adjust horizontal position if tooltip goes off-screen
+        if (left + tooltipRect.width > viewport.width) {
+            left = viewport.width - tooltipRect.width - 8;
+        }
+        if (left < 8) {
+            left = 8;
+        }
 
-    if (showTimeoutRef.current) {
-      clearTimeout(showTimeoutRef.current);
-      showTimeoutRef.current = null;
-    }
+        // Adjust vertical position if tooltip goes off-screen
+        if (top + tooltipRect.height > viewport.height) {
+            top = viewport.height - tooltipRect.height - 8;
+        }
+        if (top < 8) {
+            top = 8;
+        }
 
-    if (hideTimeoutRef.current) {
-      clearTimeout(hideTimeoutRef.current);
-    }
-
-    hideTimeoutRef.current = setTimeout(() => {
-      updateVisibility(false);
-      if (trigger === 'click') {
-        setIsClicked(false);
-      }
-    }, hideDelay);
-  }, [hideDelay, trigger, visible, updateVisibility]);
-
-  const handleClick = useCallback(() => {
-    if (trigger !== 'click') return;
-
-    if (isClicked) {
-      hideTooltip();
-    } else {
-      setIsClicked(true);
-      showTooltip();
-    }
-  }, [trigger, isClicked, showTooltip, hideTooltip]);
-
-  const handleMouseEnter = useCallback(() => {
-    if (trigger === 'hover' || (interactive && isVisible)) {
-      showTooltip();
-    }
-  }, [trigger, interactive, isVisible, showTooltip]);
-
-  const handleMouseLeave = useCallback(() => {
-    if (trigger === 'hover' || (interactive && !isClicked)) {
-      hideTooltip();
-    }
-  }, [trigger, interactive, isClicked, hideTooltip]);
-
-  const handleFocus = useCallback(() => {
-    if (trigger === 'focus' || trigger === 'hover') {
-      showTooltip();
-    }
-  }, [trigger, showTooltip]);
-
-  const handleBlur = useCallback(() => {
-    if (trigger === 'focus' || (trigger === 'hover' && !isClicked)) {
-      hideTooltip();
-    }
-  }, [trigger, isClicked, hideTooltip]);
-
-  // Cleanup timeouts on unmount
-  React.useEffect(() => {
-    return () => {
-      if (showTimeoutRef.current) clearTimeout(showTimeoutRef.current);
-      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+        setCoords({ top, left });
     };
-  }, []);
 
-  // Position and arrow configurations
-  const getPositionClasses = () => {
-    const offsetClass = `${offset}px`;
+    useLayoutEffect(() => {
+        if (isVisible) {
+            updatePosition();
+        }
+    }, [isVisible, tooltipPosition]);
 
-    switch (position) {
-      case 'top':
-        return {
-          tooltip: `bottom-full left-1/2 transform -translate-x-1/2`,
-          arrow: '-bottom-1 left-1/2 transform -translate-x-1/2',
-          margin: `mb-${offset === 8 ? '2' : '1'}`
-        };
-      case 'bottom':
-      case 'center':
-        return {
-          tooltip: `top-full left-1/2 transform -translate-x-1/2`,
-          arrow: '-top-1 left-1/2 transform -translate-x-1/2',
-          margin: `mt-${offset === 8 ? '2' : '1'}`
-        };
-      case 'left':
-        return {
-          tooltip: `right-full top-1/2 transform -translate-y-1/2`,
-          arrow: '-right-1 top-1/2 transform -translate-y-1/2',
-          margin: `mr-${offset === 8 ? '2' : '1'}`
-        };
-      case 'right':
-        return {
-          tooltip: `left-full top-1/2 transform -translate-y-1/2`,
-          arrow: '-left-1 top-1/2 transform -translate-y-1/2',
-          margin: `ml-${offset === 8 ? '2' : '1'}`
-        };
-      default:
-        return {
-          tooltip: `top-full left-1/2 transform -translate-x-1/2`,
-          arrow: '-top-1 left-1/2 transform -translate-x-1/2',
-          margin: `mt-${offset === 8 ? '2' : '1'}`
-        };
+    const showTooltip = () => {
+        // Don't show tooltip if disabled
+        if (disabled) return;
+
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+        }
+
+        timeoutRef.current = setTimeout(() => {
+            setIsVisible(true);
+        }, delay);
+    };
+
+    const hideTooltip = () => {
+        if (timeoutRef.current) {
+            clearTimeout(timeoutRef.current);
+            timeoutRef.current = null;
+        }
+        setIsVisible(false);
+    };
+
+    // Safe content check
+    const safeContent = content?.trim() || '';
+
+    if (!safeContent || disabled) {
+        return <>{children}</>;
     }
-  };
 
-  const getThemeClasses = () => {
-    switch (theme) {
-      case 'light':
-        return {
-          tooltip: 'bg-white text-gray-800 border border-gray-200 shadow-lg',
-          arrow: 'bg-white border-gray-200'
-        };
-      case 'dark':
-        return {
-          tooltip: 'bg-gray-900 text-white shadow-xl',
-          arrow: 'bg-gray-900'
-        };
-      case 'custom':
-        return {
-          tooltip: '',
-          arrow: ''
-        };
-      default:
-        return {
-          tooltip: 'bg-gray-900 text-white shadow-xl',
-          arrow: 'bg-gray-900'
-        };
-    }
-  };
+    const getArrowClasses = () => {
+        const baseClasses = "absolute w-2 h-2 bg-gray-900 transform rotate-45";
+        switch (tooltipPosition) {
+            case 'top':
+                return `${baseClasses} top-full left-1/2 -translate-x-1/2 -mt-1`;
+            case 'bottom':
+                return `${baseClasses} bottom-full left-1/2 -translate-x-1/2 -mb-1`;
+            case 'left':
+                return `${baseClasses} left-full top-1/2 -translate-y-1/2 -ml-1`;
+            case 'right':
+                return `${baseClasses} right-full top-1/2 -translate-y-1/2 -mr-1`;
+            default:
+                return `${baseClasses} top-full left-1/2 -translate-x-1/2 -mt-1`;
+        }
+    };
 
-  const getAnimationClasses = () => {
-    const base = 'transition-all duration-200 ease-out';
+    return (
+        <>
+            <div
+                ref={triggerRef}
+                className="relative inline-block"
+                onMouseEnter={showTooltip}
+                onMouseLeave={hideTooltip}
+            >
+                {children}
+            </div>
 
-    switch (animation) {
-      case 'fade':
-        return {
-          base,
-          visible: 'opacity-100',
-          hidden: 'opacity-0'
-        };
-      case 'scale':
-        return {
-          base,
-          visible: 'opacity-100 scale-100',
-          hidden: 'opacity-0 scale-95'
-        };
-      case 'slide':
-        return {
-          base,
-          visible: 'opacity-100 translate-y-0',
-          hidden: 'opacity-0 translate-y-1'
-        };
-      case 'none':
-        return {
-          base: '',
-          visible: 'opacity-100',
-          hidden: 'opacity-0'
-        };
-      default:
-        return {
-          base,
-          visible: 'opacity-100 scale-100',
-          hidden: 'opacity-0 scale-95'
-        };
-    }
-  };
-
-  if (!message.trim()) {
-    return <>{children}</>;
-  }
-
-  const positionClasses = getPositionClasses();
-  const themeClasses = getThemeClasses();
-  const animationClasses = getAnimationClasses();
-
-  return (
-    <div
-      className="relative inline-block"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-      onClick={handleClick}
-    >
-      <div
-        role={trigger === 'click' ? "button" : undefined}
-        aria-describedby={isVisible ? "tooltip" : undefined}
-        aria-expanded={trigger === 'click' ? isVisible : undefined}
-        className="focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 rounded"
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-      >
-        {children}
-      </div>
-
-      {/* Tooltip bubble */}
-      <div
-        id="tooltip"
-        role="tooltip"
-        className={`
-          absolute ${positionClasses.tooltip} ${positionClasses.margin}
-          w-max ${maxWidth} px-3 py-2
-          ${themeClasses.tooltip}
-          text-sm rounded-lg
-          ${animationClasses.base}
-          ${interactive ? 'pointer-events-auto' : 'pointer-events-none'} select-none
-          ${isVisible ? animationClasses.visible : animationClasses.hidden}
-          ${className}
-        `}
-        style={{
-          willChange: isVisible ? 'transform, opacity' : 'auto',
-          zIndex: zIndex
-        }}
-        onMouseEnter={interactive ? handleMouseEnter : undefined}
-        onMouseLeave={interactive ? handleMouseLeave : undefined}
-      >
-        {message}
-        {/* Arrow */}
-        <div
-          className={`
-            absolute ${positionClasses.arrow}
-            w-2 h-2 ${themeClasses.arrow} rotate-45
-            ${theme === 'light' ? 'border-t border-l' : ''}
-            ${arrowClassName}
-          `}
-        />
-      </div>
-    </div>
-  );
+            {isVisible && safeContent && (
+                <div
+                    ref={tooltipRef}
+                    className="fixed z-[9999] px-2 py-1 text-xs font-medium text-white bg-gray-900 rounded-md shadow-lg whitespace-nowrap pointer-events-none"
+                    style={{
+                        top: coords.top,
+                        left: coords.left,
+                    }}
+                >
+                    {safeContent}
+                    <div className={getArrowClasses()} />
+                </div>
+            )}
+        </>
+    );
 };
-
 
 export default Tooltip;

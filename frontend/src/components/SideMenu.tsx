@@ -110,7 +110,7 @@ const SideMenu: React.FC = () => {
 
   return (
     <>
-      <div className="bg-neutral-900 items-stretch h-full  border-r z-30 border-gray-200">
+      <div className="bg-neutral-900 items-stretch h-full  border-r  border-gray-200">
 
 
         <div className="hidden md:flex relative h-full min-h-screen">
@@ -118,7 +118,7 @@ const SideMenu: React.FC = () => {
           {/* Sidebar */}
           <aside
             className={`transition-all duration-500 delay-150 ease-in-out flex-1 justify-between ${
-              collapsed ? "w-55" : "w-60"
+              collapsed ? "w-55" : "w-[14rem]"
             } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
           >
           {/* Logo Section */}
@@ -141,15 +141,13 @@ const SideMenu: React.FC = () => {
             {/* Collapse Toggle Button */}
             <button
               onClick={toggleCollapsed}
+              title={collapsed ? "Open sidebar" : "Collapse sidebar"}
               className={`absolute top-[1.23rem] items-center justify-center rounded-xl p-[0.5rem]  border-white
-
                 ${collapsed ? "left-[1.34rem]  bg-[#0e423e] text-[#8eda91] opacity-0 hover:opacity-100"
-                    : "right-0 text-[#0e423e]/40 hover:text-[#0e423e]/70 opacity-100"}`}
+                    : "right-0 text-[#0e423e]/40 hover:text-[#0e423e]/70 opacity-100 " }`}
             >
               <PanelLeft size={20} />
             </button>
-
-
 
             <nav className="flex flex-col gap-1">
               {menuItems.map(({ path, label, outline: OutlineIcon, solid: SolidIcon, submenu }) => {
@@ -157,48 +155,50 @@ const SideMenu: React.FC = () => {
                 const Icon = isActive ? SolidIcon : OutlineIcon;
 
                 return submenu ? (
-                  <a
-                    key={label}
-                    onClick={(e) =>
-                      handleNavigation(e, path, {
-                        path,
-                        label,
-                        outline: OutlineIcon,
-                        solid: SolidIcon,
-                        submenu,
-                      })
-                    }
-                    className={`flex items-center gap-3 px-4 py-3 h-[3rem] max-h-[3rem] font-medium transition-colors duration-150 text-xl ${
-                      expandedItem === label
-                        ? "text-black/100 bg-neutral-900"
-                        : "text-gray-700"
-                    }`}
-                  >
-                    <Icon className="h-6 w-6 text-gray-500" />
-                    {!collapsed && label}
-                  </a>
+                  <Tooltip key={label} content={label} disabled={!collapsed} placement="right">
+                    <a
+                      onClick={(e) =>
+                        handleNavigation(e, path, {
+                          path,
+                          label,
+                          outline: OutlineIcon,
+                          solid: SolidIcon,
+                          submenu,
+                        })
+                      }
+                      className={`flex items-center gap-3 px-4 py-3 h-[3rem] max-h-[3rem] font-medium transition-colors duration-150 text-xl ${
+                        expandedItem === label
+                          ? "text-black/100 bg-neutral-900"
+                          : "text-gray-700"
+                      }`}
+                    >
+                      <Icon className="h-6 w-6 text-gray-500" />
+                      {!collapsed && label}
+                    </a>
+                  </Tooltip>
                 ) : (
-                  <a
-                    key={label}
-                    href={path} // dummy href for accessibility
-                    onClick={(e) =>
-                      handleNavigation(e, path, {
-                        path,
-                        label,
-                        outline: OutlineIcon,
-                        solid: SolidIcon,
-                        submenu,
-                      })
-                    }
-                    className={`flex items-center gap-3 h-[3rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
-                      isActive
-                        ? "text-black bg-gray-100 hover:text-neutral-900"
-                        : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
-                    } ${!user ? "cursor-pointer" : ""}`}
-                  >
-                    <Icon className="h-6 w-6" />
-                    {!collapsed && label}
-                  </a>
+                  <Tooltip key={label} content={label} disabled={!collapsed} placement="right">
+                    <a
+                      href={path} // dummy href for accessibility
+                      onClick={(e) =>
+                        handleNavigation(e, path, {
+                          path,
+                          label,
+                          outline: OutlineIcon,
+                          solid: SolidIcon,
+                          submenu,
+                        })
+                      }
+                      className={`flex items-center gap-3 h-[3rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
+                        isActive
+                          ? "text-black bg-gray-100 hover:text-neutral-900"
+                          : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
+                      } ${!user ? "cursor-pointer" : ""}`}
+                    >
+                      <Icon className="h-6 w-6" />
+                      {!collapsed && label}
+                    </a>
+                  </Tooltip>
                 );
               })}
             </nav>
@@ -216,20 +216,22 @@ const SideMenu: React.FC = () => {
             )}
 
             {/* Support button */}
-            <button
-              onClick={(e) => {
-                if (!user) {
-                  e.preventDefault();
-                  openAuthModal("login");
-                } else {
-                  navigate("/support");
-                }
-              }}
-              className="flex items-center gap-2 p-2 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
-            >
-              <ChatBubbleLeftIcon className="w-4 h-4" />
-              {!collapsed && <span>Contact support</span>}
-            </button>
+            <Tooltip content="Contact support" disabled={!collapsed} placement="right">
+              <button
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault();
+                    openAuthModal("login");
+                  } else {
+                    navigate("/support");
+                  }
+                }}
+                className="flex items-center gap-2 p-2 px-4 justify-center bg-gray-100 rounded hover:bg-gray-200 text-gray-700 hover:text-black transition"
+              >
+                <ChatBubbleLeftIcon className="w-4 h-4" />
+                {!collapsed && <span>Contact support</span>}
+              </button>
+            </Tooltip>
           </aside>
 
           {/* Submenu Panel */}

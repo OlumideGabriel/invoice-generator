@@ -197,54 +197,61 @@ const ProfileSection = ({ showNotification }) => {
   };
 
   const PasswordActions = () => (
-    <>
+    <div className="flex flex-col sm:flex-row gap-3 w-full">
       <button
         onClick={resetPasswordForm}
-        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex-1"
         disabled={isLoading}
       >
         Cancel
       </button>
       <button
         onClick={handlePasswordSubmit}
-        className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1"
         disabled={isLoading}
       >
         {isLoading ? 'Updating...' : 'Update Password'}
       </button>
-    </>
+    </div>
   );
 
   const DeleteActions = () => (
-    <>
+    <div className="flex flex-col sm:flex-row gap-3 w-full">
       <button
         onClick={resetDeleteForm}
-        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors"
+        className="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300 transition-colors flex-1"
         disabled={isLoading}
       >
         Keep Account
       </button>
       <button
         onClick={handleDeleteAccount}
-        className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1"
         disabled={isLoading}
       >
         {isLoading ? 'Deleting...' : 'Delete Forever'}
       </button>
-    </>
+    </div>
   );
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Profile Information */}
-      <div className="bg-white rounded-xl p-8 border border-gray-300">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900">Profile</h2>
+      <div className="bg-white rounded-xl p-4 md:p-6 lg:p-8 border border-gray-300">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
+          <h2 className="text-xl md:text-2xl font-semibold text-gray-900">Profile</h2>
           {isEditing ? (
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 w-full sm:w-auto">
+              <button
+                onClick={handleCancelEdit}
+                className="px-4 py-3 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 transition-colors flex-1 sm:flex-none"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleSaveProfile}
-                className="px-4 py-3 text-white min-w-32 bg-teal-600 rounded-md hover:bg-teal-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-4 py-3 text-white min-w-32 bg-teal-600 rounded-md hover:bg-teal-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex-1 sm:flex-none"
                 disabled={isLoading}
               >
                 {isLoading ? 'Saving...' : 'Save'}
@@ -253,16 +260,16 @@ const ProfileSection = ({ showNotification }) => {
           ) : (
             <button
               onClick={() => setIsEditing(true)}
-              className="px-4 py-3 text-white min-w-32  bg-teal-600 rounded-md hover:bg-teal-500 transition-colors"
+              className="px-4 py-3 text-white min-w-32 bg-teal-600 rounded-md hover:bg-teal-500 transition-colors w-full sm:w-auto"
             >
               Edit
             </button>
           )}
         </div>
 
-        <div className="flex items-start space-x-6">
-          <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-br from-yellow-300 to-green-400 rounded-full flex items-center justify-center text-2xl font-bold text-gray-800">
+        <div className="flex flex-col md:flex-row items-start gap-6">
+          <div className="relative flex-shrink-0">
+            <div className="w-16 h-16 md:w-20 md:h-20 bg-gradient-to-br from-yellow-300 to-green-400 rounded-full flex items-center justify-center text-xl md:text-2xl font-bold text-gray-800">
               {user?.profile_picture_url ? (
                 <img src={user.profile_picture_url} alt="Profile" className="w-full h-full rounded-full object-cover" />
               ) : (
@@ -274,7 +281,7 @@ const ProfileSection = ({ showNotification }) => {
             </button>
           </div>
 
-          <div className="flex gap-3 justify-center ">
+          <div className="grid grid-cols-2 md:grid-cols-2 gap-4 md:w-1/2 w-full">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
               <input
@@ -283,7 +290,7 @@ const ProfileSection = ({ showNotification }) => {
                 value={formData.first_name}
                 onChange={handleInputChange}
                 onClick={() => !isEditing && setIsEditing(true)}
-                className={`px-4 py-3 w-full input max-w-md bg-gray-100 rounded-xl border-0 text-gray-900 transition-colors ${
+                className={`px-3 py-2 md:px-4 md:py-3 w-full input bg-gray-100 rounded-xl border-0 text-gray-900 transition-colors ${
                   isEditing
                     ? 'bg-white border border-gray-300 focus:ring-2 focus:ring-teal-500 cursor-text'
                     : 'bg-gray-100 cursor-pointer hover:bg-gray-200'
@@ -300,7 +307,7 @@ const ProfileSection = ({ showNotification }) => {
                 value={formData.last_name}
                 onChange={handleInputChange}
                 onClick={() => !isEditing && setIsEditing(true)}
-                className={`px-4 py-3 w-full input max-w-md bg-gray-100 rounded-xl border-0 text-gray-900 transition-colors ${
+                className={`px-3 py-2 md:px-4 md:py-3 w-full bg-gray-100 rounded-xl input border-0 text-gray-900 transition-colors ${
                   isEditing
                     ? 'bg-white border border-gray-300 focus:ring-2 focus:ring-teal-500 cursor-text'
                     : 'bg-gray-100 cursor-pointer hover:bg-gray-200'
@@ -309,22 +316,21 @@ const ProfileSection = ({ showNotification }) => {
                 readOnly={!isEditing}
               />
             </div>
+
           </div>
         </div>
       </div>
 
       {/* Notifications */}
-      <div className="bg-white rounded-xl p-8 border border-gray-300">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Notifications</h2>
+      <div className="bg-white rounded-xl p-4 md:p-6 lg:p-8 border border-gray-300">
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Notifications</h2>
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Email Notifications</h3>
-              <p className="text-gray-500 text-sm mt-1">Receive email updates about invoices and payments.</p>
-            </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-base md:text-lg font-medium text-gray-900">Email Notifications</h3>
+            <p className="text-gray-500 text-sm mt-1">Receive email updates about invoices and payments.</p>
           </div>
-          <label className="relative inline-flex items-center cursor-pointer">
+          <label className="relative inline-flex items-center cursor-pointer flex-shrink-0">
             <input
               type="checkbox"
               className="sr-only peer"
@@ -337,19 +343,17 @@ const ProfileSection = ({ showNotification }) => {
       </div>
 
       {/* Security Section */}
-      <div className="bg-white rounded-xl p-8 border border-gray-300">
-        <h2 className="text-2xl font-semibold text-gray-900 mb-6">Security</h2>
+      <div className="bg-white rounded-xl p-4 md:p-6 lg:p-8 border border-gray-300">
+        <h2 className="text-xl md:text-2xl font-semibold text-gray-900 mb-6">Security</h2>
 
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="flex items-center">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Password</h3>
-              <p className="text-gray-500 text-sm mt-1">Change your password to keep your account secure.</p>
-            </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex-1">
+            <h3 className="text-base md:text-lg font-medium text-gray-900">Password</h3>
+            <p className="text-gray-500 text-sm mt-1">Change your password to keep your account secure.</p>
           </div>
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="px-4 py-3 text-blue-600 whitespace-nowrap border-2 border-blue-600 rounded-md hover:bg-blue-50 transition-colors"
+            className="px-4 py-3 text-blue-600 whitespace-nowrap border-2 border-blue-600 rounded-md hover:bg-blue-50 transition-colors w-full sm:w-auto"
           >
             Change Password
           </button>
@@ -357,14 +361,16 @@ const ProfileSection = ({ showNotification }) => {
       </div>
 
       {/* Delete Account */}
-      <div className="bg-red-50 rounded-xl p-8 border border-red-300">
-        <h2 className="text-2xl font-semibold text-red-900 mb-4">Delete account</h2>
+      <div className="bg-red-50 rounded-xl p-4 md:p-6 lg:p-8 border border-red-300">
+        <h2 className="text-xl md:text-2xl font-semibold text-red-900 mb-4">Delete account</h2>
 
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <p className="text-red-800 flex-1">Once you delete your account, there is no going back. Please be certain.</p>
+          <p className="text-red-800 flex-1 text-sm md:text-base">
+            Once you delete your account, there is no going back. Please be certain.
+          </p>
           <button
             onClick={() => setShowDeleteModal(true)}
-            className="px-4 py-3 border-2 border-red-500 text-white whitespace-nowrap rounded-md bg-red-600 hover:bg-red-500 transition-colors text-md font-medium"
+            className="px-4 py-3 border-2 border-red-500 text-white whitespace-nowrap rounded-md bg-red-600 hover:bg-red-500 transition-colors text-sm md:text-md font-medium w-full md:w-auto"
           >
             Delete account
           </button>
@@ -427,12 +433,12 @@ const ProfileSection = ({ showNotification }) => {
         dismissible={!isLoading}
       >
         <div className="space-y-4">
-          <div className="p-4 bg-red-100 rounded-lg border border-red-200">
+          <div className="p-3 md:p-4 bg-red-100 rounded-lg border border-red-200">
             <div className="flex items-center mb-2">
-              <AlertTriangle className="w-5 h-5 text-red-600 mr-2" />
-              <h3 className="text-lg font-semibold text-red-800">Warning: This action is irreversible</h3>
+              <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 text-red-600 mr-2" />
+              <h3 className="text-base md:text-lg font-semibold text-red-800">Warning: This action is irreversible</h3>
             </div>
-            <p className="text-red-700 text-sm">
+            <p className="text-red-700 text-xs md:text-sm">
               This action cannot be undone. All your data, including invoices, clients, and templates, will be permanently deleted.
             </p>
           </div>

@@ -651,6 +651,7 @@ def get_invoice(invoice_id):
                 'id': str(invoice.id),
                 'user_id': str(invoice.user_id),
                 'client_id': str(invoice.client_id) if invoice.client_id else None,
+                'business_id': str(invoice.business_id) if invoice.business_id else None,
                 'data': invoice.data,
                 'status': invoice.status,
                 'created_at': invoice.created_at.isoformat() if invoice.created_at else None,

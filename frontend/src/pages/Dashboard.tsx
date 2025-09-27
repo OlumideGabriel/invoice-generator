@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { User, Mail, Lock, Save, Camera, ArrowLeft, Edit2, Check, X, CreditCard,
-    Trash2, FileText, Bell, DollarSign, Users, Calendar, TrendingUp, Clock, AlertCircle, Plus, ChevronDown } from 'lucide-react';
+import {
+    User, Mail, Lock, Save, Camera, ArrowLeft, Edit2, Check, X, CreditCard,
+    Trash2, FileText, Bell, DollarSign, Users, Calendar, TrendingUp, Clock,
+    AlertCircle, Plus, ChevronDown
+} from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -12,212 +15,35 @@ import Navbar from '../components/Navbar';
 const Dashboard = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
-    const { currency } = useCurrency();
+    const { currency, currencyOptions } = useCurrency();
+
+    // State
     const [dashboardData, setDashboardData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [forexRates, setForexRates] = useState(null);
-    const [selectedBaseCurrency, setSelectedBaseCurrency] = useState('USD');
+    const [selectedCurrency, setSelectedCurrency] = useState('USD');
+    const [availableCurrencies, setAvailableCurrencies] = useState([]);
     const [showCurrencyDropdown, setShowCurrencyDropdown] = useState(false);
-    const [showRevenueCurrencyDropdown, setShowRevenueCurrencyDropdown] = useState(false);
-    const [forexLoading, setForexLoading] = useState(false);
+    const [currencyTotals, setCurrencyTotals] = useState({});
+    const [currencyLoading, setCurrencyLoading] = useState(false);
 
-    // Memoized helper functions
-    const getInitials = useCallback((u) => {
-        if (!u) return '';
-        const first = u.first_name ? u.first_name[0].toUpperCase() : '';
-        const last = u.last_name ? u.last_name[0].toUpperCase() : '';
-        if (first || last) return `${first}${last}`;
-        if (u.email) return u.email[0].toUpperCase();
-        return '';
-    }, []);
+    // Local storage keys
+    const CURRENCY_PREFERENCE_KEY = 'dashboard_currency_preference';
 
-    const formatCurrency = useCallback((amount, currencySymbol = null) => {
+    // Utility functions
+    const formatCurrency = useCallback((amount, currencyCode = 'USD') => {
         if (amount === null || amount === undefined || isNaN(amount)) {
             amount = 0;
         }
-        const symbol = currencySymbol || currency?.symbol || '£';
+
+        const currencyOption = currencyOptions.find(option => option.code === currencyCode);
+        const symbol = currencyOption?.symbol || '$';
+
         return `${symbol}${amount.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
         })}`;
-    }, [currency]);
-
-    const getInvoiceCurrency = useCallback((invoice) => {
-        return invoice?.data?.currency_symbol ||
-               invoice?.currency?.symbol ||
-               currency?.symbol ||
-               '£';
-    }, [currency]);
-
-    const calculateInvoiceTotal = useCallback((invoice) => {
-        if (!invoice || !invoice.data) return 0;
-
-        let total = 0;
-
-        // Calculate items total
-        if (Array.isArray(invoice.data.items)) {
-            total = invoice.data.items.reduce((sum, item) => {
-                const quantity = Number(item.quantity) || 0;
-                const unitCost = Number(item.unit_cost) || 0;
-                return sum + (quantity * unitCost);
-            }, 0);
-        }
-
-        // Add shipping if enabled
-        if (invoice.data.show_shipping && invoice.data.shipping_amount) {
-            total += Number(invoice.data.shipping_amount) || 0;
-        }
-
-        // Apply discount if enabled
-        if (invoice.data.show_discount && invoice.data.discount_percent) {
-            const discountAmount = invoice.data.discount_type === 'percent'
-                ? (total * invoice.data.discount_percent) / 100
-                : invoice.data.discount_percent;
-            total -= discountAmount;
-        }
-
-        // Apply tax if enabled
-        if (invoice.data.show_tax && invoice.data.tax_percent) {
-            const taxAmount = invoice.data.tax_type === 'percent'
-                ? (total * invoice.data.tax_percent) / 100
-                : invoice.data.tax_percent;
-            total += taxAmount;
-        }
-
-        return Math.max(0, total);
-    }, []);
-
-    // Fetch forex rates
-    const fetchForexRates = useCallback(async () => {
-        try {
-            setForexLoading(true);
-            const response = await fetch('https://api.exchangerate.host/latest?base=USD');
-            if (!response.ok) throw new Error('Failed to fetch exchange rates');
-            const data = await response.json();
-            setForexRates(data.rates);
-        } catch (err) {
-            console.error('Error fetching forex rates:', err);
-            setForexRates({
-                'USD': 1, 'EUR': 0.85, 'GBP': 0.73, '£': 0.73, '$': 1, '€': 0.85
-            });
-        } finally {
-            setForexLoading(false);
-        }
-    }, []);
-
-    // Convert currency to base currency
-    const convertToBaseCurrency = useCallback((amount, fromCurrency, toCurrency) => {
-        if (!forexRates || fromCurrency === toCurrency) return amount;
-
-        const currencyMap = { '$': 'USD', '£': 'GBP', '€': 'EUR', 'USD': 'USD', 'GBP': 'GBP', 'EUR': 'EUR' };
-        const fromCode = currencyMap[fromCurrency] || fromCurrency;
-        const toCode = currencyMap[toCurrency] || toCurrency;
-
-        if (fromCode === toCode) return amount;
-
-        const fromRate = forexRates[fromCode] || 1;
-        const toRate = forexRates[toCode] || 1;
-
-        return (amount / fromRate) * toRate;
-    }, [forexRates]);
-
-    // Memoized dashboard metrics
-    const dashboardMetrics = useMemo(() => {
-        const invoices = dashboardData?.invoices || [];
-
-        if (!Array.isArray(invoices) || invoices.length === 0) {
-            return {
-                totalRevenue: 0,
-                totalInvoices: 0,
-                draftInvoices: 0,
-                overdueInvoices: 0,
-                recentInvoices: [],
-                uniqueClients: 0,
-                avgInvoiceValue: 0,
-                currencyBreakdown: {}
-            };
-        }
-
-        const today = new Date();
-        let totalRevenue = 0;
-        const currencyBreakdown = {};
-        const uniqueClients = new Set();
-        let paidInvoicesCount = 0;
-
-        invoices.forEach(inv => {
-            if (inv?.status === 'paid') {
-                const invoiceTotal = calculateInvoiceTotal(inv);
-                const invoiceCurrency = getInvoiceCurrency(inv);
-                totalRevenue += invoiceTotal;
-                paidInvoicesCount++;
-
-                if (!currencyBreakdown[invoiceCurrency]) {
-                    currencyBreakdown[invoiceCurrency] = 0;
-                }
-                currencyBreakdown[invoiceCurrency] += invoiceTotal;
-            }
-
-            if (inv?.data?.to && inv.data.to !== 'None' && inv.data.to.trim() !== '') {
-                uniqueClients.add(inv.data.to);
-            }
-        });
-
-        const draftInvoices = invoices.filter(inv => inv?.status === 'draft').length;
-        const overdueInvoices = invoices.filter(inv => {
-            if (!inv?.data?.due_date) return false;
-            const dueDate = new Date(inv.data.due_date);
-            return inv.status !== 'paid' && dueDate < today;
-        }).length;
-
-        const recentInvoices = invoices
-            .filter(inv => inv?.data?.issued_date)
-            .sort((a, b) => new Date(b.data.issued_date) - new Date(a.data.issued_date))
-            .slice(0, 4);
-
-        return {
-            totalRevenue,
-            totalInvoices: invoices.length,
-            draftInvoices,
-            overdueInvoices,
-            recentInvoices,
-            uniqueClients: uniqueClients.size,
-            avgInvoiceValue: paidInvoicesCount > 0 ? totalRevenue / paidInvoicesCount : 0,
-            currencyBreakdown
-        };
-    }, [dashboardData, calculateInvoiceTotal, getInvoiceCurrency]);
-
-    // Format total revenue with mixed currencies
-    const formatTotalRevenue = useCallback((metrics) => {
-        const currencies = Object.keys(metrics.currencyBreakdown);
-        if (currencies.length === 0) return formatCurrency(0);
-        if (currencies.length === 1) {
-            return formatCurrency(metrics.currencyBreakdown[currencies[0]], currencies[0]);
-        }
-
-        const dominantCurrency = currencies.reduce((a, b) =>
-            metrics.currencyBreakdown[a] > metrics.currencyBreakdown[b] ? a : b
-        );
-        return `${formatCurrency(metrics.totalRevenue, dominantCurrency)} *`;
-    }, [formatCurrency]);
-
-    // Calculate converted average invoice value
-    const getConvertedAverageInvoiceValue = useCallback((metrics) => {
-        if (!metrics || !forexRates || Object.keys(metrics.currencyBreakdown).length === 0) {
-            return { amount: 0, currency: selectedBaseCurrency };
-        }
-
-        const totalConverted = Object.entries(metrics.currencyBreakdown).reduce((total, [currency, amount]) => {
-            return total + convertToBaseCurrency(amount, currency, selectedBaseCurrency);
-        }, 0);
-
-        const totalInvoices = metrics.totalInvoices || 1;
-
-        return {
-            amount: totalConverted / totalInvoices,
-            currency: selectedBaseCurrency
-        };
-    }, [forexRates, selectedBaseCurrency, convertToBaseCurrency]);
+    }, [currencyOptions]);
 
     const formatDate = useCallback((dateString) => {
         if (!dateString) return 'N/A';
@@ -241,6 +67,7 @@ const Dashboard = () => {
             'paid': { label: 'Paid', className: 'bg-[#d4edbc]/70 text-[#2e7230]' },
             'overdue': { label: 'Overdue', className: 'bg-[#ffcfc9]/70 text-[#bc2d20]' }
         };
+
         return statusConfigs[status.toLowerCase()] || {
             label: status.charAt(0).toUpperCase() + status.slice(1),
             className: 'bg-[#e6e6e6] text-[#404040]'
@@ -257,176 +84,199 @@ const Dashboard = () => {
             .substring(0, 2);
     }, []);
 
-    // Currency dropdown component
-    const CurrencyDropdown = useCallback(({ isOpen, onClose, currencies, selectedCurrency, onSelect }) => {
-        const allCurrencies = [...new Set([...currencies, 'USD', 'EUR', 'GBP'])];
-
-        return isOpen ? (
-            <div className="absolute right-0 top-full mt-1 w-20 bg-white border border-gray-200 rounded-md shadow-lg z-50">
-                {allCurrencies.map(curr => (
-                    <button
-                        key={curr}
-                        onClick={() => {
-                            onSelect(curr);
-                            onClose();
-                        }}
-                        className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors ${
-                            selectedCurrency === curr ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
-                        }`}
-                    >
-                        {curr}
-                    </button>
-                ))}
-            </div>
-        ) : null;
+    // Local storage functions
+    const getStoredCurrencyPreference = useCallback(() => {
+        try {
+            const stored = localStorage.getItem(CURRENCY_PREFERENCE_KEY);
+            return stored || null;
+        } catch (error) {
+            console.error('Error reading currency preference from localStorage:', error);
+            return null;
+        }
     }, []);
 
-    // Fetch dashboard data
-    useEffect(() => {
-        const fetchDashboardData = async () => {
-            if (!user?.id) return;
-
-            try {
-                setLoading(true);
-                const response = await fetch(`${API_BASE_URL}api/invoices?user_id=${user.id}`);
-                if (!response.ok) throw new Error('Failed to fetch dashboard data');
-                const data = await response.json();
-                if (data.success) {
-                    setDashboardData(data);
-                } else {
-                    throw new Error('API returned unsuccessful response');
-                }
-            } catch (err) {
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchDashboardData();
-    }, [user]);
-
-    // Fetch forex rates on component mount
-    useEffect(() => {
-        fetchForexRates();
-    }, [fetchForexRates]);
-
-    // Set default base currency when currencies are detected
-    useEffect(() => {
-        if (dashboardData && !loading) {
-            const currencies = Object.keys(dashboardMetrics.currencyBreakdown);
-            if (currencies.length > 0 && !selectedBaseCurrency) {
-                setSelectedBaseCurrency(currencies[0]);
-            }
+    const setStoredCurrencyPreference = useCallback((currencyCode) => {
+        try {
+            localStorage.setItem(CURRENCY_PREFERENCE_KEY, currencyCode);
+        } catch (error) {
+            console.error('Error saving currency preference to localStorage:', error);
         }
-    }, [dashboardData, loading, dashboardMetrics.currencyBreakdown, selectedBaseCurrency]);
+    }, []);
 
-    // Derived values
-    const currencies = useMemo(() => Object.keys(dashboardMetrics.currencyBreakdown), [dashboardMetrics.currencyBreakdown]);
-    const hasMultipleCurrencies = currencies.length > 1;
-    const convertedAvg = getConvertedAverageInvoiceValue(dashboardMetrics);
+    // Data fetching
+    const fetchAvailableCurrencies = useCallback(async () => {
+        try {
+            setCurrencyLoading(true);
+            const availableCodes = currencyOptions.map(option => option.code);
+            setAvailableCurrencies(availableCodes);
+        } catch (error) {
+            console.error('Error fetching currencies:', error);
+            // Fallback to major currencies
+            const majorCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'NGN'];
+            setAvailableCurrencies(majorCurrencies);
+        } finally {
+            setCurrencyLoading(false);
+        }
+    }, [currencyOptions]);
 
-    // Skeleton Loading Component
-    const SkeletonLoader = () => (
-        <>
-            <div className="md:block hidden sticky top-0 left-0 w-full z-30">
-                <MainMenu showLogo={false} />
-            </div>
-            <div className="md:hidden block">
-                <MainMenu />
-            </div>
+    const fetchDashboardData = useCallback(async (currencyCode = selectedCurrency) => {
+        if (!user?.id) return;
 
-            <div className="bg-white border-b border-gray-300">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex justify-between items-center py-6">
-                        <div className="flex items-center gap-6">
-                            <div className="h-8 w-64 bg-gray-200 rounded animate-pulse"></div>
-                        </div>
-                        <div className="h-10 w-32 bg-gray-200 rounded-lg animate-pulse"></div>
-                    </div>
-                </div>
-            </div>
+        try {
+            setLoading(true);
+            const response = await fetch(
+                `${API_BASE_URL}api/dashboard/summary?user_id=${user.id}&currency=${currencyCode}`
+            );
+            if (!response.ok) throw new Error('Failed to fetch dashboard data');
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-40">
-                <div className="h-6 w-48 bg-gray-200 rounded animate-pulse mb-8"></div>
+            const data = await response.json();
+            if (data.success) {
+                setDashboardData(data);
+                setError(null);
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {[...Array(4)].map((_, i) => (
-                        <div key={i} className="bg-white rounded-xl border border-gray-300 p-6">
-                            <div className="flex items-center justify-between">
-                                <div className="w-full">
-                                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-3"></div>
-                                    <div className="h-7 w-32 bg-gray-200 rounded animate-pulse"></div>
-                                </div>
-                                <div className="h-12 w-12 bg-gray-200 rounded-lg animate-pulse"></div>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                // Calculate currency totals from all invoices
+                if (data.invoices && Array.isArray(data.invoices)) {
+                    const totals = {};
+                    data.invoices.forEach(invoice => {
+                        const currencyCode = invoice.currency || 'USD';
+                        const amount = invoice.total_amount || 0;
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <div className="lg:col-span-2">
-                        <div className="bg-white rounded-xl border border-gray-300 p-6">
-                            <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-6"></div>
-                            {[...Array(4)].map((_, i) => (
-                                <div key={i} className="flex items-center justify-between py-4 border-t border-gray-200 first:border-t-0">
-                                    <div className="flex items-center space-x-4">
-                                        <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
-                                        <div>
-                                            <div className="h-4 w-32 bg-gray-200 rounded animate-pulse mb-2"></div>
-                                            <div className="h-3 w-24 bg-gray-200 rounded animate-pulse"></div>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="h-4 w-20 bg-gray-200 rounded animate-pulse mb-2"></div>
-                                        <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
+                        if (!totals[currencyCode]) {
+                            totals[currencyCode] = 0;
+                        }
+                        totals[currencyCode] += amount;
+                    });
+                    setCurrencyTotals(totals);
+                }
+            } else {
+                throw new Error(data.error || 'API returned unsuccessful response');
+            }
+        } catch (err) {
+            console.error('Dashboard fetch error:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    }, [user?.id, selectedCurrency]);
 
-                    <div className="space-y-6">
-                        {[...Array(2)].map((_, i) => (
-                            <div key={i} className="bg-white rounded-xl border border-gray-300 p-6">
-                                <div className="h-6 w-40 bg-gray-200 rounded animate-pulse mb-4"></div>
-                                <div className="space-y-3">
-                                    {[...Array(3)].map((_, j) => (
-                                        <div key={j} className="flex items-center justify-between">
-                                            <div className="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                                            <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </div>
-            <Navbar />
-        </>
-    );
+    // Memoized data
+    const dashboardMetrics = useMemo(() => {
+        if (!dashboardData) {
+            return {
+                totalRevenue: 0,
+                totalOutstanding: 0,
+                totalInvoices: 0,
+                draftInvoices: 0,
+                overdueInvoices: 0,
+                paidInvoices: 0,
+                unpaidInvoices: 0,
+                uniqueClients: 0,
+                recentInvoices: [],
+                currency: selectedCurrency
+            };
+        }
 
-    if (loading) return <SkeletonLoader />;
-    if (error) {
+        const recentInvoices = (dashboardData.invoices || [])
+            .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+            .slice(0, 4);
+
+        return {
+            totalRevenue: dashboardData.total_revenue || 0,
+            totalOutstanding: dashboardData.total_outstanding || 0,
+            totalInvoices: dashboardData.total_invoices || 0,
+            draftInvoices: dashboardData.draft_invoices || 0,
+            overdueInvoices: dashboardData.overdue_invoices || 0,
+            paidInvoices: dashboardData.paid_invoices || 0,
+            unpaidInvoices: dashboardData.unpaid_invoices || 0,
+            uniqueClients: dashboardData.unique_clients || 0,
+            recentInvoices: recentInvoices,
+            currency: dashboardData.currency || selectedCurrency
+        };
+    }, [dashboardData, selectedCurrency]);
+
+    // Currency dropdown component with skeleton loader
+    const CurrencyDropdown = useCallback(({ isOpen, onClose, currencies, selectedCurrency, onSelect, loading }) => {
+        if (!isOpen) return null;
+
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                    <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-                    <h2 className="text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
-                    <p className="text-gray-600 mb-4">{error}</p>
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                        Retry
-                    </button>
-                </div>
+            <div className="absolute right-0 top-full mt-1 w-24 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-40 overflow-y-auto">
+                {loading ? (
+                    // Skeleton loader for currencies
+                    [...Array(5)].map((_, i) => (
+                        <div key={i} className="w-full px-3 py-2 text-left">
+                            <div className="h-4 w-12 bg-gray-200 rounded animate-pulse"></div>
+                        </div>
+                    ))
+                ) : (
+                    currencies.map(curr => (
+                        <button
+                            key={curr}
+                            onClick={() => {
+                                onSelect(curr);
+                                onClose();
+                            }}
+                            className={`w-full px-3 py-2 text-left text-xs hover:bg-gray-100 transition-colors ${
+                                selectedCurrency === curr ? 'bg-blue-50 text-blue-600' : 'text-gray-700'
+                            }`}
+                        >
+                            {curr}
+                        </button>
+                    ))
+                )}
             </div>
         );
-    }
+    }, []);
 
-    return (
+    // Currency selector button with skeleton
+    const CurrencySelector = useCallback(({
+        currencies,
+        selectedCurrency,
+        onSelect,
+        loading,
+        showDropdown,
+        onToggleDropdown
+    }) => {
+        return (
+            <div className="relative">
+                <button
+                    onClick={onToggleDropdown}
+                    disabled={loading}
+                    className="flex items-center space-x-1 text-sm px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    {loading ? (
+                        <div className="flex items-center space-x-1">
+                            <div className="h-3 w-6 bg-gray-300 rounded animate-pulse"></div>
+                            <div className="h-3 w-3 bg-gray-300 rounded animate-pulse"></div>
+                        </div>
+                    ) : (
+                        <>
+                            <span>{selectedCurrency}</span>
+                            <ChevronDown className="h-3 w-3" />
+                        </>
+                    )}
+                </button>
+                <CurrencyDropdown
+                    isOpen={showDropdown}
+                    onClose={() => onToggleDropdown(false)}
+                    currencies={currencies}
+                    selectedCurrency={selectedCurrency}
+                    onSelect={onSelect}
+                    loading={loading}
+                />
+            </div>
+        );
+    }, [CurrencyDropdown]);
+
+    // Handle currency selection
+    const handleCurrencySelect = useCallback((currencyCode) => {
+        setSelectedCurrency(currencyCode);
+        setStoredCurrencyPreference(currencyCode);
+        setShowCurrencyDropdown(false);
+        // Refetch dashboard data with the new currency
+        fetchDashboardData(currencyCode);
+    }, [setStoredCurrencyPreference, fetchDashboardData]);
+
+    const SkeletonLoader = () => (
         <>
             <div className="md:block hidden sticky top-0 left-0 w-full z-30">
                 <MainMenu showLogo={false} />
@@ -439,321 +289,74 @@ const Dashboard = () => {
                 {/* Header */}
                 <div className="bg-white border-b border-gray-200">
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                        <div className="flex justify-between items-center py-6">
-                            <div>
-                                <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">Dashboard</h1>
+                        <div className="flex justify-between items-center py-4 sm:py-6">
+                            <div className="flex items-center space-x-2 sm:space-x-4">
+                                <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900">Dashboard</h1>
+                                <div className="h-6 w-12 sm:h-8 sm:w-16 bg-gray-200 rounded-lg animate-pulse"></div>
                             </div>
 
-                            <button
-                                onClick={() => navigate('/new')}
-                                className="inline-flex items-center px-4 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                <span className="hidden sm:inline">New Invoice</span>
-                                <span className="sm:hidden">New</span>
+                            <button className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base">
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                <span className="hidden xs:inline">New Invoice</span>
+                                <span className="xs:hidden">New</span>
                             </button>
                         </div>
                     </div>
                 </div>
 
-                {/* Main Content */}
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-40">
-                    <div className="text-gray-600 text-lg mb-8">Welcome back, {user?.first_name || 'Guest'}! 👋</div>
+                <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 mb-32 sm:mb-40">
+                    <div className="h-4 w-32 sm:h-6 sm:w-48 bg-gray-200 rounded animate-pulse mb-6 sm:mb-8"></div>
 
-                    {/* Forex Status Banner */}
-                    {hasMultipleCurrencies && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                            <div className="flex items-center space-x-3">
-                                <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                                <div>
-                                    <p className="text-sm font-medium text-blue-800">Multi-Currency Analysis Active</p>
-                                    <p className="text-xs text-blue-600 mt-1">
-                                        {forexLoading ? 'Loading exchange rates...' :
-                                         forexRates ? 'Live forex rates applied for accurate conversions' :
-                                         'Using fallback exchange rates'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Metrics Grid */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        {/* Total Revenue Card */}
-                        <div className="bg-white rounded-xl border border-gray-300 p-6 relative">
-                            <div className="flex items-start justify-between mb-3">
-                                <p className="text-sm font-medium text-gray-600">Total Revenue</p>
-                                {hasMultipleCurrencies && (
-                                    <div className="relative">
-                                        <button
-                                            onClick={() => setShowRevenueCurrencyDropdown(!showRevenueCurrencyDropdown)}
-                                            className="flex items-center space-x-1 text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                                        >
-                                            <span>{selectedBaseCurrency}</span>
-                                            <ChevronDown className="h-3 w-3" />
-                                        </button>
-                                        <CurrencyDropdown
-                                            isOpen={showRevenueCurrencyDropdown}
-                                            onClose={() => setShowRevenueCurrencyDropdown(false)}
-                                            currencies={currencies}
-                                            selectedCurrency={selectedBaseCurrency}
-                                            onSelect={setSelectedBaseCurrency}
-                                        />
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i} className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-3 sm:p-4 lg:p-6">
+                                <div className="flex items-center justify-between">
+                                    <div className="w-full">
+                                        <div className="h-3 w-16 sm:h-4 sm:w-24 bg-gray-200 rounded animate-pulse mb-2 sm:mb-3"></div>
+                                        <div className="h-5 w-20 sm:h-7 sm:w-32 bg-gray-200 rounded animate-pulse"></div>
                                     </div>
-                                )}
+                                    <div className="h-8 w-8 sm:h-10 sm:w-10 lg:h-12 lg:w-12 bg-gray-200 rounded-lg animate-pulse"></div>
+                                </div>
                             </div>
-                            <p className="text-2xl font-bold text-gray-900 mb-1">
-                                {hasMultipleCurrencies && forexRates ?
-                                    formatCurrency(
-                                        Object.entries(dashboardMetrics.currencyBreakdown).reduce((total, [currency, amount]) => {
-                                            return total + convertToBaseCurrency(amount, currency, selectedBaseCurrency);
-                                        }, 0),
-                                        selectedBaseCurrency
-                                    ) :
-                                    formatTotalRevenue(dashboardMetrics)
-                                }
-                            </p>
-                            {hasMultipleCurrencies && (
-                                <p className="text-xs text-gray-500">
-                                    {forexRates ? '* Forex converted' : '* Mixed currencies'}
-                                </p>
-                            )}
-                        </div>
-
-                        {/* Individual Currency Cards */}
-                        {hasMultipleCurrencies ? (
-                            currencies.slice(0, 2).map((currencySymbol, index) => (
-                                <div key={currencySymbol} className="bg-white rounded-xl border border-gray-300 p-6">
-                                    <p className="text-sm font-medium text-gray-600 mb-3">
-                                        Revenue ({currencySymbol})
-                                    </p>
-                                    <p className="text-2xl font-bold text-gray-900">
-                                        {formatCurrency(dashboardMetrics.currencyBreakdown[currencySymbol], currencySymbol)}
-                                    </p>
-                                </div>
-                            ))
-                        ) : (
-                            <>
-                                <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                    <p className="text-sm font-medium text-gray-600 mb-3">Total Invoices</p>
-                                    <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.totalInvoices}</p>
-                                </div>
-                                <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                    <p className="text-sm font-medium text-gray-600 mb-3">Unique Clients</p>
-                                    <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.uniqueClients}</p>
-                                </div>
-                            </>
-                        )}
-
-                        {/* Average Invoice Value */}
-                        <div className="bg-white rounded-xl border border-gray-300 p-6">
-                            <div className="flex items-start justify-between mb-3">
-                                <p className="text-sm font-medium text-gray-600">Avg Invoice Value</p>
-                                {hasMultipleCurrencies && (
-                                    <div className="relative">
-                                        <button
-                                            onClick={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
-                                            className="flex items-center space-x-1 text-xs px-2 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors"
-                                        >
-                                            <span>{selectedBaseCurrency}</span>
-                                            <ChevronDown className="h-3 w-3" />
-                                        </button>
-                                        <CurrencyDropdown
-                                            isOpen={showCurrencyDropdown}
-                                            onClose={() => setShowCurrencyDropdown(false)}
-                                            currencies={currencies}
-                                            selectedCurrency={selectedBaseCurrency}
-                                            onSelect={setSelectedBaseCurrency}
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                            <p className="text-2xl font-bold text-gray-900 mb-1">
-                                {formatCurrency(convertedAvg.amount, convertedAvg.currency)}
-                            </p>
-                            {hasMultipleCurrencies && forexRates && (
-                                <p className="text-xs text-gray-500">* Forex converted</p>
-                            )}
-                        </div>
+                        ))}
                     </div>
 
-                    {/* Secondary Metrics */}
-                    {hasMultipleCurrencies && currencies.length > 2 && (
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                            <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                <p className="text-sm font-medium text-gray-600 mb-3">Total Invoices</p>
-                                <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.totalInvoices}</p>
-                            </div>
-                            <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                <p className="text-sm font-medium text-gray-600 mb-3">Unique Clients</p>
-                                <p className="text-2xl font-bold text-gray-900">{dashboardMetrics.uniqueClients}</p>
-                            </div>
-                            <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                <p className="text-sm font-medium text-gray-600 mb-3">Conversion Rate</p>
-                                <p className="text-sm text-gray-600">
-                                    {forexRates ? `1 ${currencies[0]} = ${(forexRates[selectedBaseCurrency] || 1).toFixed(4)} ${selectedBaseCurrency}` : 'Loading...'}
-                                </p>
-                            </div>
-                        </div>
-                    )}
-
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        {/* Recent Invoices */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                         <div className="lg:col-span-2">
-                            <div className="bg-white rounded-xl border border-gray-300 overflow-hidden">
-                                <div className="px-6 py-4 border-b border-gray-300">
-                                    <div className="flex items-center justify-between">
-                                        <h3 className="text-lg font-medium text-gray-900">Recent Invoices</h3>
-                                        <button
-                                            onClick={() => navigate('/invoices')}
-                                            className="text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
-                                        >
-                                            View all
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="divide-y divide-gray-200">
-                                    {dashboardMetrics.recentInvoices.length > 0 ? (
-                                        dashboardMetrics.recentInvoices.map((invoice) => {
-                                            const statusConfig = getStatusConfig(invoice.status);
-                                            const totalAmount = calculateInvoiceTotal(invoice);
-                                            const customerName = invoice.data?.to || 'Unknown Customer';
-                                            const customerInitials = getCustomerInitials(customerName);
-                                            const invoiceCurrency = getInvoiceCurrency(invoice);
-
-                                            return (
-                                                <div key={invoice.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                                                    <div className="flex items-center justify-between">
-                                                        <div className="flex items-center space-x-4">
-                                                            <div className="h-10 w-10 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
-                                                                <span className="text-white text-sm font-medium">
-                                                                    {customerInitials}
-                                                                </span>
-                                                            </div>
-                                                            <div>
-                                                                <p className="text-sm font-medium text-gray-900 truncate max-w-[150px]">
-                                                                    {customerName}
-                                                                </p>
-                                                                <p className="text-sm text-gray-500">
-                                                                    #{invoice.data?.invoice_number || 'N/A'}
-                                                                </p>
-                                                            </div>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-sm font-medium text-gray-900">
-                                                                {formatCurrency(totalAmount, invoiceCurrency)}
-                                                            </p>
-                                                            <div className="flex items-center space-x-2 mt-1 justify-end">
-                                                                <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
-                                                                    {statusConfig.label}
-                                                                </span>
-                                                                <span className="text-xs text-gray-500">
-                                                                    {formatDate(invoice.data?.issued_date)}
-                                                                </span>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })
-                                    ) : (
-                                        <div className="px-6 py-8 text-center">
-                                            <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">No invoices yet</h3>
-                                            <p className="text-gray-500 mb-4">Get started by creating your first invoice.</p>
-                                            <button
-                                                onClick={() => navigate('/new')}
-                                                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                            >
-                                                <Plus className="h-4 w-4 mr-2" />
-                                                Create First Invoice
-                                            </button>
+                            <div className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-4 sm:p-6">
+                                <div className="h-4 w-32 sm:h-6 sm:w-40 bg-gray-200 rounded animate-pulse mb-4 sm:mb-6"></div>
+                                {[...Array(4)].map((_, i) => (
+                                    <div key={i} className="flex items-center justify-between py-3 sm:py-4 border-t border-gray-200 first:border-t-0">
+                                        <div className="flex items-center space-x-3 sm:space-x-4">
+                                            <div className="h-8 w-8 sm:h-10 sm:w-10 bg-gray-200 rounded-full animate-pulse"></div>
+                                            <div>
+                                                <div className="h-3 w-24 sm:h-4 sm:w-32 bg-gray-200 rounded animate-pulse mb-1 sm:mb-2"></div>
+                                                <div className="h-2 w-16 sm:h-3 sm:w-24 bg-gray-200 rounded animate-pulse"></div>
+                                            </div>
                                         </div>
-                                    )}
-                                </div>
+                                        <div className="text-right">
+                                            <div className="h-3 w-16 sm:h-4 sm:w-20 bg-gray-200 rounded animate-pulse mb-1 sm:mb-2"></div>
+                                            <div className="h-2 w-12 sm:h-3 sm:w-16 bg-gray-200 rounded animate-pulse"></div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
 
-                        {/* Sidebar */}
-                        <div className="space-y-6">
-                            {/* Currency Breakdown */}
-                            {hasMultipleCurrencies && (
-                                <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                    <h3 className="text-lg font-medium text-gray-900 mb-4">Currency Breakdown</h3>
-                                    <div className="space-y-4">
-                                        {Object.entries(dashboardMetrics.currencyBreakdown).map(([currency, amount]) => (
-                                            <div key={currency} className="flex items-center justify-between">
-                                                <div className="flex items-center space-x-3">
-                                                    <div className="h-3 w-3 bg-blue-500 rounded-full flex-shrink-0"></div>
-                                                    <span className="text-sm font-medium text-gray-700">{currency}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-sm font-medium text-gray-900">
-                                                        {formatCurrency(amount, currency)}
-                                                    </div>
-                                                    {forexRates && (
-                                                        <div className="text-xs text-gray-500">
-                                                            ≈ {formatCurrency(
-                                                                convertToBaseCurrency(amount, currency, selectedBaseCurrency),
-                                                                selectedBaseCurrency
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
+                        <div className="space-y-4 sm:space-y-6">
+                            {[...Array(2)].map((_, i) => (
+                                <div key={i} className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-4 sm:p-6">
+                                    <div className="h-4 w-28 sm:h-6 sm:w-40 bg-gray-200 rounded animate-pulse mb-3 sm:mb-4"></div>
+                                    <div className="space-y-2 sm:space-y-3">
+                                        {[...Array(3)].map((_, j) => (
+                                            <div key={j} className="flex items-center justify-between">
+                                                <div className="h-3 w-16 sm:h-4 sm:w-24 bg-gray-200 rounded animate-pulse"></div>
+                                                <div className="h-3 w-8 sm:h-4 sm:w-12 bg-gray-200 rounded animate-pulse"></div>
                                             </div>
                                         ))}
                                     </div>
                                 </div>
-                            )}
-
-                            {/* Status Summary */}
-                            <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Invoice Status</h3>
-                                <div className="space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <Clock className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                                            <span className="text-sm text-gray-600">Draft</span>
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-900">{dashboardMetrics.draftInvoices}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center space-x-3">
-                                            <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                                            <span className="text-sm text-gray-600">Overdue</span>
-                                        </div>
-                                        <span className="text-sm font-medium text-gray-900">{dashboardMetrics.overdueInvoices}</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Quick Actions */}
-                            <div className="bg-white rounded-xl border border-gray-300 p-6">
-                                <h3 className="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
-                                <div className="space-y-3">
-                                    <button
-                                        onClick={() => navigate('/new')}
-                                        className="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                    >
-                                        <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                                        <span className="text-sm font-medium">Create Invoice</span>
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/clients')}
-                                        className="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                    >
-                                        <Users className="h-5 w-5 text-green-600 flex-shrink-0" />
-                                        <span className="text-sm font-medium">Manage Clients</span>
-                                    </button>
-                                    <button
-                                        onClick={() => navigate('/settings')}
-                                        className="w-full flex items-center space-x-3 px-3 py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
-                                    >
-                                        <User className="h-5 w-5 text-purple-600 flex-shrink-0" />
-                                        <span className="text-sm font-medium">Settings</span>
-                                    </button>
-                                </div>
-                            </div>
+                            ))}
                         </div>
                     </div>
                 </div>
@@ -761,6 +364,362 @@ const Dashboard = () => {
             </div>
         </>
     );
+
+    // Effects
+    useEffect(() => {
+        fetchAvailableCurrencies();
+    }, [fetchAvailableCurrencies]);
+
+    useEffect(() => {
+        // Load currency preference from localStorage on component mount
+        const storedCurrency = getStoredCurrencyPreference();
+        if (storedCurrency && availableCurrencies.includes(storedCurrency)) {
+            setSelectedCurrency(storedCurrency);
+            // Fetch data with the stored currency
+            fetchDashboardData(storedCurrency);
+        } else if (currency?.code && availableCurrencies.includes(currency.code)) {
+            setSelectedCurrency(currency.code);
+            // Fetch data with the context currency
+            fetchDashboardData(currency.code);
+        } else {
+            // Fetch data with default currency
+            fetchDashboardData();
+        }
+    }, [currency, availableCurrencies, getStoredCurrencyPreference]);
+
+    // Early returns
+    if (loading) return <SkeletonLoader />;
+
+    if (error) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+                <div className="text-center max-w-sm">
+                    <AlertCircle className="h-12 w-12 sm:h-16 sm:w-16 text-red-500 mx-auto mb-3 sm:mb-4" />
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Error Loading Dashboard</h2>
+                    <p className="text-gray-600 mb-4 text-sm sm:text-base">{error}</p>
+                    <button
+                        onClick={() => fetchDashboardData(selectedCurrency)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Main render
+    return (
+        <>
+            <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+                <MainMenu showLogo={false} />
+            </div>
+            <div className="md:hidden block">
+                <MainMenu />
+            </div>
+
+            <div className="min-h-screen bg-gray-100">
+                {/* Header */}
+                <div className="bg-white border-b border-gray-200">
+                    <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8">
+                        <div className="flex justify-between items-center py-4 sm:py-6">
+                            <div className="flex items-center space-x-2 sm:space-x-4">
+                                <h1 className="text-xl sm:text-2xl lg:text-3xl font-semibold text-gray-900">Dashboard</h1>
+                                {availableCurrencies.length > 1 && (
+                                    <CurrencySelector
+                                        currencies={availableCurrencies}
+                                        selectedCurrency={selectedCurrency}
+                                        onSelect={handleCurrencySelect}
+                                        loading={currencyLoading}
+                                        showDropdown={showCurrencyDropdown}
+                                        onToggleDropdown={() => setShowCurrencyDropdown(!showCurrencyDropdown)}
+                                    />
+                                )}
+                            </div>
+
+                            <button
+                                onClick={() => navigate('/new')}
+                                className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors duration-200 font-medium text-sm sm:text-base"
+                            >
+                                <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                                <span className="hidden xs:inline">New Invoice</span>
+                                <span className="xs:hidden">New</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content */}
+                <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-4 sm:py-6 lg:py-8 mb-32 sm:mb-40">
+                    <div className="text-gray-600 text-sm sm:text-lg mb-4 sm:mb-6 lg:mb-8">
+                        Welcome back, {user?.first_name || 'Guest'}! 👋
+                    </div>
+
+                    {/* Metrics Grid */}
+                    <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
+                        <MetricCard
+                            title="Total Revenue"
+                            value={formatCurrency(dashboardMetrics.totalRevenue, dashboardMetrics.currency)}
+                            useCurrencySymbol={true}
+                            currencyCode={dashboardMetrics.currency}
+                            iconBg="bg-green-100"
+                            iconColor="text-green-600"
+                        />
+                        <MetricCard
+                            title="Outstanding"
+                            value={formatCurrency(dashboardMetrics.totalOutstanding, dashboardMetrics.currency)}
+                            icon={Clock}
+                            iconBg="bg-orange-100"
+                            iconColor="text-orange-600"
+                        />
+                        <MetricCard
+                            title="Total Invoices"
+                            value={dashboardMetrics.totalInvoices}
+                            icon={FileText}
+                            iconBg="bg-blue-100"
+                            iconColor="text-blue-600"
+                        />
+                        <MetricCard
+                            title="Clients"
+                            value={dashboardMetrics.uniqueClients}
+                            icon={Users}
+                            iconBg="bg-purple-100"
+                            iconColor="text-purple-600"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                        <RecentInvoices
+                            invoices={dashboardMetrics.recentInvoices}
+                            onViewAll={() => navigate('/invoices')}
+                            onCreateNew={() => navigate('/new')}
+                            formatCurrency={formatCurrency}
+                            formatDate={formatDate}
+                            getStatusConfig={getStatusConfig}
+                            getCustomerInitials={getCustomerInitials}
+                        />
+
+                        <Sidebar
+                            metrics={dashboardMetrics}
+                            currencyTotals={currencyTotals}
+                            formatCurrency={formatCurrency}
+                            onNavigate={navigate}
+                        />
+                    </div>
+                </div>
+                <Navbar />
+            </div>
+        </>
+    );
 };
+
+const MetricCard = ({ title, value, icon: Icon, iconBg, iconColor, useCurrencySymbol = false, currencyCode = 'USD' }) => {
+    const { currencyOptions } = useCurrency();
+
+    const getCurrencySymbol = () => {
+        if (!useCurrencySymbol) return <Icon className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 mr-1 rounded-sm p-1 bg-gray-100 text-gray-600`} />;
+
+        const currencyOption = currencyOptions.find(option => option.code === currencyCode);
+        const symbol = currencyOption?.symbol || '$';
+
+        return (
+            <div className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 mr-1 rounded-sm p-1 bg-gray-100 text-gray-600 flex items-center justify-center text-xs sm:text-sm font-medium`}>
+                {symbol}
+            </div>
+        );
+    };
+
+    return (
+        <div className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-3 sm:p-4 lg:p-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <div className="flex items-center mb-3 sm:mb-4 lg:mb-6">
+                        {getCurrencySymbol()}
+                        <p className="text-xs sm:text-sm font-medium text-gray-600 truncate">{title}</p>
+                    </div>
+                    <p className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">{value}</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+const RecentInvoices = ({
+    invoices,
+    onViewAll,
+    onCreateNew,
+    formatCurrency,
+    formatDate,
+    getStatusConfig,
+    getCustomerInitials
+}) => (
+    <div className="lg:col-span-2">
+        <div className="bg-white rounded-lg sm:rounded-xl border border-gray-300 overflow-hidden">
+            <div className="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-300">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-base sm:text-lg font-medium text-gray-900">Recent Invoices</h3>
+                    <button
+                        onClick={onViewAll}
+                        className="text-xs sm:text-sm text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                    >
+                        View all
+                    </button>
+                </div>
+            </div>
+            <div className="divide-y divide-gray-200">
+                {invoices.length > 0 ? (
+                    invoices.map((invoice) => {
+                        const statusConfig = getStatusConfig(invoice.status);
+                        const customerName = invoice.data?.to || 'Unknown Customer';
+                        const customerInitials = getCustomerInitials(customerName);
+
+                        return (
+                            <div key={invoice.id} className="px-3 py-3 sm:px-4 sm:py-4 hover:bg-gray-50 transition-colors">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center space-x-2 sm:space-x-3 lg:space-x-4 min-w-0 flex-1">
+                                        <div className="h-8 w-8 sm:h-10 sm:w-10 rounded-full bg-gray-900 flex items-center justify-center flex-shrink-0">
+                                            <span className="text-white text-xs sm:text-sm font-medium">
+                                                {customerInitials}
+                                            </span>
+                                        </div>
+                                        <div className="min-w-0 flex-1">
+                                            <p className="text-sm font-medium text-gray-900 truncate">
+                                                {customerName}
+                                            </p>
+                                            <p className="text-xs sm:text-sm text-gray-500 truncate">
+                                                #{invoice.data?.invoice_number || 'N/A'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="text-right ml-2 sm:ml-4 flex-shrink-0">
+                                        <p className="text-sm font-medium text-gray-900 whitespace-nowrap">
+                                            {formatCurrency(invoice.total_amount, invoice.currency)}
+                                        </p>
+                                        <div className="flex items-center space-x-1 sm:space-x-2 mt-1 justify-end flex-wrap">
+                                            <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
+                                                {statusConfig.label}
+                                            </span>
+                                            <span className="text-xs text-gray-500 whitespace-nowrap">
+                                                {formatDate(invoice.issued_date || invoice.created_at)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <EmptyInvoicesState onCreateNew={onCreateNew} />
+                )}
+            </div>
+        </div>
+    </div>
+);
+
+const EmptyInvoicesState = ({ onCreateNew }) => (
+    <div className="px-4 py-6 sm:px-6 sm:py-8 text-center">
+        <FileText className="h-8 w-8 sm:h-12 sm:w-12 text-gray-300 mx-auto mb-3 sm:mb-4" />
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No invoices yet</h3>
+        <p className="text-gray-500 mb-3 sm:mb-4 text-sm sm:text-base">Get started by creating your first invoice.</p>
+        <button
+            onClick={onCreateNew}
+            className="inline-flex items-center px-3 py-2 sm:px-4 sm:py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+        >
+            <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+            Create First Invoice
+        </button>
+    </div>
+);
+
+const Sidebar = ({ metrics, currencyTotals, formatCurrency, onNavigate }) => (
+    <div className="space-y-4 sm:space-y-6">
+        <StatusSummary metrics={metrics} />
+        <CurrencyTotals currencyTotals={currencyTotals} formatCurrency={formatCurrency} />
+        <QuickActions onNavigate={onNavigate} />
+    </div>
+);
+
+const StatusSummary = ({ metrics }) => (
+    <div className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Invoice Status</h3>
+        <div className="space-y-3 sm:space-y-4">
+            <StatusItem color="bg-green-500" label="Paid" value={metrics.paidInvoices} />
+            <StatusItem color="bg-blue-500" label="Unpaid" value={metrics.unpaidInvoices} />
+            <StatusItem color="bg-yellow-500" label="Draft" value={metrics.draftInvoices} />
+            <StatusItem color="bg-red-500" label="Overdue" value={metrics.overdueInvoices} />
+        </div>
+    </div>
+);
+
+const StatusItem = ({ color, label, value }) => (
+    <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className={`h-2 w-2 sm:h-3 sm:w-3 ${color} rounded-full`}></div>
+            <span className="text-xs sm:text-sm text-gray-600">{label}</span>
+        </div>
+        <span className="text-xs sm:text-sm font-medium text-gray-900">{value}</span>
+    </div>
+);
+
+const CurrencyTotals = ({ currencyTotals, formatCurrency }) => {
+    const currencies = Object.keys(currencyTotals).sort();
+
+    if (currencies.length === 0) return null;
+
+    return (
+        <div className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-4 sm:p-6">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Currency Totals</h3>
+            <div className="space-y-2 sm:space-y-3">
+                {currencies.map(currencyCode => (
+                    <div key={currencyCode} className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                            <div className="h-2 w-2 sm:h-3 sm:w-3 bg-gray-400 rounded-full"></div>
+                            <span className="text-xs sm:text-sm text-gray-600">{currencyCode}</span>
+                        </div>
+                        <span className="text-xs sm:text-sm font-medium text-gray-900 truncate ml-2">
+                            {formatCurrency(currencyTotals[currencyCode], currencyCode)}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
+const QuickActions = ({ onNavigate }) => (
+    <div className="bg-white rounded-lg sm:rounded-xl border border-gray-300 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-3 sm:mb-4">Quick Actions</h3>
+        <div className="space-y-2 sm:space-y-3">
+            <QuickActionItem
+                icon={FileText}
+                iconColor="text-blue-600"
+                label="Create Invoice"
+                onClick={() => onNavigate('/new')}
+            />
+            <QuickActionItem
+                icon={Users}
+                iconColor="text-green-600"
+                label="Manage Clients"
+                onClick={() => onNavigate('/clients')}
+            />
+            <QuickActionItem
+                icon={User}
+                iconColor="text-purple-600"
+                label="Settings"
+                onClick={() => onNavigate('/settings')}
+            />
+        </div>
+    </div>
+);
+
+const QuickActionItem = ({ icon: Icon, iconColor, label, onClick }) => (
+    <button
+        onClick={onClick}
+        className="w-full flex items-center space-x-2 sm:space-x-3 px-2 py-2 sm:px-3 sm:py-2 text-left hover:bg-gray-50 rounded-lg transition-colors"
+    >
+        <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${iconColor} flex-shrink-0`} />
+        <span className="text-xs sm:text-sm font-medium">{label}</span>
+    </button>
+);
 
 export default Dashboard;

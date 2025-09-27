@@ -1,11 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import {
   Search,
   ArrowUpDown,
   Filter,
+  Eye,
   Upload,
+  Download,
   Plus,
-  MoreVertical,
+  MoreHorizontal,
   Check,
   Trash2,
   FileText,
@@ -14,7 +17,8 @@ import {
   AlertCircle,
   CheckCircle2,
   X,
-  ArrowLeft
+  ArrowLeft,
+  Menu
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
@@ -128,20 +132,6 @@ const calculateInvoiceTotal = (invoice: Invoice): number => {
   return Math.max(0, total);
 };
 
-const getBillingPeriod = (issuedDate?: string, dueDate?: string): string => {
-  if (!issuedDate) return 'N/A';
-
-  const format = (dateStr: string) => {
-    const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-
-  if (dueDate) {
-    return `${format(issuedDate)} - ${format(dueDate)}`;
-  }
-  return `Issued: ${format(issuedDate)}`;
-};
-
 const InvoicesPage = () => {
   const { user } = useAuth();
   const { currency } = useCurrency();
@@ -154,12 +144,118 @@ const InvoicesPage = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [notification, setNotification] = useState<{message: string, type: 'success' | 'error'} | null>(null);
-
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [downloadingInvoices, setDownloadingInvoices] = useState<Set<string>>(new Set());
   const dropdownRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+
+  // Download invoice function - Updated to use /generate-invoice
+  const downloadInvoice = async (invoiceId: string, invoiceNumber: string = 'invoice') => {
+    if (downloadingInvoices.has(invoiceId)) return;
+
+    setDownloadingInvoices(prev => new Set(prev).add(invoiceId));
+
+    try {
+      // First, get the invoice data
+      const invoiceResponse = await fetch(`${API_BASE_URL}/api/invoices/${invoiceId}?user_id=${user?.id}`);
+      if (!invoiceResponse.ok) {
+        throw new Error('Failed to fetch invoice data');
+      }
+
+      const invoiceData = await invoiceResponse.json();
+      if (!invoiceData.success) {
+        throw new Error('Invoice not found');
+      }
+
+      // Use the /generate-invoice endpoint with the invoice data
+      const generateResponse = await fetch(`${API_BASE_URL}/generate-invoice`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoiceData.invoice.data)
+      });
+
+      if (!generateResponse.ok) {
+        throw new Error('Failed to generate PDF');
+      }
+
+      const blob = await generateResponse.blob();
+
+      // Check if it's actually a PDF
+      if (blob.type !== 'application/pdf') {
+        throw new Error('Invalid response format - expected PDF');
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // Create a safe filename using the actual invoice number from the data
+      const actualInvoiceNumber = invoiceData.invoice.data?.invoice_number || invoiceNumber;
+      const safeInvoiceNumber = actualInvoiceNumber.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+      a.download = `invoice_${safeInvoiceNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      showNotification('Invoice downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading invoice:', error);
+      showNotification('Failed to download invoice', 'error');
+    } finally {
+      setDownloadingInvoices(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(invoiceId);
+        return newSet;
+      });
+    }
+  };
+
+  // Bulk download selected invoices - Updated for /generate-invoice
+  const downloadSelectedInvoices = async () => {
+    if (selectedInvoices.size === 0) return;
+
+    const downloadPromises = Array.from(selectedInvoices).map(async (invoiceId) => {
+      const invoice = filteredInvoices.find(inv => inv.id === invoiceId);
+      if (!invoice) return;
+
+      try {
+        // Use the invoice data directly since we already have it
+        const generateResponse = await fetch(`${API_BASE_URL}/generate-invoice`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(invoice.data)
+        });
+
+        if (generateResponse.ok) {
+          const blob = await generateResponse.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+
+          const safeInvoiceNumber = (invoice.data?.invoice_number || 'invoice').replace(/[^a-z0-9]/gi, '_').toLowerCase();
+          a.download = `invoice_${safeInvoiceNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
+
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          window.URL.revokeObjectURL(url);
+        }
+      } catch (error) {
+        console.error(`Error downloading invoice ${invoiceId}:`, error);
+      }
+    });
+
+    await Promise.allSettled(downloadPromises);
+    showNotification(`Downloaded ${selectedInvoices.size} invoice(s)`);
+  };
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -352,37 +448,35 @@ const InvoicesPage = () => {
   };
 
   const getStatusConfig = (status = '') => {
-        switch (status.toLowerCase()) {
-            case 'draft':
-                return {
-                    label: 'Draft',
-                    className: 'bg-[#e6e6e6]/70 text-[#404040]'
-                };
-            case 'sent':
-            case 'in progress':
-                return {
-                    label: 'Sent',
-                    className: 'bg-[#dce7ff]/70 text-[#2323ff]'
-                };
-            case 'paid':
-                return {
-                    label: 'Paid',
-                    className: 'bg-[#d4edbc]/70 text-[#2e7230]'
-                };
-            case 'overdue':
-                return {
-                    label: 'Overdue',
-                    className: 'bg-[#ffcfc9]/70 text-[#bc2d20]'
-                };
-            default:
-                return {
-                    label: status.charAt(0).toUpperCase() + status.slice(1),
-                    className: 'bg-[#e6e6e6] text-[#404040]'
-                };
-        }
-    };
-
-
+    switch (status.toLowerCase()) {
+      case 'draft':
+        return {
+          label: 'Draft',
+          className: 'bg-[#e6e6e6]/70 text-[#404040]'
+        };
+      case 'sent':
+      case 'in progress':
+        return {
+          label: 'Sent',
+          className: 'bg-[#dce7ff]/70 text-[#2323ff]'
+        };
+      case 'paid':
+        return {
+          label: 'Paid',
+          className: 'bg-[#d4edbc]/70 text-[#2e7230]'
+        };
+      case 'overdue':
+        return {
+          label: 'Overdue',
+          className: 'bg-[#ffcfc9]/70 text-[#bc2d20]'
+        };
+      default:
+        return {
+          label: status.charAt(0).toUpperCase() + status.slice(1),
+          className: 'bg-[#e6e6e6] text-[#404040]'
+        };
+    }
+  };
 
   const getCustomerInitials = (customerName: string): string => {
     return customerName
@@ -411,161 +505,225 @@ const InvoicesPage = () => {
     setSelectedInvoices(newSelected);
   };
 
-  const toggleDropdown = (invoiceId: string) => {
+  const toggleDropdown = (invoiceId: string, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
     setActiveDropdown(activeDropdown === invoiceId ? null : invoiceId);
   };
 
   const pagination = invoicesData?.pagination;
 
   return (
-      <>
+    <>
       <div className="md:block hidden sticky top-0 left-0 w-full z-30">
-      <MainMenu showLogo={false} />
+        <MainMenu showLogo={false} />
       </div>
       <div className="md:hidden block">
-      <MainMenu />
+        <MainMenu />
       </div>
 
-    <div className="">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-
-            <div className="flex items-center space-x-3 gap-6">
-            {/* Back button */}
-           <div className="flex items-center space-x-3 gap-6">
+      <div className="">
+        {/* Header */}
+        <div className="bg-white shadow-sm border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center py-4 md:py-6">
+              <div className="flex items-center space-x-3 gap-4 md:gap-6">
+                {/* Back button */}
                 <button
-              onClick={() => window.history.back()}
-              className="inline-flex items-center px-3 py-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            </div>
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">Invoices</h1>
-                <p className="mt-2 text-gray-600 hidden">
-                  Manage your invoices ({filteredInvoices.length} total)
-                </p>
+                  onClick={() => window.history.back()}
+                  className="inline-flex items-center p-2 md:p-3 bg-gray-50 hover:bg-gray-100 rounded-lg text-gray-400 hover:text-gray-800 transition-colors"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <div>
+                  <h1 className="text-xl md:text-3xl font-bold text-gray-900">Invoices</h1>
+                  <p className="mt-1 md:mt-2 text-sm md:text-base text-gray-600 hidden">
+                    Manage your invoices ({filteredInvoices.length} total)
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex space-x-3">
-              <button className="inline-flex hidden items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200">
-                <Upload className="h-4 w-4 mr-2" />
-                Import
-              </button>
-              <button
-                onClick={() => {
-                  window.location.href = '/new';
-                }}
-                className="inline-flex items-center px-4 py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
-              >
-                <Plus className="h-5 w-5 mr-2" />
-                New <span className="ml-1 hidden lg:inline">Invoice</span>
-              </button>
-
+              <div className="flex space-x-2 md:space-x-3">
+                <button
+                  onClick={() => {
+                    window.location.href = '/new';
+                  }}
+                  className="inline-flex items-center px-3 py-2 md:px-4 md:py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl text-sm md:text-base"
+                >
+                  <Plus className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2" />
+                  New <span className="ml-1 hidden sm:inline">Invoice</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Dropdown Portals - Rendered outside table to avoid clipping */}
-      {activeDropdown && (
-        <div className="fixed inset-0 z-40" onClick={() => setActiveDropdown(null)}>
-          {(() => {
-            const buttonElement = document.querySelector(`[data-dropdown-button="${activeDropdown}"]`);
-            if (!buttonElement) return null;
+        {/* Dropdown Portals - Fixed z-index issues */}
+        {activeDropdown && (
+          <div className="fixed inset-0 z-50" onClick={() => setActiveDropdown(null)}>
+            {(() => {
+              const buttonElement = document.querySelector(`[data-dropdown-button="${activeDropdown}"]`);
+              if (!buttonElement) return null;
 
-            const rect = buttonElement.getBoundingClientRect();
+              const rect = buttonElement.getBoundingClientRect();
 
-            return (
-              <div
-                ref={(el) => {
-                  dropdownRefs.current[activeDropdown] = el;
-                }}
-                className="absolute w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
-                style={{
-                  top: rect.bottom + window.scrollY + 8,
-                  left: rect.right + window.scrollX - 192, // 192px = w-48
-                }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <div className="py-1">
-                  <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
-                    Change Status
-                  </div>
-                  {STATUS_OPTIONS.filter(status => status.value !== '').map((status) => (
-                    <button
-                      key={status.value}
-                      onClick={() => updateInvoiceStatus(activeDropdown, status.value)}
-                      className="group flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
-                    >
-                      <span>{status.label}</span>
-                      {invoicesData?.invoices.find(inv => inv.id === activeDropdown)?.status === status.value && (
-                        <Check className="h-4 w-4 text-green-600" />
-                      )}
-                    </button>
-                  ))}
-                  <div className="border-t border-gray-100 mt-1 pt-1">
-                    <button
-                      onClick={() => confirmDelete(activeDropdown)}
-                      className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
-                    >
-                      <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
-                      Delete Invoice
-                    </button>
+              // Calculate position for mobile vs desktop
+              const isMobile = window.innerWidth < 768;
+              const topPosition = isMobile ? rect.bottom + 8 : rect.bottom + window.scrollY + 8;
+              const leftPosition = isMobile ? rect.left : rect.right + window.scrollX - 192;
+
+              return (
+                <div
+                  ref={(el) => {
+                    dropdownRefs.current[activeDropdown] = el;
+                  }}
+                  className="relative md:w-48 w-full rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                  style={{
+                    top: topPosition,
+                    left: isMobile ? '50%' : leftPosition,
+                    transform: isMobile ? 'translateX(-50%)' : 'none',
+                    maxWidth: isMobile ? 'calc(100vw - 32px)' : 'none',
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="py-1">
+                    <div className="px-3 py-2 text-xs font-medium text-gray-500 uppercase tracking-wide border-b border-gray-100">
+                      Change Status
+                    </div>
+                    {STATUS_OPTIONS.filter(status => status.value !== '').map((status) => (
+                      <button
+                        key={status.value}
+                        onClick={() => updateInvoiceStatus(activeDropdown, status.value)}
+                        className="group flex items-center justify-between px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      >
+                        <span>{status.label}</span>
+                        {invoicesData?.invoices.find(inv => inv.id === activeDropdown)?.status === status.value && (
+                          <Check className="h-4 w-4 text-green-600" />
+                        )}
+                      </button>
+                    ))}
+                    <div className="border-t border-gray-100 mt-1 pt-1">
+                      <button
+                        onClick={() => confirmDelete(activeDropdown)}
+                        className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
+                      >
+                        <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
+                        Delete Invoice
+                      </button>
+                    </div>
                   </div>
                 </div>
+              );
+            })()}
+          </div>
+        )}
+
+        {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 mb-20 md:mb-40 lg:px-8 lg:py-8 py-4">
+        {/* Bulk Actions Bar */}
+        {selectedInvoices.size > 0 && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4 flex items-center justify-between">
+            <div className="flex items-center">
+              <CheckCircle2 className="h-5 w-5 text-blue-600 mr-2" />
+              <span className="text-blue-800 font-medium">
+                {selectedInvoices.size} invoice{selectedInvoices.size !== 1 ? 's' : ''} selected
+              </span>
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={downloadSelectedInvoices}
+                className="inline-flex items-center px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                <Download className="h-4 w-4 mr-1" />
+                Download Selected ({selectedInvoices.size})
+              </button>
+              <button
+                onClick={() => setSelectedInvoices(new Set())}
+                className="inline-flex items-center px-3 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        )}
+          {/* Search and Filters */}
+          <div className="rounded-xl py-3 mb-4 md:mb-6">
+            {/* Mobile Layout */}
+            <div className="md:hidden space-y-4">
+              {/* Search Bar */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Search invoices..."
+                  className="w-full !bg-gray-150 pl-10 pr-4 py-2.5 !rounded-xl border-2 !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
               </div>
-            );
-          })()}
-        </div>
-      )}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 mb-40 sm:px-6 lg:px-8 lg:py-8 py-4">
-        {/* Search and Filters */}
-        <div className="rounded-xl py-3 mb-6">
-          <div className="flex flex-col lg:flex-row justify-between gap-8 lg:items-center">
-  {/* Status Filter Buttons */}
-  <div className="w-full order-last lg:order-first">
-    <nav className="flex flex-row overflow-x-auto gap-2.5">
-      {STATUS_OPTIONS.map((status) => {
-        const isActive = statusFilter === status.value;
+              {/* Horizontal Scrolling Filter Tabs */}
+              <div className="relative">
+                <div className="flex space-x-2 overflow-x-auto pb-2 -mx-2 px-2 scrollbar-hide">
+                  {STATUS_OPTIONS.map((status) => {
+                    const isActive = statusFilter === status.value;
+                    return (
+                      <button
+                        key={status.value}
+                        onClick={() => handleStatusFilter(status.value)}
+                        className={`flex-shrink-0 px-4 py-2.5 rounded-full transition-colors text-sm font-medium whitespace-nowrap ${
+                          isActive
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {status.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
 
-        return (
-          <button
-            key={status.value}
-            onClick={() => handleStatusFilter(status.value)}
-            className={`flex items-center px-4 py-2.5 rounded-full transition-colors text-md min-w-fit ${
-              isActive
-                ? 'bg-gray-900 text-neutral-50 font-medium'
-                : 'text-gray-900 hover:bg-white bg-transparent border'
-            }`}
-          >
-            <span className="truncate whitespace-nowrap">{status.label}</span>
-          </button>
-        );
-      })}
-    </nav>
-  </div>
+            {/* Desktop Layout */}
+            <div className="hidden md:flex flex-col lg:flex-row justify-between gap-4 lg:items-center">
+              {/* Horizontal Scrolling Filter Tabs */}
+              <div className="w-full order-last lg:order-first">
+                <div className="flex space-x-2 overflow-x-auto pb-2 scrollbar-hide">
+                  {STATUS_OPTIONS.map((status) => {
+                    const isActive = statusFilter === status.value;
+                    return (
+                      <button
+                        key={status.value}
+                        onClick={() => handleStatusFilter(status.value)}
+                        className={`flex-shrink-0 px-4 py-2.5 rounded-full transition-colors text-sm font-medium whitespace-nowrap ${
+                          isActive
+                            ? 'bg-gray-900 text-white shadow-sm'
+                            : 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {status.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
 
-  {/* Search Bar */}
-  <div className="relative w-full order-first lg:order-last lg:w-auto lg:min-w-80">
-    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
-    <input
-      type="text"
-      placeholder="Search"
-      className="w-full !bg-gray-150 pl-10 pr-4 py-3 !rounded-xl border-2 !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      value={searchTerm}
-      onChange={handleSearch}
-    />
-  </div>
-</div>
+              {/* Search Bar */}
+              <div className="relative w-full order-first lg:order-last lg:w-auto lg:min-w-80">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-neutral-400" />
+                <input
+                  type="text"
+                  placeholder="Search invoices..."
+                  className="w-full !bg-gray-150 pl-10 pr-4 py-3 !rounded-xl border-2 !border-neutral-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  value={searchTerm}
+                  onChange={handleSearch}
+                />
+              </div>
+            </div>
+          </div>
 
-        </div>
-
-        {/* Invoices Table */}
+ {/* Invoices Table */}
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -579,235 +737,332 @@ const InvoicesPage = () => {
               <p className="text-gray-500 mb-4">
                 {searchTerm || statusFilter ? 'No invoices match your criteria.' : 'Get started by creating your first invoice.'}
               </p>
-              <button
-                onClick={() => window.location.href = '/new'}
-                className="inline-flex hidden items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Create First Invoice
-              </button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left">
-                      <input
-                        type="checkbox"
-                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                        checked={selectedInvoices.size === filteredInvoices.length && filteredInvoices.length > 0}
-                        onChange={(e) => handleSelectAll(e.target.checked)}
-                      />
-                    </th>
-                    <th className="px-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Invoice #
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Client
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Amount Due
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Date Issued
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Due Date
-                    </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredInvoices.map((invoice) => {
-                    const statusConfig = getStatusConfig(invoice.status);
-                    const totalAmount = calculateInvoiceTotal(invoice);
-                    const customerName = invoice.data?.to || 'Unknown Customer';
-                    const customerInitials = getCustomerInitials(customerName);
-                    const isDropdownActive = activeDropdown === invoice.id;
-                    const isUpdating = updatingStatus === invoice.id;
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50 border-b border-gray-200">
+                    <tr>
+                      <th className="px-4 py-3 text-left">
+                        <input
+                          type="checkbox"
+                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          checked={selectedInvoices.size === filteredInvoices.length && filteredInvoices.length > 0}
+                          onChange={(e) => handleSelectAll(e.target.checked)}
+                        />
+                      </th>
+                      <th className="px-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Invoice #
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Client
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Amount Due
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Status
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Date Issued
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {filteredInvoices.map((invoice) => {
+                      const statusConfig = getStatusConfig(invoice.status);
+                      const totalAmount = calculateInvoiceTotal(invoice);
+                      const customerName = invoice.data?.to || 'Unknown Customer';
+                      const customerInitials = getCustomerInitials(customerName);
+                      const isDropdownActive = activeDropdown === invoice.id;
+                      const isUpdating = updatingStatus === invoice.id;
+                      const isDownloading = downloadingInvoices.has(invoice.id);
 
-                    return (
-                      <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-4 py-4 w-2">
-                          <input
-                            type="checkbox"
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                            checked={selectedInvoices.has(invoice.id)}
-                            onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
-                          />
-                        </td>
-                        <td className="px-0 text-left py-4 text-sm text-gray-900">
-                          {invoice.data?.invoice_number || '-'}
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 h-8 w-8">
+                      return (
+                        <tr key={invoice.id} className="hover:bg-gray-50 transition-colors">
+                          <td className="px-4 py-4 w-2">
+                            <input
+                              type="checkbox"
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              checked={selectedInvoices.has(invoice.id)}
+                              onChange={(e) => handleSelectInvoice(invoice.id, e.target.checked)}
+                            />
+                          </td>
+                          <td className="px-0 text-left py-4 text-sm text-gray-900">
+                            {invoice.data?.invoice_number || '-'}
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="flex items-center">
+                              <div className="flex-shrink-0 h-8 w-8">
                                 <div className="h-8 w-8 rounded-full bg-gray-900 flex items-center justify-center">
-                                    <span className="text-white text-sm font-medium">
-                                        {customerInitials}
-                                    </span>
+                                  <span className="text-white text-sm font-medium">
+                                    {customerInitials}
+                                  </span>
                                 </div>
+                              </div>
+                              <div className="ml-4">
+                                <div className="text-sm font-medium text-gray-900">{customerName}</div>
+                                <div className="text-sm text-gray-500">{invoice.data?.from || 'N/A'}</div>
+                              </div>
                             </div>
-                            <div className="ml-4">
-                              <div className="text-sm font-medium text-gray-900">{customerName}</div>
-                              <div className="text-sm text-gray-500">{invoice.data?.from || 'N/A'}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-gray-900">
+                              {formatAmount(totalAmount, invoice.data?.currency_symbol || invoice.currency?.symbol || '£')}
                             </div>
+                            <div className="text-sm text-gray-500">
+                              {invoice.data?.currency || invoice.currency?.code || 'GBP'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
+                              {statusConfig.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {formatDate(invoice.data?.issued_date)}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <div className="flex justify-center gap-2 items-center">
+                              <button title="View invoice">
+                              <Link to={`/invoice/${invoice.id}`}>
+                                <FileText className="p-1.5 h-8 w-8 border border-gray-200 rounded-md text-neutral-400 hover:text-gray-500 bg-gray-50 hover:bg-gray-100"
+                                 />
+                              </Link>
+                              </button>
+                              <button
+                                onClick={() => downloadInvoice(invoice.id, invoice.data?.invoice_number)}
+                                disabled={isDownloading}
+                                className="p-1.5 h-8 w-8 border border-gray-200 rounded-md text-neutral-400 hover:text-gray-500 bg-gray-50 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Download Invoice"
+                              >
+                                {isDownloading ? (
+                                  <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                                ) : (
+                                  <Download className="h-4 w-4" />
+                                )}
+                              </button>
+                              <button
+                                onClick={() => confirmDelete(invoice.id)}
+                                className="group flex items-center p-1 h-8 w-8 border border-gray-300 hover:border-red-100 rounded-md text-sm text-gray-400 hover:bg-red-50 justify-center"
+                                title="Delete invoice"
+                              >
+                                <Trash2 className="h-4 w-4 text-neutral-400 group-hover:text-red-500" />
+                              </button>
+                              <div className="relative inline-block text-center">
+                                <button
+                                  onClick={(e) => toggleDropdown(invoice.id, e)}
+                                  disabled={isUpdating}
+                                  data-dropdown-button={invoice.id}
+                                  className="inline-flex items-center p-1.5 h-8 w-8 text-neutral-400 border border-gray-200 hover:text-gray-600 rounded-md hover:bg-gray-100 transition-colors disabled:opacity-50"
+                                  title="Change status"
+                                >
+                                  {isUpdating ? (
+                                    <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                                  ) : (
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Cards */}
+              <div className="md:hidden">
+                {filteredInvoices.map((invoice) => {
+                  const statusConfig = getStatusConfig(invoice.status);
+                  const totalAmount = calculateInvoiceTotal(invoice);
+                  const customerName = invoice.data?.to || 'Unknown Customer';
+                  const customerInitials = getCustomerInitials(customerName);
+                  const isDropdownActive = activeDropdown === invoice.id;
+                  const isDownloading = downloadingInvoices.has(invoice.id);
+
+                  return (
+                    <div key={invoice.id} className="border-b border-gray-200 last:border-b-0 p-4">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 rounded-full bg-gray-900 flex items-center justify-center mr-3">
+                            <span className="text-white text-sm font-medium">
+                              {customerInitials}
+                            </span>
                           </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">
+                          <div>
+                            <div className="font-medium text-gray-900">{customerName}</div>
+                            <div className="text-sm text-gray-500">#{invoice.data?.invoice_number || '-'}</div>
+                          </div>
+                        </div>
+                        <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
+                          {statusConfig.label}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <div className="text-xs text-gray-500">Amount</div>
+                          <div className="font-medium text-gray-900">
                             {formatAmount(totalAmount, invoice.data?.currency_symbol || invoice.currency?.symbol || '£')}
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {invoice.data?.currency || invoice.currency?.code || 'GBP'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <span className={`inline-flex px-2.5 py-1 text-xs font-medium rounded-full ${statusConfig.className}`}>
-                            {statusConfig.label}
-                          </span>
-                        </td>
+                        </div>
+                        <div>
+                          <div className="text-xs text-gray-500">Issued</div>
+                          <div className="text-sm text-gray-900">{formatDate(invoice.data?.issued_date)}</div>
+                        </div>
+                      </div>
 
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {formatDate(invoice.data?.issued_date)}
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
-                          {invoice.data?.due_date ? formatDate(invoice.data.due_date) : 'N/A'}
-                          </td>
-                        <td className="px-6 py-4 text-right relative">
-                          <div className="relative inline-block text-left">
-                            <button
-                              onClick={() => toggleDropdown(invoice.id)}
-                              disabled={isUpdating}
-                              data-dropdown-button={invoice.id}
-                              className="inline-flex items-center p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
-                            >
-                              {isUpdating ? (
-                                <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-                              ) : (
-                                <MoreVertical className="h-4 w-4" />
-                              )}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      <div className="flex justify-between items-center">
+                        <div className="flex space-x-2">
+                          <Link to={`/invoice/${invoice.id}`} className="p-2 border border-gray-200 rounded-md text-gray-400 hover:text-gray-500">
+                            <FileText className="h-4 w-4" />
+                          </Link>
+                          <button
+                            onClick={() => downloadInvoice(invoice.id, invoice.data?.invoice_number)}
+                            disabled={isDownloading}
+                            className="p-2 border border-gray-200 rounded-md text-gray-400 hover:text-gray-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Download Invoice"
+                          >
+                            {isDownloading ? (
+                              <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                            ) : (
+                              <Download className="h-4 w-4" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => confirmDelete(invoice.id)}
+                            className="p-2 border border-gray-200 rounded-md text-gray-400 hover:text-red-500 hover:border-red-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <button
+                          onClick={(e) => toggleDropdown(invoice.id, e)}
+                          data-dropdown-button={invoice.id}
+                          className="p-2 border border-gray-200 rounded-md text-gray-400 hover:text-gray-600"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
           )}
 
-          {/* Pagination */}
-          {pagination && pagination.pages > 1 && (
-            <div className="bg-white px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-              <div className="text-sm text-gray-500">
-                Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} invoices
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                  disabled={!pagination.has_prev}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="h-4 w-4 mr-1" />
-                  Previous
-                </button>
-                <span className="text-sm text-gray-500">
-                  Page {currentPage} of {pagination.pages}
-                </span>
-                <button
-                  onClick={() => setCurrentPage(prev => Math.min(pagination.pages, prev + 1))}
-                  disabled={!pagination.has_next}
-                  className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full">
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                  <AlertCircle className="h-5 w-5 text-red-600" />
+            {/* Pagination */}
+            {pagination && pagination.pages > 1 && (
+              <div className="bg-white px-4 md:px-6 py-3 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <div className="text-sm text-gray-500 text-center sm:text-left">
+                  Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} invoices
                 </div>
-                <div className="ml-3">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Confirm Deletion
-                  </h3>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={!pagination.has_prev}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-4 w-4 mr-1" />
+                    Previous
+                  </button>
+                  <span className="text-sm text-gray-500 hidden sm:inline">
+                    Page {currentPage} of {pagination.pages}
+                  </span>
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(pagination.pages, prev + 1))}
+                    disabled={!pagination.has_next}
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Next
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </button>
                 </div>
               </div>
-
-              <p className="text-sm text-gray-500 mb-6">
-                Are you sure you want to delete this invoice? This action cannot be undone.
-              </p>
-
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={cancelDelete}
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => deleteInvoice(showDeleteConfirm)}
-                  disabled={deletingInvoice === showDeleteConfirm}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {deletingInvoice === showDeleteConfirm ? (
-                    <>
-                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
-                      Deleting...
-                    </>
-                  ) : (
-                    'Delete'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Notification */}
-      {notification && (
-        <div className="fixed bottom-4 right-4 z-50">
-          <div className={`flex items-center p-4 rounded-lg shadow-lg ${
-            notification.type === 'success'
-              ? 'bg-green-100 border border-green-200 text-green-800'
-              : 'bg-red-100 border border-red-200 text-red-800'
-          }`}>
-            {notification.type === 'success' ? (
-              <CheckCircle2 className="h-5 w-5 mr-3 text-green-600" />
-            ) : (
-              <AlertCircle className="h-5 w-5 mr-3 text-red-600" />
             )}
-            <span className="text-sm font-medium">{notification.message}</span>
-            <button
-              onClick={() => setNotification(null)}
-              className="ml-3 text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
         </div>
-      )}
-    </div>
-    <Navbar />
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4">
+              <div className="p-6">
+                <div className="flex items-center mb-4">
+                  <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                    <AlertCircle className="h-5 w-5 text-red-600" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      Confirm Deletion
+                    </h3>
+                  </div>
+                </div>
+
+                <p className="text-sm text-gray-500 mb-6">
+                  Are you sure you want to delete this invoice? This action cannot be undone.
+                </p>
+
+                <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
+                  <button
+                    onClick={cancelDelete}
+                    className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors order-2 sm:order-1"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => deleteInvoice(showDeleteConfirm)}
+                    disabled={deletingInvoice === showDeleteConfirm}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed order-1 sm:order-2"
+                  >
+                    {deletingInvoice === showDeleteConfirm ? (
+                      <>
+                        <div className="w-4 h-4 animate-spin rounded-full border-2 border-white border-t-transparent mr-2"></div>
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Notification */}
+        {notification && (
+          <div className="fixed bottom-4 right-4 left-4 md:left-auto z-70">
+            <div className={`flex items-center p-4 rounded-lg shadow-lg ${
+              notification.type === 'success'
+                ? 'bg-green-100 border border-green-200 text-green-800'
+                : 'bg-red-100 border border-red-200 text-red-800'
+            }`}>
+              {notification.type === 'success' ? (
+                <CheckCircle2 className="h-5 w-5 mr-3 text-green-600" />
+              ) : (
+                <AlertCircle className="h-5 w-5 mr-3 text-red-600" />
+              )}
+              <span className="text-sm font-medium flex-1">{notification.message}</span>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-3 text-gray-400 hover:text-gray-600"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+      <Navbar />
     </>
   );
 };

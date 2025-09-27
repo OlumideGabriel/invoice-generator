@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ChevronDown, ChevronDownIcon, Plus } from 'lucide-react';
 import LogoUpload from './LogoUpload';
 import PartyField from './PartyField';
@@ -25,6 +26,7 @@ import Navbar from './Navbar';
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
+
 
 // Helper functions for generating default dates
 const getTodayString = () => {
@@ -88,6 +90,7 @@ const InvoiceGenerator: React.FC = () => {
   // --- NEW STATE FOR USER/CLIENT/INVOICES ---
   const { user } = useAuth();
   const userId = user?.id || user?.user_id;
+  const [isSaved, setIsSaved] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null); // Optional
   const [businessId, setBusinessId] = useState<string | null>(null); // Optional
   const [invoices, setInvoices] = useState<any[]>([]);
@@ -97,6 +100,7 @@ const InvoiceGenerator: React.FC = () => {
   const [loading, setLoading] = useState(false); // For download
   const [previewLoading, setPreviewLoading] = useState(false); // For preview
   const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   // Use the invoice hook for all invoice-related state and functionality
   const {
@@ -341,98 +345,113 @@ const InvoiceGenerator: React.FC = () => {
     handleChange(index, field as keyof InvoiceItem, value);
   };
 
-  const saveInvoiceToDatabase = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      // Compose invoice data
-      const invoicePayload = {
-        user_id: userId,
-        client_id: clientId,
-        business_id: businessId,
-        data: {
-          from,
-          to,
-          items,
-          invoice_number: invoiceNumber,
-          issued_date: issuedDate,
-          due_date: dueDate,
-          payment_details: paymentDetails,
-          terms,
-          tax_percent: taxPercent,
-          discount_percent: discountPercent,
-          shipping_amount: shippingAmount,
-          tax_type: taxType,
-          discount_type: discountType,
-          show_tax: showTax,
-          show_discount: showDiscount,
-          show_shipping: showShipping,
-          logo_url: logoUrl,
-          // Include all currency variants in the data object
-          currency: typeof currency === 'string' ? currency : currency.code,
-          currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
-          currency_label: typeof currency === 'string' ? currency : currency.label
-        },
+const saveInvoiceToDatabase = async () => {
+  setLoading(true);
+  setError(null);
+
+  try {
+    const invoicePayload = {
+      user_id: userId,
+      client_id: clientId,
+      business_id: businessId,
+      data: {
+        from,
+        to,
+        items,
+        invoice_number: invoiceNumber,
         issued_date: issuedDate,
         due_date: dueDate,
-        status: "draft",
-        // Include currency in the root object for backward compatibility
+        payment_details: paymentDetails,
+        terms,
+        tax_percent: taxPercent,
+        discount_percent: discountPercent,
+        shipping_amount: shippingAmount,
+        tax_type: taxType,
+        discount_type: discountType,
+        show_tax: showTax,
+        show_discount: showDiscount,
+        show_shipping: showShipping,
+        logo_url: logoUrl,
         currency: typeof currency === 'string' ? currency : currency.code,
         currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
         currency_label: typeof currency === 'string' ? currency : currency.label
-      };
+      },
+      issued_date: issuedDate,
+      due_date: dueDate,
+      status: "draft",
+      currency: typeof currency === 'string' ? currency : currency.code,
+      currency_symbol: typeof currency === 'string' ? currency : currency.symbol,
+      currency_label: typeof currency === 'string' ? currency : currency.label
+    };
 
-      // Only save if user_id and required fields are present
-      const hasRequiredFields =
-        userId &&
-        invoiceNumber &&
-        Array.isArray(items) && items.length > 0 &&
-        from &&
-        to;
+    // required fields check
+    const hasRequiredFields =
+      userId &&
+      invoiceNumber &&
+      Array.isArray(items) && items.length > 0 &&
+      from &&
+      to;
 
-      if (hasRequiredFields) {
-        const response = await fetch(`${API_BASE_URL}api/invoices`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(invoicePayload)
-        });
-        const result = await response.json();
-        if (result.success) {
-          // Don't show alert here, we'll show it after PDF generation
-          fetchInvoices(); // Refresh invoice list
-          return true;
-        } else {
-          setError(result.error || "Failed to save invoice.");
-          return false;
-        }
-      }
+    if (!hasRequiredFields) {
+      setError("Please fill in all required fields before saving.");
       return false;
-    } catch (err: any) {
-      setError(err.message || "An error occurred while saving the invoice.");
-      return false;
-    } finally {
-      setLoading(false);
     }
-  };
 
-  const handleInvoiceSubmit = async () => {
-  setLoading(true);
-  try {
-    // First save to database
-    const saved = await saveInvoiceToDatabase();
+    let response;
 
-    // Then generate and download PDF
-    await handleSubmit();
-
-    // Show success message if saved successfully
-    if (saved) {
-      alert("Invoice saved and downloaded successfully!");
+    if (selectedInvoiceId) {
+      // 🔄 Update existing invoice
+      console.log('Updating existing invoice:', selectedInvoiceId);
+      response = await fetch(`${API_BASE_URL}api/invoices/${selectedInvoiceId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoicePayload)
+      });
     } else {
-      alert("Invoice downloaded (not saved to database). Please check required fields and try again to save.");
+      // ➕ Create new invoice
+      console.log('Creating new invoice');
+      response = await fetch(`${API_BASE_URL}api/invoices`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoicePayload)
+      });
     }
-  } catch (error) {
-    console.error("Error in invoice submission:", error);
-    alert("An error occurred while processing your invoice.");
+
+    const result = await response.json();
+    console.log('Save result:', result);
+
+    if (result.success) {
+      await fetchInvoices(); // Wait for invoices to be refreshed
+      setIsSaved(true);
+
+      // Get the invoice ID
+      const invoiceId = selectedInvoiceId || result.invoice?.id;
+      console.log('Attempting to redirect to invoice ID:', invoiceId);
+
+      if (invoiceId) {
+        // Clear localStorage since we've successfully saved to database
+        clearInvoiceFromLocalStorage();
+        setLastSavedTime(null);
+
+        // Add a small delay to ensure state updates are processed
+        setTimeout(() => {
+          console.log('Navigating to:', `/invoice/${invoiceId}`);
+          navigate(`/invoice/${invoiceId}`);
+        }, 100);
+      } else {
+        console.error('No invoice ID found in result:', result);
+      }
+
+      return true;
+    } else {
+      console.error('Save failed:', result);
+      setError(result.error || "Failed to save invoice.");
+      return false;
+    }
+  } catch (err: any) {
+    console.error('Save error:', err);
+    setError(err.message || "An error occurred while saving the invoice.");
+    return false;
   } finally {
     setLoading(false);
   }
@@ -494,7 +513,7 @@ const handlePreview = async () => {
 
   return (
       <>
-      <div className="md:block hidden sticky top-0 left-0 w-full z-30">
+      <div className="md:block hidden sticky top-0 left-0 w-full z-40">
       <MainMenu showLogo={false} />
       </div>
       <div className="md:hidden block">
@@ -739,7 +758,9 @@ const handlePreview = async () => {
         <InvoiceSidebar
           loading={loading}
           previewLoading={previewLoading}
-          onSubmit={handleInvoiceSubmit}
+          onSave={saveInvoiceToDatabase}
+          onDownload={handleSubmit}
+          isSaved={isSaved}
           onPreview={handlePreview}
           previewPdfUrl={previewPdfUrl}
           setPreviewPdfUrl={setPreviewPdfUrl}
@@ -758,7 +779,6 @@ const handlePreview = async () => {
           shippingAmount={shippingAmount}
           taxType={taxType}
           discountType={discountType}
-          // Add localStorage management functions as props
           onSaveToLocalStorage={manualSaveToLocalStorage}
           onLoadFromLocalStorage={manualLoadFromLocalStorage}
           onClearLocalStorage={manualClearLocalStorage}

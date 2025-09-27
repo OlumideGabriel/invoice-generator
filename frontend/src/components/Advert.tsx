@@ -14,7 +14,7 @@ export default function Advert() {
       <a href="https://medium.com/@talktoolumide/it-started-with-a-familiar-pain-point-f33f26b85d3a" target="_blank" rel="noopener noreferrer" className="flex items-start z-10 w-full hover:contrast-125">
     <div className="flex items-start z-10 w-full hidden lg:block">
       <div className="w-full">
-      <div className="bg-[#8eda91] hover:bg-[#8eda91] shadow-xs p-4 transition-all duration-200 ease-in-out relative">
+      <div className="bg-[#8eda91] rounded-t-sm hover:bg-[#8eda91] shadow-xs p-4 transition-all duration-200 ease-in-out relative">
         {/* Close Button */}
         <button
           onClick={() => setIsVisible(false)}
@@ -25,12 +25,12 @@ export default function Advert() {
         </button>
 
         {/* Header with icon */}
-        <div className="flex items-center mb-1 pr-6">
-          <h3 className="font-medium text-3xl hidden lg:block text-[#0e423e]">500</h3><Plus className="text-[#0e423e]" size={30}/>
+        <div className="flex items-center pr-6">
+          <h3 className="font-medium text-2xl hidden lg:block text-[#0e423e]">500</h3><Plus className="text-[#0e423e]" size={25}/>
         </div>
 
         {/* Single benefit */}
-        <p className="text-sm text-[#0e423e] text-left mb-4">
+        <p className="text-[13px] text-[#0e423e] text-left mb-3">
           How we got our first 500 users without running Ads
         </p>
 
@@ -51,7 +51,7 @@ export default function Advert() {
       <img
         src="/advert-3.png"
         alt="Envoyce Logo"
-        className="w-full bg-cover bg-green-500"
+        className="w-full bg-cover rounded-b-sm bg-green-500"
       />
       </div>
 

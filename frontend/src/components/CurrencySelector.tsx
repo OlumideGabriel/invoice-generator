@@ -20,7 +20,7 @@ export default function CurrencySelector({ currency, setCurrency, currencyOption
   return (
     <div className="md:mt-8 mt-0 relative">
       <label className="md:block hidden text-md text-gray-600 mb-5">Change currency</label>
-      <div className="md:relative bg-neutral-800 border border-gray-200 shadow-sm rounded-md lg:w-40 w-[9rem] cursor-pointer select-none">
+      <div className="md:relative bg-neutral-800 border border-gray-200 shadow-sm rounded-md lg:w-full w-[9rem] cursor-pointer select-none">
         {/* Trigger Button */}
         <div
           role="button"
