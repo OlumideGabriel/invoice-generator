@@ -96,7 +96,7 @@ const SideMenu: React.FC = () => {
 
   useEffect(() => {
     const handleResize = () => {
-      if (window.innerWidth < 1120) {
+      if (window.innerWidth < 1285) {
         setCollapsed(true);
       } else {
         setCollapsed(false);
