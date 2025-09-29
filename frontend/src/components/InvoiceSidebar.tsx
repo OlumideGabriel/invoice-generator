@@ -1,14 +1,15 @@
-import React from 'react';
-import { X, Eye, Send, Download } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Eye, Send, Download, Menu } from 'lucide-react';
 import { useCurrency } from '../context/CurrencyContext';
 import CurrencySelector from './CurrencySelector';
 import Spinner from './Spinner';
 import SaveButton from './SaveButton';
+import AuthModal from './AuthModal';
 
 interface InvoiceSidebarProps {
   loading: boolean;
   previewLoading: boolean;
-  onSave: () => void;
+  onSave: () => Promise<string | void> | void;
   onDownload: () => void;
   onPreview: () => void;
   isSaved: boolean;
@@ -19,6 +20,8 @@ interface InvoiceSidebarProps {
   onLoadFromLocalStorage?: () => void;
   onClearLocalStorage?: () => void;
   lastSavedTime?: string | null;
+  redirectAfterSave?: boolean;
+  onSaveSuccess?: (invoiceId?: string) => void;
 }
 
 const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
@@ -35,6 +38,21 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   onClearLocalStorage,
   lastSavedTime,
 }) => {
+  // Auth modal state
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
+  // iPad sidebar state
+  const [ipadSidebarOpen, setIpadSidebarOpen] = useState(false);
+
+  const openAuthModal = (mode: 'login' | 'signup') => {
+    setAuthModalMode(mode);
+    setAuthModalOpen(true);
+  };
+
+  const handleAuthModeChange = (mode: 'login' | 'signup') => {
+    setAuthModalMode(mode);
+  };
+
   return (
     <div>
       {/* Preview Modal - Keep z-50 (highest) */}
@@ -75,10 +93,21 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         </div>
       )}
 
-      {/* Desktop Sidebar - Decrease z-index to 30 */}
-      <div className="w-full min-w-40 hidden md:flex flex-col sticky top-[6.75rem] z-30 self-start"> {/* Changed from z-40 to z-30 */}
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        mode={authModalMode}
+        onModeChange={handleAuthModeChange}
+      />
+
+
+
+
+
+      {/* Desktop Sidebar - z-30 */}
+      <div className="w-full min-w-40 hidden xl:flex flex-col sticky top-[6.75rem] z-30 self-start">
         <div className="flex flex-col gap-4 mb-8">
-          {/* Protected Save Button */}
           <SaveButton
             onClick={onSave}
             disabled={loading}
@@ -86,6 +115,11 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             loading={loading}
             size="lg"
             variant="default"
+            onAuthRequired={openAuthModal}
+            redirectAfterSave={true}
+            onSaveSuccess={(invoiceId) => {
+              console.log('Invoice saved successfully, ID:', invoiceId);
+            }}
           />
 
           {/* Download PDF */}
@@ -190,9 +224,131 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         </div>
       </div>
 
-      {/* Mobile Action Bar - Keep original z-index or adjust if needed */}
+      {/* Ipad sidebar - z-30 */}
+      <div className="w-full min-w-40 hidden md:flex xl:hidden justify-between z-30 items-center">
+      {/* Divider + Currency Selector */}
+        <div className="mt-0">
+          {(() => {
+            const { currency, setCurrency, currencyOptions } = useCurrency();
+            return (
+              <CurrencySelector
+                currency={currency}
+                setCurrency={setCurrency}
+                currencyOptions={currencyOptions}
+              />
+            );
+          })()}
+        </div>
+
+        <div className="flex flex-row gap-2">
+          <SaveButton
+            onClick={onSave}
+            disabled={loading}
+            isSaved={isSaved}
+            loading={loading}
+            size="sm"
+            variant="default"
+            onAuthRequired={openAuthModal}
+            redirectAfterSave={true}
+            onSaveSuccess={(invoiceId) => {
+              console.log('Invoice saved successfully, ID:', invoiceId);
+            }}
+          />
+
+          {/* Download PDF */}
+          <button
+            type="button"
+            onClick={onDownload}
+            disabled={loading}
+            className="w-full px-8 py-[1.35rem] text-md bg-black h-10 text-white font-medium rounded-lg flex items-center
+            justify-center gap-2 transition hover:bg-gray-900 hover:shadow-md"
+          >
+            <Download size={16} />
+            Download
+          </button>
+
+          {/* Send Button */}
+          <button
+            type="button"
+            onClick={() => {
+              const mailtoUrl = `mailto:talktoolumide@gmail.com?subject=Invoice Preview&body=Hello, here is your invoice preview.`;
+              const newWindow = window.open(mailtoUrl, '_blank');
+              if (!newWindow) window.location.href = mailtoUrl;
+            }}
+            disabled={loading}
+            className="w-full px-8 py-2.5 hidden text-md bg-white hover:bg-gray-100 font-medium rounded-lg flex items-center justify-center gap-2 text-black border-2 border-gray-900 transition"
+          >
+            <Send size={16} />
+            Send
+          </button>
+
+          {/* Preview Button */}
+          <button
+            type="button"
+            onClick={onPreview}
+            disabled={previewLoading}
+            className="w-full px-8 py-2 text-lg bg-transparent border-2 hover:bg-[#0f131a] font-medium rounded-lg flex h-11
+            items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition"
+          >
+            {previewLoading ? (
+              <Spinner size="md" color="current" />
+            ) : (
+              <>
+                Preview <Eye size={20} />
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Last Saved Time Indicator */}
+        {lastSavedTime && isSaved && (
+          <div className="mb-4 text-xs text-gray-500 text-center">
+            Last saved: {lastSavedTime}
+          </div>
+        )}
+
+        {/* Local Storage Actions */}
+        {(onSaveToLocalStorage || onLoadFromLocalStorage || onClearLocalStorage) && (
+          <div className="mb-6 p-4 hidden bg-gray-50 rounded-lg">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Local Storage</h3>
+            <div className="flex flex-col gap-2">
+              {onSaveToLocalStorage && (
+                <button
+                  type="button"
+                  onClick={onSaveToLocalStorage}
+                  className="text-xs px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition"
+                >
+                  Save to Browser
+                </button>
+              )}
+              {onLoadFromLocalStorage && (
+                <button
+                  type="button"
+                  onClick={onLoadFromLocalStorage}
+                  className="text-xs px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 transition"
+                >
+                  Load from Browser
+                </button>
+              )}
+              {onClearLocalStorage && (
+                <button
+                  type="button"
+                  onClick={onClearLocalStorage}
+                  className="text-xs px-3 py-1 bg-red-100 text-red-700 rounded hover:bg-red-200 transition"
+                >
+                  Clear Storage
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+      </div>
+
+
+
+      {/* Mobile Action Bar - z-40 */}
       <div className="md:hidden flex w-full items-center fixed bottom-0 left-0 p-4 bg-white justify-between gap-3 pb-20 border-t border-gray-200 shadow-lg z-40">
-        {/* Protected Save Button */}
         <SaveButton
           onClick={onSave}
           disabled={loading}
@@ -201,6 +357,11 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
           size="sm"
           variant="mobile"
           className="flex-1"
+          onAuthRequired={openAuthModal}
+          redirectAfterSave={true}
+          onSaveSuccess={(invoiceId) => {
+            console.log('Invoice saved successfully, ID:', invoiceId);
+          }}
         />
 
         {/* Download Button */}

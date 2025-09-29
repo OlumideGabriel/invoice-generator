@@ -375,6 +375,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
             aria-label={label}
           />
           {/* button that shows dropdown*/}
+          {user && (
           <button
             type="button"
             onClick={openCreateModal}
@@ -384,8 +385,10 @@ const PartyField: React.FC<PartyFieldProps> = ({
             ${showDropdown ? 'rotate-0' : 'rotate-0'}`}
             aria-label={`Add ${type}`}
           >
+
             <Plus size={18} />
           </button>
+          )}
 
           {/* Dropdown Menu */}
           {showDropdown && user && (

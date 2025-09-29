@@ -206,6 +206,20 @@ const InvoicePageRedesign = () => {
     }
   };
 
+  // In your InvoicePageRedesign component - FIX the handleEditInvoice function
+// In your InvoicePageRedesign component - UPDATE the handleEditInvoice function
+const handleEditInvoice = () => {
+  if (!invoice) return;
+
+  // Navigate to the invoice generator with the invoice ID
+  navigate('/new', {
+    state: {
+      editInvoiceId: invoice.id,
+      isEditing: true
+    }
+  });
+};
+
   const handleEditClient = () => {
     if (client) {
       navigate(`/clients?edit=${client.id}`);
@@ -213,7 +227,8 @@ const InvoicePageRedesign = () => {
   };
 
   const handleEditBusiness = () => {
-    if (business) { navigate(`/settings?section=business`);
+    if (business) {
+      navigate(`/settings?section=business`);
     } else {
       navigate('/businesses?create=true');
     }
@@ -648,6 +663,15 @@ const InvoicePageRedesign = () => {
               </div>
 
               <div className="flex items-center space-x-2">
+                {/* NEW: Edit button for mobile */}
+                <button
+                  onClick={handleEditInvoice}
+                  className="p-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  title="Edit Invoice"
+                >
+                  <Edit className="h-4 w-4" />
+                </button>
+
                 <button
                   onClick={handlePreviewPDF}
                   disabled={previewLoading}
@@ -686,8 +710,8 @@ const InvoicePageRedesign = () => {
         </div>
 
         {/* Desktop Header */}
-        <div className="hidden md:block bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="hidden bg-white md:block border-b border-gray-200">
+          <div className="max-w-7xl  mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <button
@@ -706,6 +730,15 @@ const InvoicePageRedesign = () => {
               </div>
 
               <div className="flex items-center space-x-3">
+                {/* NEW: Edit button for desktop */}
+                <button
+                  onClick={handleEditInvoice}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit Invoice
+                </button>
+
                 <button
                   onClick={handlePreviewPDF}
                   disabled={previewLoading}

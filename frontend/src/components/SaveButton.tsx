@@ -1,19 +1,21 @@
-// components/SaveButton.tsx (enhanced with auth modal pattern)
+// components/SaveButton.tsx (updated with navigation functionality)
 import React, { useState } from 'react';
-import { Save, Check, LogIn } from 'lucide-react';
+import { Save, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import Spinner from './Spinner';
-import AuthModal from './AuthModal';
 
 interface SaveButtonProps {
-  onClick: () => void;
+  onClick: () => Promise<string | void> | void; // Updated to handle async and return invoice ID
   disabled?: boolean;
   isSaved?: boolean;
   loading?: boolean;
   size?: 'sm' | 'md' | 'lg';
   variant?: 'default' | 'mobile';
   className?: string;
+  onAuthRequired?: (mode: 'login' | 'signup') => void;
+  redirectAfterSave?: boolean; // New prop to control redirect behavior
+  onSaveSuccess?: (invoiceId?: string) => void; // Optional callback for custom handling
 }
 
 const SaveButton: React.FC<SaveButtonProps> = ({
@@ -24,33 +26,43 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   size = 'lg',
   variant = 'default',
   className = '',
+  onAuthRequired,
+  redirectAfterSave = false,
+  onSaveSuccess,
 }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showTooltip, setShowTooltip] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  // Auth modal state - following the same pattern as SideMenu
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
-
-  const openAuthModal = (mode: 'login' | 'signup') => {
-    setAuthModalMode(mode);
-    setAuthModalOpen(true);
-  };
-
-  const handleAuthModeChange = (mode: 'login' | 'signup') => {
-    setAuthModalMode(mode);
-  };
-
-  const handleClick = () => {
-    // Following the same pattern as SideMenu: if user is not authenticated, open auth modal
-    if (!user) {
-      openAuthModal('login');
+  const handleClick = async () => {
+    // If user is not authenticated, call the auth required callback
+    if (!user && onAuthRequired) {
+      onAuthRequired('login');
       return;
     }
 
-    // User is authenticated, proceed with the save action
-    onClick();
+    try {
+      setIsProcessing(true);
+
+      // Execute the onClick function and await if it's a promise
+      const result = await onClick();
+
+      // If redirectAfterSave is true and we got an invoice ID, navigate to invoice page
+      if (redirectAfterSave && typeof result === 'string') {
+        navigate(`/invoice/${result}`);
+      }
+
+      // Call the success callback if provided
+      if (onSaveSuccess) {
+        onSaveSuccess(typeof result === 'string' ? result : undefined);
+      }
+    } catch (error) {
+      console.error('Error saving invoice:', error);
+      // You might want to show an error toast here
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleMouseEnter = () => {
@@ -70,8 +82,9 @@ const SaveButton: React.FC<SaveButtonProps> = ({
 
   const currentSize = sizeConfig[size];
   const isUserLoggedIn = !!user;
+  const isLoading = loading || isProcessing;
 
-  const baseStyles = `font-medium rounded-lg flex items-center justify-center gap-2  border-2 transition ${currentSize.padding} ${currentSize.text} ${className} relative`;
+  const baseStyles = `font-medium rounded-lg flex items-center whitespace-nowrap justify-center gap-2 border-2 transition ${currentSize.padding} ${currentSize.text} ${className} relative`;
 
   const variantStyles = {
     default: isSaved
@@ -89,52 +102,41 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   const buttonStyles = `${baseStyles} ${variantStyles[variant]}`;
 
   return (
-    <>
-    {/* Auth Modal - following the exact same pattern as SideMenu */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        mode={authModalMode}
-        onModeChange={handleAuthModeChange}
-      />
-      <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={disabled || isSaved || loading}
-          className={buttonStyles}
-        >
-          {loading ? (
-            <Spinner size={currentSize.spinner} color="current" />
-          ) : isSaved ? (
-            <>
-              <Check size={currentSize.icon} />
-              {variant === 'mobile' ? 'Saved' : 'Saved Invoice'}
-            </>
-          ) : !isUserLoggedIn ? (
-            <>
-              <Save size={currentSize.icon} />
-              {variant === 'mobile' ? 'Save ' : 'Save Invoice'}
-            </>
-          ) : (
-            <>
-              <Save size={currentSize.icon} />
-              {variant === 'mobile' ? 'Save' : 'Save Invoice'}
-            </>
-          )}
-        </button>
-
-        {/* Tooltip for non-logged in users */}
-        {showTooltip && !isUserLoggedIn && (
-          <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-sm rounded py-1 px-2 whitespace-nowrap z-50">
-            Sign in to save your invoice
-            <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-          </div>
+    <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={disabled || isSaved || isLoading}
+        className={buttonStyles}
+      >
+        {isLoading ? (
+          <Spinner size={currentSize.spinner} color="current" />
+        ) : isSaved ? (
+          <>
+            <Check size={currentSize.icon} />
+            {variant === 'mobile' ? 'Saved' : 'Saved Invoice'}
+          </>
+        ) : !isUserLoggedIn ? (
+          <>
+            <Save size={currentSize.icon} />
+            {variant === 'mobile' ? 'Save ' : 'Save Invoice'}
+          </>
+        ) : (
+          <>
+            <Save size={currentSize.icon} />
+            {variant === 'mobile' ? 'Save' : 'Save Invoice'}
+          </>
         )}
-      </div>
+      </button>
 
-
-    </>
+      {/* Tooltip for non-logged in users */}
+      {showTooltip && !isUserLoggedIn && (
+        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-md py-0.5 px-2 whitespace-nowrap z-50">
+          Sign in to save your invoice
+          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+        </div>
+      )}
+    </div>
   );
 };
 

@@ -682,6 +682,125 @@ def update_invoice_status(invoice_id):
     return InvoiceOperations.update_invoice_status(str(invoice_id))
 
 
+# Add this to your app.py file, near your other invoice routes
+
+@app.route('/api/invoices/<uuid:invoice_id>', methods=['PUT'])
+def update_invoice(invoice_id):
+    """Update an existing invoice with complete data"""
+    try:
+        data = request.get_json()
+
+        # Extract all fields from request
+        user_id = data.get('user_id')
+        client_id = data.get('client_id')
+        business_id = data.get('business_id')
+        invoice_data = data.get('data')  # Complete invoice data object
+        issued_date = data.get('issued_date')
+        due_date = data.get('due_date')
+        status = data.get('status', 'draft')
+        currency = data.get('currency')
+
+        # Validate required fields
+        if not user_id or not invoice_data:
+            return jsonify({'success': False, 'error': 'Missing required fields (user_id, data)'}), 400
+
+        # Validate UUID formats
+        try:
+            uuid.UUID(user_id)
+            if client_id:
+                uuid.UUID(client_id)
+            if business_id:
+                uuid.UUID(business_id)
+        except ValueError:
+            return jsonify({'success': False, 'error': 'Invalid UUID format'}), 400
+
+        # Find the existing invoice (ensure user owns it)
+        invoice = db.session.query(Invoice).filter_by(id=invoice_id, user_id=user_id).first()
+        if not invoice:
+            return jsonify({'success': False, 'error': 'Invoice not found or unauthorized'}), 404
+
+        # Update all invoice fields
+        invoice.client_id = client_id
+        invoice.business_id = business_id
+        invoice.data = invoice_data
+        invoice.issued_date = issued_date
+        invoice.due_date = due_date
+        invoice.status = status
+        invoice.currency = currency
+
+        # Update timestamp if the field exists in your model
+        if hasattr(invoice, 'updated_at'):
+            invoice.updated_at = datetime.utcnow()
+
+        # Commit the changes
+        db.session.commit()
+
+        app.logger.info(f"Invoice {invoice_id} updated successfully by user {user_id}")
+
+        # Return success with invoice_id (matching your POST endpoint structure)
+        return jsonify({
+            'success': True,
+            'invoice_id': str(invoice.id),
+            'message': 'Invoice updated successfully'
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error updating invoice {invoice_id}: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to update invoice'}), 500
+
+
+# Add this route to your app.py
+@app.route('/api/invoices/<uuid:invoice_id>/edit', methods=['GET'])
+def get_invoice_for_edit(invoice_id):
+    """Get invoice data specifically for editing in the invoice generator"""
+    try:
+        user_id = request.args.get('user_id')
+        if not user_id:
+            return jsonify({'success': False, 'error': 'user_id required'}), 400
+
+        # Get invoice using SQLAlchemy
+        invoice = db.session.query(Invoice).filter_by(id=invoice_id, user_id=user_id).first()
+        if not invoice:
+            return jsonify({'success': False, 'error': 'Invoice not found'}), 404
+
+        # Transform the data into the format expected by the invoice generator
+        invoice_data = invoice.data if invoice.data else {}
+
+        edit_data = {
+            'id': str(invoice.id),
+            'from': invoice_data.get('from', ''),
+            'to': invoice_data.get('to', ''),
+            'items': invoice_data.get('items', []),
+            'invoiceNumber': invoice_data.get('invoice_number', ''),
+            'issuedDate': invoice_data.get('issued_date', ''),
+            'dueDate': invoice_data.get('due_date', ''),
+            'paymentDetails': invoice_data.get('payment_details', ''),
+            'terms': invoice_data.get('terms', ''),
+            'taxPercent': invoice_data.get('tax_percent', 0),
+            'discountPercent': invoice_data.get('discount_percent', 0),
+            'shippingAmount': invoice_data.get('shipping_amount', 0),
+            'taxType': invoice_data.get('tax_type', 'percent'),
+            'discountType': invoice_data.get('discount_type', 'percent'),
+            'showTax': invoice_data.get('show_tax', True),
+            'showDiscount': invoice_data.get('show_discount', False),
+            'showShipping': invoice_data.get('show_shipping', True),
+            'logoUrl': invoice_data.get('logo_url', None),
+            'currency': invoice_data.get('currency', 'GBP'),
+            'status': invoice.status,
+            'clientId': str(invoice.client_id) if invoice.client_id else None,
+            'businessId': str(invoice.business_id) if invoice.business_id else None
+        }
+
+        return jsonify({
+            'success': True,
+            'editData': edit_data
+        })
+
+    except Exception as e:
+        app.logger.error(f"Error getting invoice for edit {invoice_id}: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to get invoice data for editing'}), 500
+
 # Add delete functionality (NEW)
 @app.route('/api/invoices/<invoice_id>', methods=['DELETE'])
 def delete_invoice(invoice_id):
