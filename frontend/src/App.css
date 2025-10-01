@@ -17,8 +17,8 @@ html, body, #root {
   min-height: 100dvh;  /* use min-height, not max-height */
   align-items: stretch; /* let children fill horizontally */
 }
-@media screen and (max-width: 1000px) {
-  bodies {
-    zoom: 0.7; /* 80% zoom */
+@media screen and (max-width: 1285px) {
+  body {
+    zoom: 0.95; /* 80% zoom */
   }
 }

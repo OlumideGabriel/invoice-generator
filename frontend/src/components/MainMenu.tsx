@@ -122,16 +122,16 @@ const MainMenu: React.FC<MainMenuProps> = ({
         }`}
         onMouseLeave={() => setOpen(false)}
       >
-        <div className="flex items-center justify-between main-menu mx-1 px-4 py-4">
+        <div className="flex items-center justify-between main-menu mx-2 px-4 py-3">
           <div className="flex items-center space-x-6">
             {showLogo && (
               <Link to="/" className="flex items-start gap-1 hover:contrast-125">
                 <img
                   src="/envoyce.svg"
                   alt="Envoyce Logo"
-                  className="h-10 md:h-10 w-auto "
+                  className="h-8 md:h-8 w-auto "
                 />
-                <span className="md:text-3xl text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+                <span className="md:text-2xl text-2xl sm:block -mt-[0.1rem] tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                   envoyce
                 </span>
               </Link>
@@ -152,19 +152,19 @@ const MainMenu: React.FC<MainMenuProps> = ({
           {user ? (
             <div className="hidden md:flex relative z-50" ref={menuRef}>
               <Link to='/notifications'
-              className="flex items-center justify-center mr-5">
+              className="flex items-center justify-center mr-2">
                 <span className=" absolute top-[0.3rem] hidden left-[1.2rem] bg-red-500 text-white text-sm font-bold border rounded-full
                  h-3 w-3 flex items-center justify-center">
                   {alert > 99 ? '99+' : setAlert}
                 </span>
 
-                <Bell className="self-center w-10 h-10 p-2 rounded-full text-gray-400
+                <Bell className="self-center w-11 h-11 p-3 rounded-full text-gray-400
                 hover:text-gray-200 hover:bg-neutral-100 cursor-pointer transition-colors duration-150" />
               </Link>
 
               <a
                 onClick={() => setOpen(!open)}
-                className="flex items-center justify-center  rounded-full bg-blue-300 hover:bg-blue-200
+                className="flex items-center justify-center  rounded-full h-11 w-11 hover:bg-blue-50
                 text-gray-900 cursor-pointer transition-colors duration-150
                 focus:outline-none text-xl font-bold"
               >
@@ -173,10 +173,10 @@ const MainMenu: React.FC<MainMenuProps> = ({
                     <img
                       src={user.profile_picture_url}
                       alt="User Avatar"
-                      className="h-11 w-11 rounded-full"
+                      className="h-8 w-8 rounded-full"
                     />
                   ) : (
-                    <span className="flex text-xl font-bold w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
+                    <span className="flex text-xl font-bold w-8 h-8 text-gray-800 bg-blue-200 rounded-full justify-center items-center">
                       {getInitials(user) || <User className="w-6 h-6" />}
                     </span>
                   )}
@@ -197,7 +197,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
                         <img
                           src={user.user_metadata.avatar_url}
                           alt="User Avatar"
-                          className="h-12 w-12 mr-2 rounded-full"
+                          className="h-8 w-8 mr-2 rounded-full"
                         />
                       ) : (
                         <span className="flex text-xl font-bold mr-2 w-10 h-10 px-0 py-0 text-gray-900 bg-blue-200 rounded-full justify-center items-center">
@@ -214,7 +214,7 @@ const MainMenu: React.FC<MainMenuProps> = ({
                         </div>
 
                         {user?.email && (
-                          <div className="text-sm text-gray-500 mt-1">
+                          <div className="text-sm text-gray-500">
                             {user.email}
                           </div>
                         )}

@@ -117,21 +117,21 @@ const SideMenu: React.FC = () => {
 
           {/* Sidebar */}
           <aside
-            className={`transition-all duration-500 delay-150 ease-in-out flex-1 justify-between ${
+            className={`transition-all duration-200 delay-150 ease-in-out flex-1 justify-between ${
               collapsed ? "w-55" : "w-[14rem]"
             } sidebar px-4 py-8 flex flex-col font-medium gap-8 border-neutral-800`}
           >
           {/* Logo Section */}
 
-          <div className="flex items-center ml-1 -mt-3.5 space-x-6">
-            <Link to="/" className="flex items-start justify-center gap-1 hover:contrast-125">
+          <div className="flex ml-2 -mt-3.5 space-x-6">
+            <Link to="/" className="flex items-start justify-start gap-1 hover:contrast-125">
               <img
                 src="/envoyce.svg"
                 alt="Envoyce Logo"
-                className="h-10 md:h-10 w-auto "
+                className="h-8 md:h-8 w-auto "
               />
               {!collapsed && (
-              <span className="md:text-3xl text-3xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
+              <span className="md:text-2xl -mt-[0.1rem] self-start text-2xl sm:block tracking-tight text-[#0e423e] font-[Open Sauce Sans]">
                 envoyce
               </span>
                 )}
@@ -142,8 +142,8 @@ const SideMenu: React.FC = () => {
             <button
               onClick={toggleCollapsed}
               title={collapsed ? "Open sidebar" : "Collapse sidebar"}
-              className={`absolute top-[1.23rem] items-center justify-center rounded-xl p-[0.5rem]  border-white
-                ${collapsed ? "left-[1.34rem]  bg-[#0e423e] text-[#8eda91] opacity-0 hover:opacity-100"
+              className={`absolute top-[1.15rem] items-center justify-center rounded-[0.58rem] py-[0.33rem] px-[0.32rem] border-white
+                ${collapsed ? "left-[1.52rem] bg-[#0e423e] text-[#8eda91] opacity-0 hover:opacity-100"
                     : "right-0 text-[#0e423e]/40 hover:text-[#0e423e]/70 opacity-100 " }`}
             >
               <PanelLeft size={20} />
@@ -166,7 +166,7 @@ const SideMenu: React.FC = () => {
                           submenu,
                         })
                       }
-                      className={`flex items-center gap-3 px-4 py-3 h-[3rem] max-h-[3rem] font-medium transition-colors duration-150 text-xl ${
+                      className={`flex items-center justify-start gap-3 px-4 py-3 h-[3rem] font-medium transition-colors duration-150 text-xl ${
                         expandedItem === label
                           ? "text-black/100 bg-neutral-900"
                           : "text-gray-700"
@@ -189,7 +189,7 @@ const SideMenu: React.FC = () => {
                           submenu,
                         })
                       }
-                      className={`flex items-center gap-3 h-[3rem] max-h-[3rem] px-3 py-2 font-medium transition-colors duration-150 text-xl rounded-lg ${
+                      className={`flex items-center gap-2 px-3 h-[3rem] py-2.5 font-medium transition-colors duration-150 text-lg rounded-lg ${
                         isActive
                           ? "text-black bg-gray-100 hover:text-neutral-900"
                           : "text-gray-700 hover:text-black/80 hover:bg-gray-100"

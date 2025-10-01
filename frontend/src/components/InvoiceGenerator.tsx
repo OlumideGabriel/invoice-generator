@@ -802,7 +802,7 @@ const InvoiceGenerator: React.FC = () => {
 
             <button
               onClick={addItem}
-              className="mb-10 mt-4 lg:ml-[1.6rem] w-full lg:w-auto px-3 py-3 lg:py-2.5 lg:bg-white bg-gray-200 lg:bg-gray-100 hover:bg-gray-200 whitespace-nowrap text-black font-medium rounded-md flex items-center justify-center gap-2 border-2 md:border border-dashed md:border-solid border-black transition"
+              className="mb-10 mt-4 md:ml-[1.6rem] w-full md:w-auto px-3 py-3 md:py-2.5 md:bg-white bg-gray-200 md:bg-gray-100 hover:bg-gray-200 whitespace-nowrap text-black font-medium rounded-md flex items-center justify-center gap-2 border-2 md:border border-dashed md:border-solid border-black transition"
             >
               <Plus size={18} /> Add Item
             </button>

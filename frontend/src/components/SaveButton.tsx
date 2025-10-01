@@ -90,7 +90,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
     default: isSaved
       ? 'bg-green-100 text-green-700 border-green-300 cursor-default'
       : isUserLoggedIn
-      ? 'bg-white text-black border-gray-900 hover:bg-gray-100 hover:scale-[1.02] hover:shadow-md'
+      ? ' text-black border-gray-900 hover:bg-white'
       : 'bg-white text-gray-700 border-gray-400 cursor-pointer',
     mobile: isSaved
       ? 'bg-green-100 text-green-700 border-green-300'
@@ -102,7 +102,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   const buttonStyles = `${baseStyles} ${variantStyles[variant]}`;
 
   return (
-    <div className="relative" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+    <div className="relative w-full" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
       <button
         type="button"
         onClick={handleClick}
@@ -128,14 +128,6 @@ const SaveButton: React.FC<SaveButtonProps> = ({
           </>
         )}
       </button>
-
-      {/* Tooltip for non-logged in users */}
-      {showTooltip && !isUserLoggedIn && (
-        <div className="absolute bottom-full mb-2 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white text-xs rounded-md py-0.5 px-2 whitespace-nowrap z-50">
-          Sign in to save your invoice
-          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-        </div>
-      )}
     </div>
   );
 };

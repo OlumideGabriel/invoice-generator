@@ -54,7 +54,8 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
   };
 
   return (
-    <div>
+      <>
+      <div>
       {/* Preview Modal - Keep z-50 (highest) */}
       {previewPdfUrl !== null && (
         <div
@@ -92,8 +93,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
           </div>
         </div>
       )}
-
-      {/* Auth Modal */}
+   {/* Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
@@ -101,12 +101,11 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         onModeChange={handleAuthModeChange}
       />
 
-
-
-
+  </div>
+    <div className="flex flex-col sticky top-[6.7rem] items-center md:items-stretch">
 
       {/* Desktop Sidebar - z-30 */}
-      <div className="w-full min-w-40 hidden xl:flex flex-col sticky top-[6.75rem] z-30 self-start">
+      <div className="w-full min-w-40 hidden xl:flex flex-col z-30 self-start">
         <div className="flex flex-col gap-4 mb-8">
           <SaveButton
             onClick={onSave}
@@ -127,7 +126,8 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             type="button"
             onClick={onDownload}
             disabled={loading}
-            className="w-full px-8 py-4 text-md bg-black text-white font-medium rounded-lg flex items-center justify-center gap-2 transition hover:bg-gray-900 hover:scale-[1.02] hover:shadow-md"
+            className="w-full px-8 py-4 text-md bg-black text-white font-medium rounded-lg flex items-center
+            justify-center gap-2 transition hover:bg-black/90 active:scale-[0.98]"
           >
             <Download size={16} />
             Download
@@ -153,13 +153,14 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             type="button"
             onClick={onPreview}
             disabled={previewLoading}
-            className="w-full px-8 py-2 text-lg bg-transparent border-2 hover:bg-[#0f131a] font-medium rounded-lg flex items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition"
+            className="w-full px-8 py-3 text-md bg-transparent active:scale-[0.98] border-2 hover:bg-[#0f131a]
+            font-medium rounded-lg flex items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition"
           >
             {previewLoading ? (
               <Spinner size="md" color="current" />
             ) : (
               <>
-                Preview <Eye size={20} />
+                 <Eye size={18} /> Preview
               </>
             )}
           </button>
@@ -287,14 +288,14 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             type="button"
             onClick={onPreview}
             disabled={previewLoading}
-            className="w-full px-8 py-2 text-lg bg-transparent border-2 hover:bg-[#0f131a] font-medium rounded-lg flex h-11
+            className="w-full px-8 py-3 text-md bg-transparent border-2 hover:bg-[#0f131a] font-medium rounded-lg flex h-11
             items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition"
           >
             {previewLoading ? (
               <Spinner size="md" color="current" />
             ) : (
               <>
-                Preview <Eye size={20} />
+                <Eye size={18} />Preview
               </>
             )}
           </button>
@@ -399,6 +400,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
         </div>
       )}
     </div>
+    </>
   );
 };
 
