@@ -349,49 +349,53 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
 
 
       {/* Mobile Action Bar - z-40 */}
-      <div className="md:hidden flex w-full items-center fixed bottom-0 left-0 p-4 bg-white justify-between gap-3 pb-20 border-t border-gray-200 shadow-lg z-40">
-        <SaveButton
-          onClick={onSave}
-          disabled={loading}
-          isSaved={isSaved}
-          loading={loading}
-          size="sm"
-          variant="mobile"
-          className="flex-1"
-          onAuthRequired={openAuthModal}
-          redirectAfterSave={true}
-          onSaveSuccess={(invoiceId) => {
-            console.log('Invoice saved successfully, ID:', invoiceId);
-          }}
-        />
+<div className="md:hidden flex w-full items-center fixed bottom-0 left-0 p-4 bg-white justify-between gap-3 pb-20 border-t border-gray-200 shadow-lg z-40">
 
-        {/* Download Button */}
-        <button
-          type="button"
-          onClick={onDownload}
-          disabled={loading}
-          className="flex-1 px-4 py-3 rounded-lg text-sm font-medium bg-black text-white flex items-center justify-center gap-2 hover:bg-gray-900 transition"
-        >
-          <Download size={16} />
-          Download
-        </button>
 
-        {/* Preview Button */}
-        <button
-          type="button"
-          onClick={onPreview}
-          disabled={previewLoading}
-          className="flex px-6 py-3 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-200 transition"
-        >
-          {previewLoading ? (
-            <Spinner size="sm" color="current" />
-          ) : (
-            <>
-              <Eye size={20} />
-            </>
-          )}
-        </button>
-      </div>
+  {/* Save Button */}
+  <SaveButton
+    onClick={onSave}
+    disabled={loading}
+    isSaved={isSaved}
+    loading={loading}
+    size="sm"
+    variant="mobile"
+    className="flex-1 w-full"
+    onAuthRequired={openAuthModal}
+    redirectAfterSave={true}
+    onSaveSuccess={(invoiceId) => {
+      console.log('Invoice saved successfully, ID:', invoiceId);
+    }}
+  />
+
+  {/* Download Button */}
+  <button
+    type="button"
+    onClick={onDownload}
+    disabled={loading}
+    className="flex-1 px-4 min-w-40 w-full py-3 rounded-lg text-sm font-medium bg-gray-900 text-white flex items-center justify-center gap-2 hover:bg-gray-900 transition"
+  >
+    <Download size={16} />
+    Download
+  </button>
+
+  {/* Preview Button */}
+  <button
+    type="button"
+    onClick={onPreview}
+    disabled={previewLoading}
+    className="flex px-6 py-3 rounded-lg text-sm font-medium bg-gray-900 text-white flex items-center justify-center gap-2 transition"
+  >
+    {previewLoading ? (
+      <Spinner size="sm" color="current" />
+    ) : (
+      <>
+        <Eye size={20} />
+      </>
+    )}
+  </button>
+
+</div>
 
       {/* Mobile Last Saved Time Indicator */}
       {lastSavedTime && isSaved && (
