@@ -3,16 +3,16 @@ import {
   BriefcaseBusiness,
   Plus,
   Building,
-  Hash,
   Mail,
   MapPin,
   Phone,
   Trash2,
   Edit2,
-  Wifi,
-  WifiOff
+  WifiOff,
+  RefreshCw,
 } from 'lucide-react';
 import BusinessModal from './BusinessModal';
+import { API_BASE_URL } from '../config/api';
 
 interface Business {
   id: string;
@@ -42,104 +42,139 @@ const BusinessCard: React.FC<{
   onDelete: (id: string) => void;
   onEdit: (business: Business) => void;
 }> = ({ business, onDelete, onEdit }) => (
-  <div className="bg-teal-50 hover:border-teal-600 border-2 border-teal-500 rounded-lg p-4 sm:p-6 transition-all duration-200 hover:shadow-sm h-full flex flex-col">
-    {/* Header Section */}
-    <div className="flex items-start justify-between mb-4 min-h-0">
+  <div className="bg-teal-50 border-2 border-teal-500 rounded-lg p-4 sm:p-6 transition-all duration-200 h-full flex flex-col">
+    <div className="flex items-start justify-between mb-4 sm:mb-6">
       <div className="flex items-center space-x-3 flex-1 min-w-0">
-        <Building className="w-6 h-6 sm:w-8 sm:h-8 text-teal-600 flex-shrink-0" />
+        <div className="flex-shrink-0 w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
+          <Building className="w-5 h-5 text-white" />
+        </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold sm:text-lg font-medium text-teal-900 truncate">
+          <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
             {business.name}
           </h3>
           {business.email && (
-            <div className="text-xs sm:text-sm text-gray-500 flex items-center  min-w-0">
-              <Mail className="w-3 h-3 mr-1 flex-shrink-0" />
+            <div className="text-sm text-gray-600 flex items-center min-w-0">
+              <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
               <span className="truncate">{business.email}</span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Action Buttons */}
       <div className="flex space-x-1 flex-shrink-0 ml-2">
         <button
           onClick={() => onEdit(business)}
-          className="p-1.5 sm:p-2 text-gray-400 hover:text-teal-600 hover:bg-teal-100 rounded-lg transition-colors"
+          className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
           aria-label="Edit business"
         >
-          <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <Edit2 className="w-4 h-4" />
         </button>
         <button
           onClick={() => onDelete(business.id)}
-          className="p-1.5 sm:p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
           aria-label="Delete business"
         >
-          <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          <Trash2 className="w-4 h-4" />
         </button>
       </div>
     </div>
 
-    {/* Content Section */}
-    <div className="flex-1 space-y-2 text-xs sm:text-sm text-gray-500 mb-4 min-h-0">
+    <div className="flex-1 space-y-2 sm:space-y-3 text-sm text-gray-700 mb-4 sm:mb-6">
       {business.address && (
-        <div className="flex items-start min-w-0">
-          <MapPin className="w-3 h-3 mr-2 flex-shrink-0 mt-0.5" />
-          <span className="break-words leading-relaxed">{business.address}</span>
+        <div className="flex items-start">
+          <MapPin className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5 text-gray-500" />
+          <span className="break-words leading-relaxed text-xs sm:text-sm">
+            {business.address}
+          </span>
         </div>
       )}
       {business.phone && (
-        <div className="flex items-center min-w-0">
-          <Phone className="w-3 h-3 mr-2 flex-shrink-0" />
-          <span className="truncate">{business.phone}</span>
-        </div>
-      )}
-      {business.tax_id && (
-        <div className="flex items-center min-w-0">
-          <Hash className="w-3 h-3 mr-2 flex-shrink-0" />
-          <span className="truncate">Tax ID: {business.tax_id}</span>
+        <div className="flex items-center">
+          <Phone className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
+          <span className="truncate text-xs sm:text-sm">{business.phone}</span>
         </div>
       )}
     </div>
 
-    {/* Footer Section */}
-    <div className="pt-3 border-t border-gray-200 flex-shrink-0">
-      <div className="flex justify-start">
-        <span className="inline-flex items-center px-2 py-1 bg-teal-100 rounded-full text-xs font-medium text-teal-700">
-          {business.invoice_count || 0} invoices
-        </span>
-      </div>
+    <div className="pt-3 sm:pt-4 border-t border-gray-200">
+      <span className="text-teal-600 font-medium text-xs sm:text-sm">
+        {business.invoice_count || 0} invoices
+      </span>
     </div>
   </div>
 );
 
-const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotification }) => {
+const BusinessSection: React.FC<BusinessSectionProps> = ({
+  user,
+  showNotification,
+}) => {
   const [businesses, setBusinesses] = useState<Business[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
-  const [fetchError, setFetchError] = useState(false);
-  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [hasNetworkError, setHasNetworkError] = useState(!navigator.onLine);
 
-  // Helpers for cache
-  const saveToCache = (data: Business[]) => {
-    // localStorage.setItem('businesses', JSON.stringify(data));
+  const fetchBusinesses = async () => {
+    setLoading(true);
+
+    // Check true offline state before fetch
+    if (!navigator.onLine) {
+      setHasNetworkError(true);
+      showNotification(
+        'You appear to be offline. Please check your internet connection.',
+        'error'
+      );
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const params = new URLSearchParams({
+        user_id: user.id,
+        page: '1',
+        per_page: '100',
+      });
+
+      const response = await fetch(`${API_BASE_URL}/api/businesses?${params}`);
+
+      if (!response.ok) {
+        throw new Error(`API returned ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setBusinesses(data.businesses || []);
+      } else {
+        showNotification('Error fetching businesses', 'error');
+      }
+
+      setHasNetworkError(false);
+    } catch (error) {
+      if (!navigator.onLine) {
+        setHasNetworkError(true);
+        showNotification('You appear to be offline.', 'error');
+      } else {
+        showNotification(
+          'Server error. Please try again later.',
+          'error'
+        );
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const loadFromCache = () => {
-    // const cached = localStorage.getItem('businesses');
-    // return cached ? (JSON.parse(cached) as Business[]) : [];
-    return [];
-  };
-
-  // Monitor online/offline status
+  // Auto-update when going online/offline
   useEffect(() => {
+    fetchBusinesses();
+
     const handleOnline = () => {
-      setIsOnline(true);
-      showNotification('Connection restored', 'success');
+      setHasNetworkError(false);
+      fetchBusinesses();
     };
     const handleOffline = () => {
-      setIsOnline(false);
-      showNotification('No internet connection', 'error');
+      setHasNetworkError(true);
     };
 
     window.addEventListener('online', handleOnline);
@@ -149,116 +184,63 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [showNotification]);
-
-  // Load cache first, then fetch fresh
-  useEffect(() => {
-    const cachedBusinesses = loadFromCache();
-    if (cachedBusinesses.length > 0) {
-      setBusinesses(cachedBusinesses);
-    }
-    fetchBusinesses();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const fetchBusinesses = async () => {
-    if (!isOnline) {
-      setFetchError(true);
-      setLoading(false);
+  const handleRetry = () => {
+    setHasNetworkError(false);
+    setLoading(true);
+    fetchBusinesses();
+  };
+
+  const handleDeleteBusiness = async (businessId: string) => {
+    if (!window.confirm('Are you sure you want to delete this business?'))
+      return;
+
+    if (hasNetworkError) {
+      showNotification(
+        'No internet connection. Please check your network and try again.',
+        'error'
+      );
       return;
     }
 
     try {
-      setLoading(true);
-      setFetchError(false);
-
-      console.log('Fetching businesses for user:', user.id);
-
-      const response = await fetch(`/api/businesses?user_id=${user.id}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Fetch response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Fetch error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log('Fetched businesses data:', data);
-
-      if (data.success) {
-        setBusinesses(data.businesses || []);
-        saveToCache(data.businesses || []);
-      } else {
-        console.error('API returned success: false', data);
-        showNotification(data.error || data.message || 'Failed to fetch businesses', 'error');
-        setFetchError(true);
-      }
-    } catch (err) {
-      console.error('Error fetching businesses:', err);
-      showNotification(`Error fetching businesses: ${err.message}`, 'error');
-      setFetchError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDeleteBusiness = async (businessId: string) => {
-    if (!isOnline) return showNotification('No internet connection', 'error');
-    if (!window.confirm('Are you sure you want to delete this business?')) return;
-
-    try {
-      setLoading(true);
-
-      console.log('Deleting business:', businessId);
-
-      const response = await fetch(`/api/businesses/${businessId}`, {
+      const response = await fetch(`${API_BASE_URL}/api/businesses/${businessId}`, {
         method: 'DELETE',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        }
       });
 
-      console.log('Delete response status:', response.status);
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('Delete error response:', errorText);
-        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
-      }
-
       const data = await response.json();
-      console.log('Delete response:', data);
 
       if (data.success) {
         showNotification('Business deleted successfully', 'success');
-        await fetchBusinesses(); // Refresh the list
+        fetchBusinesses();
       } else {
-        console.error('Delete API returned success: false', data);
-        showNotification(data.error || data.message || 'Failed to delete business', 'error');
+        showNotification(data.error || 'Failed to delete business', 'error');
       }
     } catch (error) {
-      console.error('Error deleting business:', error);
-      showNotification(`Error deleting business: ${error.message}`, 'error');
-    } finally {
-      setLoading(false);
+      if (!navigator.onLine) {
+        setHasNetworkError(true);
+        showNotification('You appear to be offline.', 'error');
+      } else {
+        showNotification('Server error while deleting business.', 'error');
+      }
     }
   };
 
   const handleEditBusiness = (business: Business) => {
+    if (hasNetworkError) {
+      showNotification('No internet connection. Please check your network and try again.', 'error');
+      return;
+    }
     setEditingBusiness(business);
     setShowModal(true);
   };
 
   const handleAddNewBusiness = () => {
+    if (hasNetworkError) {
+      showNotification('No internet connection. Please check your network and try again.', 'error');
+      return;
+    }
     setEditingBusiness(null);
     setShowModal(true);
   };
@@ -268,85 +250,82 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({ user, showNotificatio
     setEditingBusiness(null);
   };
 
-  const handleModalSuccess = (message: string, type?: string) => {
-    showNotification(message, type === 'error' ? 'error' : 'success');
+  const handleModalSuccess = (message: string) => {
+    showNotification(message, 'success');
     setShowModal(false);
     setEditingBusiness(null);
-    fetchBusinesses(); // Refresh the list
+    if (!hasNetworkError) {
+      fetchBusinesses();
+    }
   };
 
   return (
-    <div className="max-w-7xl mx-auto ">
-      {/* Main Business Section */}
-      <div className="bg-white rounded-xl p-8 border border-gray-300">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Businesses</h2>
-            <p className="text-gray-500 text-sm mt-1">Manage your business information and settings</p>
-          </div>
-          <div className="flex items-center space-x-3">
-            {isOnline ? (
-              <Wifi className="w-5 h-5 hidden text-green-500" title="Online" />
-            ) : (
-              <WifiOff className="w-5 h-5 hidden text-red-500" title="Offline" />
-            )}
+    <div className="bg-white rounded-xl border border-gray-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Header */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-row items-start justify-between">
+            <div className="mb-4 sm:mb-0">
+              <h1 className="text-2xl font-bold text-gray-900">Businesses</h1>
+              <p className="text-gray-600 text-sm sm:text-base">
+                Manage your business information and settings
+              </p>
+            </div>
             <button
               onClick={handleAddNewBusiness}
-              disabled={!isOnline}
-              className={`px-6 py-4 min-w-32 text-white rounded-md transition-colors text-md font-medium ${
-                isOnline
-                  ? 'bg-teal-600 hover:bg-teal-500'
-                  : 'bg-gray-300 cursor-not-allowed'
-              }`}
+              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium shadow-sm text-sm sm:text-base min-w-20 sm:w-auto justify-center mt-2 sm:mt-0"
+              disabled={hasNetworkError}
             >
-              <Plus className="w-4 h-4 mr-2 inline" />
-              Add Business
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              Add <span className="hidden md:block">&nbsp;Business</span>
             </button>
           </div>
         </div>
 
+        {/* Content */}
         {loading ? (
-          <div className="text-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
-            <p className="text-gray-500 mt-4">Loading businesses...</p>
+          <div className="text-center py-12 sm:py-20">
+            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-teal-600 mx-auto"></div>
+            <p className="text-gray-500 mt-3 sm:mt-4 text-sm sm:text-base">
+              Loading businesses...
+            </p>
           </div>
-        ) : fetchError ? (
-          <div className="text-center py-12">
-            <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">
-              {isOnline ? 'Failed to load businesses' : 'No internet connection'}
+        ) : hasNetworkError ? (
+          <div className="bg-white rounded-md border border-gray-200 p-6 sm:p-12 text-center">
+            <WifiOff className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+              No internet connection
+            </h3>
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
+              Please check your connection and try again
             </p>
             <button
-              onClick={fetchBusinesses}
-              disabled={!isOnline}
-              className={`px-4 py-3 rounded-md transition-colors font-medium ${
-                isOnline
-                  ? 'bg-teal-600 text-white hover:bg-teal-500'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              onClick={handleRetry}
+              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
             >
+              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Retry
             </button>
           </div>
         ) : businesses.length === 0 ? (
-          <div className="text-center py-12">
-            <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 mb-4">No businesses added yet</p>
+          <div className="bg-white rounded-md border border-gray-200 p-6 sm:p-12 text-center">
+            <BriefcaseBusiness className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+              No businesses yet
+            </h3>
+            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
+              Get started by adding your first business
+            </p>
             <button
               onClick={handleAddNewBusiness}
-              disabled={!isOnline}
-              className={`px-4 py-3 rounded-md transition-colors font-medium ${
-                isOnline
-                  ? 'bg-teal-600 text-white hover:bg-teal-500'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-md hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
             >
-              <Plus className="w-4 h-4 mr-2 inline" />
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               Add Your First Business
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {businesses.map((business) => (
               <BusinessCard
                 key={business.id}

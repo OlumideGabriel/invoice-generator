@@ -243,7 +243,7 @@ const SettingsPage = () => {
             </div>
 
             {/* Content Area */}
-            <div className="py-4 md:py-10 min-w-0">
+            <div className="py-4 md:py-2 min-w-0">
               {renderActiveSection()}
             </div>
           </div>

@@ -333,7 +333,6 @@ const ClientsPage = () => {
 
                 <div>
                   <h1 className="text-xl md:text-3xl font-bold text-gray-900">Clients</h1>
-                  <p className="mt-1 hidden md:block text-gray-600">Manage your client database</p>
                 </div>
               </div>
               <button
