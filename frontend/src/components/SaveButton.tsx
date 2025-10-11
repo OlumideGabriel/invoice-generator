@@ -77,7 +77,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   const sizeConfig = {
     sm: { padding: 'px-6 py-2.5', text: 'text-sm', icon: 14, spinner: 'sm' as const },
     md: { padding: 'px-4 py-2', text: 'text-sm', icon: 16, spinner: 'md' as const },
-    lg: { padding: 'px-8 py-4', text: 'text-md', icon: 16, spinner: 'md' as const },
+    lg: { padding: 'px-8 py-3.5', text: 'text-md', icon: 16, spinner: 'md' as const },
   };
 
   const currentSize = sizeConfig[size];
@@ -90,8 +90,8 @@ const SaveButton: React.FC<SaveButtonProps> = ({
     default: isSaved
       ? 'bg-green-100 text-green-700 border-green-300 cursor-default'
       : isUserLoggedIn
-      ? ' text-black border-gray-900 hover:bg-white'
-      : 'bg-white text-gray-700 border-gray-400 cursor-pointer',
+      ? ' text-black bg-white border-gray-200 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white w-40'
+      : 'bg-white text-gray-700 border-gray-200 cursor-pointer w-40',
     mobile: isSaved
       ? 'bg-green-100 text-green-700 border-green-300'
       : isUserLoggedIn
@@ -118,13 +118,13 @@ const SaveButton: React.FC<SaveButtonProps> = ({
           </>
         ) : !isUserLoggedIn ? (
           <>
-            <Save size={currentSize.icon} />
-            {variant === 'mobile' ? 'Save ' : 'Save Invoice'}
+
+            {variant === 'mobile' ? 'Save ' : 'Save'}
           </>
         ) : (
           <>
-            <Save size={currentSize.icon} />
-            {variant === 'mobile' ? 'Save' : 'Save Invoice'}
+
+            {variant === 'mobile' ? 'Save' : 'Save'}
           </>
         )}
       </button>

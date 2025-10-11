@@ -153,14 +153,14 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             type="button"
             onClick={onPreview}
             disabled={previewLoading}
-            className="w-full px-8 py-3 text-md bg-transparent active:scale-[0.98] border-2 hover:bg-[#0f131a]
+            className="w-full px-8 py-3 text-md bg-white border-2 border-gray-200 active:scale-[0.98] hover:bg-[#0f131a]
             font-medium rounded-lg flex items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition"
           >
             {previewLoading ? (
               <Spinner size="md" color="current" />
             ) : (
               <>
-                 <Eye size={18} /> Preview
+                  Preview
               </>
             )}
           </button>
