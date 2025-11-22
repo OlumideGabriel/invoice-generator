@@ -247,7 +247,7 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             disabled={loading}
             isSaved={isSaved}
             loading={loading}
-            size="sm"
+            size="md"
             variant="default"
             onAuthRequired={openAuthModal}
             redirectAfterSave={true}
@@ -288,14 +288,14 @@ const InvoiceSidebar: React.FC<InvoiceSidebarProps> = ({
             type="button"
             onClick={onPreview}
             disabled={previewLoading}
-            className="w-full px-8 py-3 text-md bg-transparent border-2 hover:bg-[#0f131a] font-medium rounded-lg flex h-11
+            className="w-full px-10 py-3 text-md bg-white border-2 border-neutral-200 hover:bg-[#0f131a] font-medium rounded-lg flex h-11
             items-center justify-center gap-2 text-black hover:border-gray-900 hover:text-white transition"
           >
             {previewLoading ? (
               <Spinner size="md" color="current" />
             ) : (
               <>
-                <Eye size={18} />Preview
+               Preview
               </>
             )}
           </button>

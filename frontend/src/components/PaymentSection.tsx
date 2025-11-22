@@ -18,7 +18,7 @@ const PaymentSection: React.FC<PaymentSectionProps> = ({ paymentDetails, setPaym
           rows={3}
           placeholder={`Bank: [Your Bank]
 Account: [Your Account Number]`}
-          className="md:w-2/3 md:max-w-70 w-full min-h-20 max-h-20 p-3 rounded-md
+          className="md:w-2/3 md:max-w-[22rem] w-full min-h-20 max-h-20 p-3 rounded-md
           bg-neutral-700 border !border-gray-300 focus:outline-none focus:ring-2"
         />
       </div>
@@ -29,7 +29,7 @@ Account: [Your Account Number]`}
           onChange={(e) => setTerms(e.target.value)}
           rows={3}
           placeholder={`Please submit payment within 15 days of receipt of this invoice.`}
-          className="md:w-2/3 md:max-w-70 w-full min-h-20 max-h-20 p-3 rounded-md bg-neutral-700 border !border-gray-300
+          className="md:w-2/3 md:max-w-[22rem] w-full min-h-20 max-h-20 p-3 rounded-md bg-neutral-700 border !border-gray-300
           focus:outline-none focus:ring-2"
         />
       </div>

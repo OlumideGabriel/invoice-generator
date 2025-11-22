@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Plus, CircleAlert, X } from 'lucide-react';
 import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
 import LogoUpload from './LogoUpload';
@@ -25,84 +25,23 @@ const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
-const getTodayString = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const getSevenDaysFromNowString = () => {
-  const today = new Date();
-  const sevenDaysLater = new Date(today);
-  sevenDaysLater.setDate(today.getDate() + 7);
-  const year = sevenDaysLater.getFullYear();
-  const month = String(sevenDaysLater.getMonth() + 1).padStart(2, '0');
-  const day = String(sevenDaysLater.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-// ==================== LOCALSTORAGE UTILITIES ====================
-
-const localStorageKeys = {
-  INVOICE_DATA: 'invoiceData',
-  LAST_SAVED: 'lastSavedInvoice'
-};
-
-const saveInvoiceToLocalStorage = (invoiceData: any) => {
-  try {
-    localStorage.setItem(localStorageKeys.INVOICE_DATA, JSON.stringify(invoiceData));
-    localStorage.setItem(localStorageKeys.LAST_SAVED, new Date().toISOString());
-    return true;
-  } catch (error) {
-    console.error('Error saving to localStorage:', error);
-    return false;
-  }
-};
-
-const loadInvoiceFromLocalStorage = () => {
-  try {
-    const data = localStorage.getItem(localStorageKeys.INVOICE_DATA);
-    return data ? JSON.parse(data) : null;
-  } catch (error) {
-    console.error('Error loading from localStorage:', error);
-    return null;
-  }
-};
-
-const clearInvoiceFromLocalStorage = () => {
-  try {
-    localStorage.removeItem(localStorageKeys.INVOICE_DATA);
-    localStorage.removeItem(localStorageKeys.LAST_SAVED);
-    return true;
-  } catch (error) {
-    console.error('Error clearing localStorage:', error);
-    return false;
-  }
-};
-
 // ==================== MAIN COMPONENT ====================
 
-const InvoiceGenerator: React.FC = () => {
+const InvoiceEdit: React.FC = () => {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const userId = user?.id || user?.user_id;
   const navigate = useNavigate();
-  const location = useLocation();
   const { currency, setCurrency, currencyOptions } = useCurrency();
 
   // State management
+  const [loading, setLoading] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [fetchingData, setFetchingData] = useState(true);
   const [isSaved, setIsSaved] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [businessId, setBusinessId] = useState<string | null>(null);
-  const [invoices, setInvoices] = useState<any[]>([]);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
   const [previewPdfUrl, setPreviewPdfUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [previewLoading, setPreviewLoading] = useState(false);
-  const [lastSavedTime, setLastSavedTime] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(false);
-  const [fetchingEditData, setFetchingEditData] = useState(false);
 
   // Invoice hook for all invoice-related state and functionality
   const {
@@ -140,57 +79,49 @@ const InvoiceGenerator: React.FC = () => {
     error, setError,
   } = useInvoice();
 
-  // ==================== INVOICE EDITING ====================
+  // ==================== FETCH INVOICE DATA ====================
 
   useEffect(() => {
-    const editInvoiceId = location.state?.editInvoiceId;
-    const isEditingMode = location.state?.isEditing;
-
-    if (editInvoiceId && isEditingMode && userId && !fetchingEditData && !isEditing) {
-      console.log('🔄 Starting to load invoice for editing:', editInvoiceId);
-      setIsEditing(true);
-      setSelectedInvoiceId(editInvoiceId);
-      fetchInvoiceForEditing(editInvoiceId);
+    if (!id || !userId) {
+      setFetchingData(false);
+      return;
     }
-  }, [location.state, userId, fetchingEditData, isEditing]);
 
-  const fetchInvoiceForEditing = async (invoiceId: string) => {
-    if (!userId) return;
+    const fetchInvoiceData = async () => {
+      try {
+        setFetchingData(true);
+        console.log('📡 Fetching invoice data for editing:', id);
 
-    try {
-      setFetchingEditData(true);
-      console.log('📡 Fetching invoice data for editing...');
+        const response = await fetch(
+          `${API_BASE_URL}/api/invoices/${id}/edit?user_id=${userId}`
+        );
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/invoices/${invoiceId}/edit?user_id=${userId}`
-      );
+        if (!response.ok) {
+          throw new Error('Failed to fetch invoice data');
+        }
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch invoice data');
+        const data = await response.json();
+
+        if (data.success && data.editData) {
+          console.log('✅ Invoice data loaded:', data.editData);
+          populateFormWithData(data.editData);
+        } else {
+          throw new Error(data.error || 'Failed to load invoice data');
+        }
+      } catch (err) {
+        console.error('❌ Error fetching invoice:', err);
+        setError('Failed to load invoice for editing');
+      } finally {
+        setFetchingData(false);
       }
+    };
 
-      const data = await response.json();
+    fetchInvoiceData();
+  }, [id, userId]);
 
-      if (data.success && data.editData) {
-        console.log('✅ Invoice data loaded for editing:', data.editData);
-        populateFormWithEditData(data.editData);
-      } else {
-        throw new Error(data.error || 'Failed to load invoice data');
-      }
-    } catch (err) {
-      console.error('❌ Error fetching invoice for editing:', err);
-      setError('Failed to load invoice for editing');
-      setIsEditing(false);
-      setSelectedInvoiceId(null);
-    } finally {
-      setFetchingEditData(false);
-    }
-  };
+  const populateFormWithData = (editData: any) => {
+    console.log('🔄 Populating form with data:', editData);
 
-  const populateFormWithEditData = (editData: any) => {
-    console.log('🔄 Populating form with edit data:', editData);
-
-    // Extract invoice number from various possible locations
     const existingInvoiceNumber =
       editData.invoiceNumber ||
       editData.data?.invoice_number ||
@@ -198,16 +129,12 @@ const InvoiceGenerator: React.FC = () => {
       editData.data?.invoiceNumber ||
       '';
 
-    // Set invoice number FIRST to prevent race conditions
     if (existingInvoiceNumber) {
       const invoiceNumString = String(existingInvoiceNumber);
       setInvoiceNumber(invoiceNumString);
       console.log('✅ Invoice number set to:', invoiceNumString);
-    } else {
-      console.warn('⚠️ No invoice number found in edit data.');
     }
 
-    // Set all other fields
     setFrom(editData.from || editData.data?.from || '');
     setTo(editData.to || editData.data?.to || '');
 
@@ -246,215 +173,12 @@ const InvoiceGenerator: React.FC = () => {
       if (currencyOption) setCurrency(currencyOption);
     }
 
-    console.log('✅ Form populated successfully. Invoice number:', existingInvoiceNumber);
-  };
-
-  // ==================== INVOICE FETCHING ====================
-
-  const fetchInvoices = async () => {
-    if (!userId) {
-      console.warn('⚠️ fetchInvoices: no userId, skipping');
-      return;
-    }
-
-    try {
-      console.log('📡 fetchInvoices: fetching invoices for user', userId);
-      const res = await fetch(`${API_BASE_URL}/api/invoices?user_id=${userId}`);
-      const data = await res.json();
-      console.log('📦 fetchInvoices: raw response', data);
-
-      if (!Array.isArray(data.invoices)) {
-        console.warn('⚠️ fetchInvoices: response has no invoices array');
-        return;
-      }
-
-      setInvoices(data.invoices);
-
-      // If we're editing, DO NOT modify the invoice number
-      if (isEditing || selectedInvoiceId) {
-        console.log('✏️ fetchInvoices: edit mode - preserving existing invoice number:', invoiceNumber);
-        return;
-      }
-
-      // Only generate invoice number if it's empty and we're not editing
-      if (!invoiceNumber) {
-        const numbers = data.invoices
-          .map((inv: any) => {
-            const raw = inv.data?.invoice_number || inv.data?.invoiceNumber || inv.invoice_number || '';
-            const digits = String(raw).replace(/\D/g, '');
-            const n = parseInt(digits, 10);
-            return isNaN(n) ? 0 : n;
-          })
-          .filter((n: number) => n > 0);
-
-        const next = numbers.length > 0 ? Math.max(...numbers) + 1 : 1;
-        const formatted = String(next).padStart(4, '0');
-        setInvoiceNumber(formatted);
-        console.log('🔢 fetchInvoices: generated invoice number:', formatted);
-      } else {
-        console.log('ℹ️ fetchInvoices: invoiceNumber already set, not generating:', invoiceNumber);
-      }
-    } catch (e) {
-      console.error('❌ fetchInvoices error:', e);
-    }
-  };
-
-  useEffect(() => {
-    if (!userId) {
-      console.log("⏸️ useEffect(fetchInvoices): no userId, skipping");
-      return;
-    }
-
-    if (fetchingEditData) {
-      console.log("⏸️ useEffect(fetchInvoices): fetchingEditData active, skipping");
-      return;
-    }
-
-    console.log("▶️ useEffect(fetchInvoices): calling fetchInvoices");
-    fetchInvoices();
-  }, [userId, isEditing, selectedInvoiceId, fetchingEditData]);
-
-// ==================== LOCALSTORAGE MANAGEMENT ====================
-
-useEffect(() => {
-  if (!isEditing && !fetchingEditData) {
-    const savedInvoice = loadInvoiceFromLocalStorage();
-    if (savedInvoice && !selectedInvoiceId) {
-      loadInvoiceFromLocalData(savedInvoice);
-    }
-
-    const lastSaved = localStorage.getItem(localStorageKeys.LAST_SAVED);
-    if (lastSaved) {
-      setLastSavedTime(new Date(lastSaved).toLocaleString());
-    }
-  }
-}, [isEditing, fetchingEditData]);
-
-useEffect(() => {
-  // IMPORTANT: Do NOT auto-save while in edit mode
-  if (isEditing || fetchingEditData) {
-    return;
-  }
-
-  const invoiceData = {
-    from, to, items, invoiceNumber, issuedDate, dueDate,
-    paymentDetails, terms, taxPercent, discountPercent,
-    shippingAmount, taxType, discountType, showTax,
-    showDiscount, showShipping, logoUrl,
-    currency: typeof currency === 'string' ? currency : currency.code
-  };
-
-  const timeoutId = setTimeout(() => {
-    saveInvoiceToLocalStorage(invoiceData);
-    setLastSavedTime(new Date().toLocaleString());
-  }, 500);
-
-  return () => clearTimeout(timeoutId);
-}, [
-  from, to, items, invoiceNumber, issuedDate, dueDate,
-  paymentDetails, terms, taxPercent, discountPercent,
-  shippingAmount, taxType, discountType, showTax,
-  showDiscount, showShipping, logoUrl, currency, isEditing, fetchingEditData
-]);
-
-  const loadInvoiceFromLocalData = (data: any) => {
-    setFrom(data.from || "");
-    setTo(data.to || "");
-
-    const itemsWithIds = (data.items || []).map((item: any) => ({
-      ...item,
-      id: item.id || generateId()
-    }));
-
-    setItems(itemsWithIds.length > 0 ? itemsWithIds : [
-      { id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }
-    ]);
-
-    setInvoiceNumber(data.invoiceNumber || "0001");
-    setIssuedDate(data.issuedDate || getTodayString());
-    setDueDate(data.dueDate || getSevenDaysFromNowString());
-    setPaymentDetails(data.paymentDetails || "");
-    setTerms(data.terms || "");
-    setTaxPercent(data.taxPercent || 0);
-    setDiscountPercent(data.discountPercent || 0);
-    setShippingAmount(data.shippingAmount || 0);
-    setTaxType(data.taxType || 'percent');
-    setDiscountType(data.discountType || 'percent');
-    setShowTax(data.showTax ?? true);
-    setShowDiscount(data.showDiscount ?? false);
-    setShowShipping(data.showShipping ?? true);
-    setLogoUrl(data.logoUrl || null);
-
-    if (data.currency) {
-      const currencyOption = currencyOptions.find(
-        (opt: any) => opt.code === data.currency || opt === data.currency
-      );
-      if (currencyOption) {
-        setCurrency(currencyOption);
-      }
-    }
-  };
-
-  const manualSaveToLocalStorage = () => {
-    const invoiceData = {
-      from, to, items, invoiceNumber, issuedDate, dueDate,
-      paymentDetails, terms, taxPercent, discountPercent,
-      shippingAmount, taxType, discountType, showTax,
-      showDiscount, showShipping, logoUrl,
-      currency: typeof currency === 'string' ? currency : currency.code
-    };
-    saveInvoiceToLocalStorage(invoiceData);
-    setLastSavedTime(new Date().toLocaleString());
-    alert('Invoice saved to browser storage!');
-  };
-
-  const manualLoadFromLocalStorage = () => {
-    const saved = loadInvoiceFromLocalStorage();
-    if (saved) {
-      loadInvoiceFromLocalData(saved);
-      alert('Invoice loaded from browser storage!');
-    } else {
-      alert('No invoice found in browser storage.');
-    }
-  };
-
-  const manualClearLocalStorage = () => {
-    clearInvoiceFromLocalStorage();
-    setLastSavedTime(null);
-    alert('Browser storage cleared!');
-  };
-
-  // ==================== FORM MANAGEMENT ====================
-
-  const resetForm = () => {
-    setIsEditing(false);
-    setSelectedInvoiceId(null);
-    setFrom("");
-    setTo("");
-    setItems([{ id: generateId(), name: '', description: '', quantity: 1, unit_cost: 0, showDesc: false }]);
-    setInvoiceNumber("");
-    setIssuedDate(getTodayString());
-    setDueDate(getSevenDaysFromNowString());
-    setPaymentDetails("");
-    setTerms("");
-    setTaxPercent(0);
-    setDiscountPercent(0);
-    setShippingAmount(0);
-    setTaxType('percent');
-    setDiscountType('percent');
-    setShowTax(true);
-    setShowDiscount(false);
-    setShowShipping(true);
-    setLogoUrl(null);
-    setClientId(null);
-    setBusinessId(null);
-    clearInvoiceFromLocalStorage();
-    setLastSavedTime(null);
+    console.log('✅ Form populated successfully');
   };
 
   // ==================== DATABASE OPERATIONS ====================
 
-  const saveInvoiceToDatabase = async (): Promise<string> => {
+  const updateInvoiceInDatabase = async (): Promise<string> => {
     setLoading(true);
     setError(null);
 
@@ -501,63 +225,28 @@ useEffect(() => {
         throw new Error("Missing required fields");
       }
 
-      let response;
-
-      if (selectedInvoiceId) {
-        console.log('Updating existing invoice:', selectedInvoiceId);
-        response = await fetch(`${API_BASE_URL}/api/invoices/${selectedInvoiceId}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(invoicePayload)
-        });
-      } else {
-        console.log('Creating new invoice');
-        response = await fetch(`${API_BASE_URL}/api/invoices`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(invoicePayload)
-        });
-      }
+      console.log('Updating invoice:', id);
+      const response = await fetch(`${API_BASE_URL}/api/invoices/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(invoicePayload)
+      });
 
       const result = await response.json();
       console.log('Complete API response:', JSON.stringify(result, null, 2));
 
       if (result.success) {
-        await fetchInvoices();
         setIsSaved(true);
-
-        let invoiceId = selectedInvoiceId;
-
-        if (!selectedInvoiceId) {
-          invoiceId =
-            result.invoice_id ||
-            result.invoiceId ||
-            result.invoice?.id ||
-            result.data?.id ||
-            result.id;
-        }
-
-        console.log('Found invoice ID:', invoiceId);
-
-        if (invoiceId) {
-          const invoiceIdString = String(invoiceId);
-          clearInvoiceFromLocalStorage();
-          setLastSavedTime(null);
-          setIsEditing(false);
-          console.log('Returning invoice ID for navigation:', invoiceIdString);
-          return invoiceIdString;
-        } else {
-          console.error('No invoice ID found in response:', result);
-          throw new Error("No invoice ID returned from server.");
-        }
+        console.log('✅ Invoice updated successfully');
+        return String(id);
       } else {
-        console.error('Save failed:', result);
-        setError(result.error || result.message || "Failed to save invoice.");
-        throw new Error(result.error || result.message || "Failed to save invoice");
+        console.error('Update failed:', result);
+        setError(result.error || result.message || "Failed to update invoice.");
+        throw new Error(result.error || result.message || "Failed to update invoice");
       }
     } catch (err: any) {
-      console.error('Save error:', err);
-      setError(err.message || "An error occurred while saving the invoice.");
+      console.error('Update error:', err);
+      setError(err.message || "An error occurred while updating the invoice.");
       throw err;
     } finally {
       setLoading(false);
@@ -590,10 +279,31 @@ useEffect(() => {
   };
 
   const handleSaveSuccess = (invoiceId?: string) => {
-    console.log('Invoice saved successfully:', invoiceId);
+    console.log('Invoice updated successfully:', invoiceId);
+    navigate('/invoices');
   };
 
   // ==================== RENDER ====================
+
+  if (fetchingData) {
+    return (
+      <>
+        <div className="md:block hidden sticky z-40 top-0 left-0 w-full">
+          <MainMenu showLogo={false} />
+        </div>
+        <div className="md:hidden block">
+          <MainMenu />
+        </div>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <span className="text-gray-600">Loading invoice data...</span>
+          </div>
+        </div>
+        <Navbar />
+      </>
+    );
+  }
 
   return (
     <>
@@ -623,41 +333,21 @@ useEffect(() => {
             </div>
           )}
 
-
-          {/* Loading Alert */}
-          {fetchingEditData && (
-            <div className="sticky top-0 z-50 transform">
-              <div className="flex items-center max-w-full xl:max-w-7xl gap-3 text-blue-700 bg-blue-50 px-4 py-3 rounded-lg shadow-sm border border-blue-100 mb-4 mx-auto">
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
-                <span className="flex-1">Loading invoice data...</span>
+          <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border-none sm:border border-gray-200 w-full bg-transparent sm:bg-white rounded-2xl p-4 sm:p-6 lg:p-8">
+            {/* Edit Mode Indicator */}
+            <div className="mb-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <span className="text-teal-700 text-teal-600 px-2 py-1 bg-teal-100 rounded-md font-medium">Editing Invoice: {invoiceNumber}</span>
+                </div>
+                <button
+                  onClick={() => navigate('/new')}
+                  className="text-teal-600 px-2 py-1 bg-teal-100 rounded-md hover:text-teal-800 text-sm font-medium"
+                >
+                  New Invoice
+                </button>
               </div>
             </div>
-          )}
-
-          <div className="basis-full xl:basis-128 max-w-full xl:max-w-5xl border-none sm:border border-gray-200 w-full bg-transparent sm:bg-white rounded-2xl p-4 sm:p-6 lg:p-8">
-            {/* Auto-save Indicator */}
-            {lastSavedTime && !isEditing && (
-              <div className="text-xs hidden text-gray-500 mb-2 text-right">
-                Auto-saved: {lastSavedTime}
-              </div>
-            )}
-
-            {/* Edit Mode Indicator */}
-                {isEditing && (
-                  <div className="mb-4 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <span className="text-teal-700 text-teal-600 px-2 py-1 bg-teal-100 rounded-md font-medium">Editing Invoice: {invoiceNumber}</span>
-                      </div>
-                      <button
-                        onClick={() => navigate('/new')}
-                        className="text-teal-600 px-2 py-1 bg-teal-100 rounded-md hover:text-teal-800 text-sm font-medium"
-                      >
-                        New Invoice
-                      </button>
-                    </div>
-                  </div>
-                )}
 
             {/* Logo & Invoice Number Section */}
             <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
@@ -726,18 +416,17 @@ useEffect(() => {
               </div>
 
               <div className="lg:items-end w-full rounded-lg flex flex-col md:flex-row lg:flex-col gap-4">
-              <div className="">
-                <DatePicker
-                  label="Issued Date"
-                  placeholder="Select issued date"
-                  value={issuedDate}
-                  onChange={setIssuedDate}
-                  id="issued-date"
-                  className="w-full"
+                <div className="">
+                  <DatePicker
+                    label="Issued Date"
+                    placeholder="Select issued date"
+                    value={issuedDate}
+                    onChange={setIssuedDate}
+                    id="issued-date"
+                    className="w-full"
                   />
                 </div>
 
-                {/* Updated Due Date with DatePicker */}
                 <div className="">
                   <DatePicker
                     label="Due Date"
@@ -862,7 +551,7 @@ useEffect(() => {
           <InvoiceSidebar
             loading={loading}
             previewLoading={previewLoading}
-            onSave={saveInvoiceToDatabase}
+            onSave={updateInvoiceInDatabase}
             onDownload={handleSubmit}
             isSaved={isSaved}
             onPreview={handlePreview}
@@ -883,18 +572,14 @@ useEffect(() => {
             shippingAmount={shippingAmount}
             taxType={taxType}
             discountType={discountType}
-            onSaveToLocalStorage={manualSaveToLocalStorage}
-            onLoadFromLocalStorage={manualLoadFromLocalStorage}
-            onClearLocalStorage={manualClearLocalStorage}
-            lastSavedTime={lastSavedTime}
             redirectAfterSave={true}
             onSaveSuccess={handleSaveSuccess}
           />
         </div>
       </div>
-      <Navbar/>
+      <Navbar />
     </>
   );
 };
 
-export default InvoiceGenerator;
+export default InvoiceEdit;

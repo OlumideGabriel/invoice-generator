@@ -16,6 +16,7 @@ import Dashboard from './pages/Dashboard';
 import SettingsPage from './pages/SettingsPage';
 import InvoicesPage from './pages/InvoicesPage';
 import InvoicePage from './pages/InvoicePage';
+import InvoiceEdit from './components/InvoiceEdit'
 import ClientsPage from './pages/ClientsPage';
 import Home from './pages/Home';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
@@ -103,6 +104,7 @@ const AppContent: React.FC = () => {
 
             {/* Public routes */}
             <Route path="/new" element={<InvoiceGenerator />} />
+            <Route path="/invoice/edit/:id" element={<InvoiceEdit />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>

@@ -14,17 +14,20 @@ from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
 from notifications import Notifications
-from utils import create_user_notification
 from io import BytesIO
+import os
+from pathlib import Path
 import tempfile
 from pdf2image import convert_from_bytes
 import ssl, certifi, os, logging
 import uuid
 from functools import lru_cache
 from supabase import create_client, Client
+import base64
+import sib_api_v3_sdk
+from sib_api_v3_sdk.rest import ApiException
 # Register the blueprint in your main app
 from routes.dashboard import dashboard_bp
-
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -34,6 +37,7 @@ DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -75,7 +79,6 @@ UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.register_blueprint(dashboard_bp)
-
 
 
 @app.after_request
@@ -405,6 +408,240 @@ def generate_invoice():
         logging.exception("Error in generate_invoice")
         return jsonify({'error': str(e)}), 500
 
+
+@app.route('/api/send-invoice', methods=['POST'])
+def send_invoice():
+    """Send invoice email using external HTML template"""
+    data = request.get_json()
+
+    email = data.get('email')
+    message = data.get('message', '')
+    invoice_data = data.get('invoice')
+    client_data = data.get('client')
+    business_data = data.get('business')
+
+    if not email:
+        return jsonify({"success": False, "error": "Email required"}), 400
+
+    if not invoice_data:
+        return jsonify({"success": False, "error": "Invoice data required"}), 400
+
+    print(f"📧 Sending invoice to: {email}")
+    print(f"Invoice: {invoice_data.get('data', {}).get('invoice_number', 'N/A')}")
+
+    try:
+        # Extract invoice details
+        invoice_details = invoice_data.get('data', {})
+        invoice_number = invoice_details.get('invoice_number', 'N/A')
+        issued_date = invoice_details.get('issued_date', 'N/A')
+        due_date = invoice_details.get('due_date', 'N/A')
+        items = invoice_details.get('items', [])
+        currency_symbol = invoice_details.get('currency_symbol', '$')
+
+        # Get business info
+        business_name = business_data.get('name', 'Your Business') if business_data else 'Your Business'
+        business_email = business_data.get('email', 'hello@business.com') if business_data else 'hello@business.com'
+        company_initial = business_name[0].upper() if business_name else 'B'
+
+        # Get client info
+        client_name = client_data.get('name', 'Valued Client') if client_data else 'Valued Client'
+
+        # Format dates
+        def format_date(date_str):
+            try:
+                from datetime import datetime
+                date_obj = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+                return date_obj.strftime('%b %d, %Y')
+            except:
+                return date_str
+
+        formatted_issued_date = format_date(issued_date)
+        formatted_due_date = format_date(due_date)
+
+        # Calculate totals
+        subtotal = sum(item.get('quantity', 0) * item.get('unit_cost', 0) for item in items)
+
+        # Calculate discount amount
+        discount_amount = 0
+        discount_section = ""
+        if invoice_details.get('show_discount') and invoice_details.get('discount_percent'):
+            if invoice_details.get('discount_type') == 'percent':
+                discount_amount = (subtotal * invoice_details.get('discount_percent')) / 100
+            else:
+                discount_amount = invoice_details.get('discount_percent', 0)
+
+            discount_percent_display = f"({invoice_details.get('discount_percent')}%)" if invoice_details.get(
+                'discount_type') == 'percent' else ""
+            discount_section = f"""
+                <div class="calculation-row">
+                    <span class="calculation-label">Discount {discount_percent_display}</span>
+                    <span class="discount-amount">-{currency_symbol}{discount_amount:.2f}</span>
+                </div>
+            """
+
+        # Calculate tax amount
+        tax_amount = 0
+        tax_section = ""
+        if invoice_details.get('show_tax') and invoice_details.get('tax_percent'):
+            amount_after_discount = subtotal - discount_amount
+            if invoice_details.get('tax_type') == 'percent':
+                tax_amount = (amount_after_discount * invoice_details.get('tax_percent')) / 100
+            else:
+                tax_amount = invoice_details.get('tax_percent', 0)
+
+            tax_percent_display = f"({invoice_details.get('tax_percent')}%)" if invoice_details.get(
+                'tax_type') == 'percent' else ""
+            tax_section = f"""
+                <div class="calculation-row">
+                    <span class="calculation-label">Tax {tax_percent_display}</span>
+                    <span class="calculation-amount">{currency_symbol}{tax_amount:.2f}</span>
+                </div>
+            """
+
+        # Calculate shipping amount
+        shipping_amount = 0
+        shipping_section = ""
+        if invoice_details.get('show_shipping') and invoice_details.get('shipping_amount'):
+            shipping_amount = invoice_details.get('shipping_amount', 0)
+            shipping_section = f"""
+                <div class="calculation-row">
+                    <span class="calculation-label">Shipping</span>
+                    <span class="calculation-amount">{currency_symbol}{shipping_amount:.2f}</span>
+                </div>
+            """
+
+        # Calculate final total
+        total = subtotal - discount_amount + tax_amount + shipping_amount
+
+        # Build line items HTML as table rows
+        line_items_html = ""
+        for item in items:
+            quantity = item.get('quantity', 0)
+            unit_cost = item.get('unit_cost', 0)
+            item_total = quantity * unit_cost
+            item_name = item.get('name', 'Item')
+
+            # Build item cell with optional description
+            item_cell = f'<div class="item-name">{item_name}</div>'
+            if item.get('showDesc') and item.get('description'):
+                item_cell += f'<div class="item-description">{item.get("description")}</div>'
+
+            line_items_html += f"""
+                        <tr>
+                            <td>{item_cell}</td>
+                            <td class="item-qty">{quantity}</td>
+                            <td class="item-rate">{currency_symbol}{unit_cost:.2f}</td>
+                            <td class="item-amount">{currency_symbol}{item_total:.2f}</td>
+                        </tr>
+            """
+
+        # Build message section HTML
+        message_section = ""
+        if message:
+            message_section = f"""
+            <div class="message-section">
+                <p class="message-text">{message}</p>
+            </div>
+            """
+
+        # Create payment link
+        payment_link = f"https://envoyce.xyz/pay/{invoice_data.get('id', '')}"
+
+        # Load HTML template from file
+        template_path = Path(__file__).parent / 'templates' / 'invoice_email.html'
+
+        # Alternative paths in case the structure is different
+        if not template_path.exists():
+            template_path = Path(__file__).parent.parent / 'templates' / 'invoice_email.html'
+
+        if not template_path.exists():
+            # Fallback to current directory
+            template_path = Path('templates') / 'invoice_email.html'
+
+        print(f"📄 Loading template from: {template_path}")
+
+        if not template_path.exists():
+            return jsonify({
+                "success": False,
+                "error": f"Template file not found at {template_path}"
+            }), 500
+
+        with open(template_path, 'r', encoding='utf-8') as f:
+            html_template = f.read()
+
+        # Replace placeholders
+        html_content = html_template.replace('{{INVOICE_NUMBER}}', str(invoice_number))
+        html_content = html_content.replace('{{COMPANY_INITIAL}}', company_initial)
+        html_content = html_content.replace('{{COMPANY_NAME}}', business_name)
+        html_content = html_content.replace('{{COMPANY_EMAIL}}', business_email)
+        html_content = html_content.replace('{{ISSUED_DATE}}', formatted_issued_date)
+        html_content = html_content.replace('{{DUE_DATE}}', formatted_due_date)
+        html_content = html_content.replace('{{CURRENCY}}', currency_symbol)
+        html_content = html_content.replace('{{TOTAL_AMOUNT}}', f'{total:.2f}')
+        html_content = html_content.replace('{{LINE_ITEMS}}', line_items_html)
+        html_content = html_content.replace('{{SUBTOTAL}}', f'{subtotal:.2f}')
+        html_content = html_content.replace('{{PAYMENT_LINK}}', payment_link)
+        html_content = html_content.replace('{{MESSAGE_SECTION}}', message_section)
+
+        # Replace the new placeholders for tax, discount, and shipping
+        html_content = html_content.replace('{{DISCOUNT_SECTION}}', discount_section)
+        html_content = html_content.replace('{{TAX_SECTION}}', tax_section)
+        html_content = html_content.replace('{{SHIPPING_SECTION}}', shipping_section)
+
+        # Send email via Brevo
+        payload = {
+            "sender": {
+                "name": business_name,
+                "email": "support@envoyce.xyz"
+            },
+            "to": [{"email": email, "name": client_name}],
+            "subject": f"Invoice #{invoice_number} from {business_name}",
+            "htmlContent": html_content
+        }
+
+        print(f"📤 Sending to Brevo API...")
+
+        res = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={
+                'accept': 'application/json',
+                'content-type': 'application/json',
+                'api-key': BREVO_API_KEY
+            },
+            json=payload,
+            timeout=15
+        )
+
+        print(f"✅ Brevo Response: {res.status_code}")
+
+        if res.status_code == 201:
+            return jsonify({
+                "success": True,
+                "message": f"Invoice sent successfully to {email}",
+                "messageId": res.json().get('messageId')
+            })
+        else:
+            error_msg = res.json().get('message', 'Failed to send email')
+            print(f"❌ Brevo Error: {error_msg}")
+            return jsonify({
+                "success": False,
+                "error": error_msg
+            }), 400
+
+    except FileNotFoundError as e:
+        print(f"❌ Template file not found: {e}")
+        return jsonify({
+            "success": False,
+            "error": "Email template not found. Please check template file location."
+        }), 500
+    except Exception as e:
+        print(f"❌ Error: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({
+            "success": False,
+            "error": f"Server error: {str(e)}"
+        }), 500
 
 def download_image_for_weasyprint(image_url):
     """Download image from URL and return local file path"""

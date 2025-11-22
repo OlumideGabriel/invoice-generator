@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+    <style>
+        /* Gmail-compatible CSS */
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            -webkit-text-size-adjust: 100%;
+        }
+        .email-wrapper {
+            width: 100%;
+            background-color: #f5f5f5;
+            padding: 20px 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f5f5f5;
+        }
+        .invoice-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 15px;
+            border: 1px solid #dddddd;
+        }
+        .invoice-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .message-section {
+            background-color: #f0fdfa;
+            border-left: 4px solid #14b8a6;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+        }
+        .message-text {
+            color: #115e59;
+            font-size: 14px;
+            line-height: 1.4;
+            margin: 0;
+        }
+        .company-info {
+            background-color: #f8f9fa;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            text-align: left;
+        }
+        .company-avatar {
+            width: 50px;
+            height: 50px;
+            background: #a78bfa;
+            border-radius: 50%;
+            display: inline-block;
+            text-align: center;
+            line-height: 50px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffffff;
+            margin-right: 15px;
+            vertical-align: middle;
+        }
+        .company-details {
+            display: inline-block;
+            vertical-align: middle;
+            text-align: left;
+        }
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin: 0 0 4px 0;
+        }
+        .company-email {
+            font-size: 14px;
+            color: #666666;
+            margin: 0;
+        }
+        .dates-row {
+            width: 100%;
+        }
+        .date-block {
+            display: inline-block;
+            width: 48%;
+            vertical-align: top;
+        }
+        .date-label {
+            font-size: 12px;
+            color: #666666;
+            margin-bottom: 6px;
+            font-weight: bold;
+        }
+        .date-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .total-section {
+            background-color: #ffffff;
+            padding: 25px;
+            border: 1px solid #dddddd;
+            border-radius: 12px;
+        }
+        .total-header {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .total-amount {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 25px;
+            text-align: left;
+        }
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .items-table thead tr {
+            background-color: #f9fafb;
+        }
+        .items-table th {
+            padding: 12px 8px;
+            text-align: left;
+            color: #6b7280;
+            font-size: 13px;
+            font-weight: bold;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .items-table th:last-child,
+        .items-table td:last-child {
+            text-align: right;
+        }
+        .items-table th:nth-child(2),
+        .items-table td:nth-child(2),
+        .items-table th:nth-child(3),
+        .items-table td:nth-child(3) {
+            text-align: right;
+        }
+        .items-table tbody tr {
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .items-table td {
+            padding: 14px 8px;
+            font-size: 14px;
+        }
+        .item-name {
+            color: #1a1a1a;
+            font-weight: bold;
+        }
+        .item-description {
+            color: #6b7280;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .item-qty,
+        .item-rate {
+            color: #666666;
+        }
+        .item-amount {
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .calculation-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 8px 0;
+            font-size: 14px;
+        }
+        .calculation-label {
+            color: #666666;
+        }
+        .calculation-amount {
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .discount-amount {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .subtotal-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 12px 0;
+            margin-top: 15px;
+        }
+        .subtotal-label {
+            font-size: 15px;
+            color: #666666;
+        }
+        .subtotal-amount {
+            font-size: 15px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .final-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 15px 0 0 0;
+            border-top: 2px solid #e5e7eb;
+            margin-top: 15px;
+        }
+        .final-total-label {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .final-total-amount {
+            font-size: 16px;
+            font-weight: bold;
+            color: #1a1a1a;
+        }
+        .pay-button {
+            display: block;
+            width: 100%;
+            background-color: #000000;
+            color: #ffffff !important;
+            text-align: center;
+            padding: 14px 20px;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 25px 0 0 0;
+            border-radius: 8px;
+            border: none;
+            box-sizing: border-box;
+        }
+        .footer {
+            text-align: center;
+            padding: 20px;
+            color: #999999;
+            font-size: 12px;
+        }
+        .powered-by {
+            text-align: center;
+        }
+        .envoyce-logo {
+            display: inline-block;
+        }
+        .logo-icon {
+            width: 14px;
+            height: 14px;
+            background-color: #1a1a1a;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 4px;
+        }
+
+        /* Mobile styles */
+        @media only screen and (max-width: 480px) {
+            .email-wrapper {
+                padding: 10px 0;
+            }
+            .email-container {
+                margin: 0 10px;
+            }
+            .invoice-card, .total-section {
+                padding: 20px;
+            }
+            .date-block {
+                display: block;
+                width: 100%;
+                margin-bottom: 15px;
+            }
+            .items-table th,
+            .items-table td {
+                padding: 10px 6px;
+                font-size: 12px;
+            }
+            .total-amount {
+                font-size: 24px;
+            }
+            .calculation-row {
+                padding: 6px 0;
+                font-size: 13px;
+            }
+            .pay-button {
+                width: 100%;
+                padding: 14px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-wrapper">
+        <div class="email-container">
+            <div class="invoice-card">
+                <div class="invoice-header">
+                    Invoice #{{INVOICE_NUMBER}} from
+                </div>
+
+                {{MESSAGE_SECTION}}
+
+                <div class="company-info">
+                    <div class="company-avatar">{{COMPANY_INITIAL}}</div>
+                    <div class="company-details">
+                        <h2 class="company-name">{{COMPANY_NAME}}</h2>
+                        <p class="company-email">{{COMPANY_EMAIL}}</p>
+                    </div>
+                </div>
+
+                <div class="dates-row">
+                    <div class="date-block">
+                        <div class="date-label">Issued Date</div>
+                        <div class="date-value">{{ISSUED_DATE}}</div>
+                    </div>
+                    <div class="date-block">
+                        <div class="date-label">Due Date</div>
+                        <div class="date-value">{{DUE_DATE}}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="total-section">
+                <div class="total-header">Total</div>
+                <div class="total-amount">{{CURRENCY}}{{TOTAL_AMOUNT}}</div>
+
+                <table class="items-table" cellpadding="0" cellspacing="0" border="0">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Qty</th>
+                            <th>Rate</th>
+                            <th>Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{LINE_ITEMS}}
+                    </tbody>
+                </table>
+
+                <div class="subtotal-row">
+                    <span class="subtotal-label">Subtotal&nbsp;</span>
+                    <span class="subtotal-amount">{{CURRENCY}}{{SUBTOTAL}}</span>
+                </div>
+
+                {{DISCOUNT_SECTION}}
+
+                {{TAX_SECTION}}
+
+                {{SHIPPING_SECTION}}
+
+                <div class="final-total ">
+                    <span class="final-total-label">Total&nbsp;</span>
+                    <span class="final-total-amount">{{CURRENCY}}{{TOTAL_AMOUNT}}</span>
+                </div>
+
+                <a href="{{PAYMENT_LINK}}" class="pay-button" style="color: #ffffff !important; text-decoration: none; display: block; width: 100%; background-color: #000000; text-align: center; padding: 14px 20px; font-size: 18px; font-weight: 500; margin: 25px 0 0 0; border-radius: 8px; box-sizing: border-box;">Pay Invoice</a>
+            </div>
+
+            <div class="footer">
+    <div class="powered-by">
+        <span style="color: #666666;">Powered by</span>
+        <a href="https://envoyce.xyz" target="_blank" rel="noopener noreferrer" class="envoyce-logo" style="text-decoration: none; display: inline-block; vertical-align: middle;">
+            <img src="https://rlhdtlsdqadhagthihug.supabase.co/storage/v1/object/public/assets/envoyce_email_icon.png"
+                 alt="Envoyce Logo"
+                 width="auto"
+                 height="24"
+                 style="vertical-align: top; border: 0; outline: none; text-decoration: none;">
+            <span style="color: #000; font-size: 19px">envoyce</span>
+        </a>
+    </div>
+    <div style="margin-top: 10px; font-size: 11px; color: #aaaaaa; ">
+        © {{CURRENT_YEAR}} Envoyce. All rights reserved.
+    </div>
+</div>
+
+        </div>
+    </div>
+</body>
+</html>

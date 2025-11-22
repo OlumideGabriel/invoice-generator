@@ -1,14 +1,8 @@
 # routes/dashboard.py
 from flask import Blueprint, request, jsonify
-from dotenv import load_dotenv
-import os
-import requests
 from datetime import datetime
 
-load_dotenv()
-
 dashboard_bp = Blueprint('dashboard', __name__)
-API_KEY = os.getenv("CURRENCY_FREAKS")
 
 
 def normalize_currency(currency):
@@ -106,85 +100,59 @@ def calculate_invoice_total(invoice_data):
         return 0.0
 
 
-def get_total_revenue(invoices, target_currency):
+def calculate_currency_metrics(invoices):
     """
-    Calculate total revenue with strict currency conversion
-    No fallbacks - will raise exception if conversion fails
+    Calculate metrics grouped by currency
+    Returns a dictionary with currency-specific metrics
     """
-    # Normalize target currency
-    target_currency = normalize_currency(target_currency)
-
-    # If target is USD, use simple calculation
-    if target_currency == 'USD':
-        total = 0
-        for invoice in invoices:
-            if hasattr(invoice, 'data'):
-                invoice_data = invoice.data
-            else:
-                invoice_data = invoice.get('data', {})
-            amount = calculate_invoice_total(invoice_data)
-            total += amount
-        return round(total, 2)
-
-    # For non-USD currencies, require API key and successful conversion
-    if not API_KEY:
-        raise Exception("Currency conversion requires API key")
-
-    # Get exchange rates
-    response = requests.get(
-        "https://api.currencyfreaks.com/v2.0/rates/latest",
-        params={'apikey': API_KEY, 'base': 'USD'},
-        timeout=10
-    )
-    response.raise_for_status()
-    rates_data = response.json()
-    rates = rates_data.get('rates', {})
-
-    # Ensure USD is in rates
-    rates['USD'] = 1.0
-
-    # Check if target currency is supported
-    if target_currency not in rates:
-        raise Exception(f"Currency {target_currency} not supported")
-
-    total = 0
+    currency_data = {}
 
     for invoice in invoices:
-        # Get invoice data and amount
+        # Get invoice data
         if hasattr(invoice, 'data'):
             invoice_data = invoice.data
         else:
             invoice_data = invoice.get('data', {})
 
+        # Get currency and amount
+        currency = normalize_currency(invoice_data.get('currency', 'USD') if isinstance(invoice_data, dict) else 'USD')
         amount = calculate_invoice_total(invoice_data)
-        if amount == 0:
-            continue
 
-        # Get invoice currency
-        currency = 'USD'
-        if isinstance(invoice_data, dict):
-            currency = invoice_data.get('currency', 'USD')
-        currency = normalize_currency(currency)
+        # Initialize currency data if not exists
+        if currency not in currency_data:
+            currency_data[currency] = {
+                'total_revenue': 0.0,
+                'total_outstanding': 0.0,
+                'total_invoices': 0,
+                'paid_invoices': 0,
+                'unpaid_invoices': 0,
+                'draft_invoices': 0,
+                'overdue_invoices': 0
+            }
 
-        # Convert to target currency
-        if currency == target_currency:
-            total += amount
-        else:
-            # Convert via USD
-            # First: from invoice currency to USD
-            if currency not in rates:
-                raise Exception(f"Invoice currency {currency} not supported for conversion")
+        # Update metrics based on status
+        currency_data[currency]['total_invoices'] += 1
 
-            if rates[currency] == 0:
-                raise Exception(f"Zero exchange rate for currency {currency}")
+        status = invoice.status if hasattr(invoice, 'status') else invoice.get('status', '')
 
-            usd_amount = amount / float(rates[currency])
+        if status == 'paid':
+            currency_data[currency]['total_revenue'] += amount
+            currency_data[currency]['paid_invoices'] += 1
+        elif status in ['sent', 'in progress', 'overdue']:
+            currency_data[currency]['total_outstanding'] += amount
+            currency_data[currency]['unpaid_invoices'] += 1
+        elif status == 'draft':
+            currency_data[currency]['draft_invoices'] += 1
 
-            # Second: from USD to target currency
-            target_amount = usd_amount * float(rates[target_currency])
-            total += target_amount
+        if status == 'overdue':
+            currency_data[currency]['overdue_invoices'] += 1
 
-    return round(total, 2)
+    # Round all currency totals
+    for currency in currency_data:
+        currency_data[currency]['total_revenue'] = round(currency_data[currency]['total_revenue'], 2)
+        currency_data[currency]['total_outstanding'] = round(currency_data[currency]['total_outstanding'], 2)
+
+    return currency_data
 
 
 @dashboard_bp.route('/api/dashboard/summary', methods=['GET'])
@@ -194,7 +162,6 @@ def get_dashboard_summary():
     """
     try:
         user_id = request.args.get('user_id')
-        target_currency = request.args.get('currency', 'USD')
 
         if not user_id:
             return jsonify({'success': False, 'error': 'User ID is required'}), 400
@@ -210,15 +177,14 @@ def get_dashboard_summary():
         # Get all invoices for the user
         invoices = Invoice.query.filter_by(user_id=user_id).all()
 
-        # Calculate metrics
+        # Calculate overall metrics
         paid_invoices = [inv for inv in invoices if inv.status == 'paid']
         unpaid_invoices = [inv for inv in invoices if inv.status in ['sent', 'in progress', 'overdue']]
         draft_invoices = [inv for inv in invoices if inv.status == 'draft']
         overdue_invoices = [inv for inv in invoices if inv.status == 'overdue']
 
-        # Calculate totals using the strict function
-        total_revenue = get_total_revenue(paid_invoices, target_currency)
-        total_outstanding = get_total_revenue(unpaid_invoices, target_currency)
+        # Calculate currency-specific metrics
+        currency_metrics = calculate_currency_metrics(invoices)
 
         # Get unique clients
         unique_clients = set()
@@ -261,130 +227,16 @@ def get_dashboard_summary():
 
         return jsonify({
             'success': True,
-            'total_revenue': total_revenue,
-            'total_outstanding': total_outstanding,
             'total_invoices': len(invoices),
             'paid_invoices': len(paid_invoices),
             'unpaid_invoices': len(unpaid_invoices),
             'draft_invoices': len(draft_invoices),
             'overdue_invoices': len(overdue_invoices),
             'unique_clients': len(unique_clients),
-            'currency': target_currency,
+            'currency_metrics': currency_metrics,
             'invoices': invoices_data
         })
 
     except Exception as e:
         print(f"Error in dashboard summary: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@dashboard_bp.route('/api/dashboard/revenue', methods=['GET'])
-def get_dashboard_revenue():
-    """
-    Individual endpoint for revenue only
-    """
-    try:
-        user_id = request.args.get('user_id')
-        target_currency = request.args.get('currency', 'USD')
-
-        if not user_id:
-            return jsonify({'success': False, 'error': 'User ID is required'}), 400
-
-        from models import Invoice, User
-
-        user = User.query.filter_by(id=user_id).first()
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-
-        invoices = Invoice.query.filter_by(user_id=user_id).all()
-        paid_invoices = [inv for inv in invoices if inv.status == 'paid']
-
-        total_revenue = get_total_revenue(paid_invoices, target_currency)
-
-        return jsonify({
-            'success': True,
-            'total_revenue': total_revenue,
-            'currency': target_currency,
-            'paid_invoices_count': len(paid_invoices)
-        })
-
-    except Exception as e:
-        print(f"Error in revenue endpoint: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@dashboard_bp.route('/api/dashboard/outstanding', methods=['GET'])
-def get_outstanding_receivables():
-    """
-    Individual endpoint for outstanding receivables only
-    """
-    try:
-        user_id = request.args.get('user_id')
-        target_currency = request.args.get('currency', 'USD')
-
-        if not user_id:
-            return jsonify({'success': False, 'error': 'User ID is required'}), 400
-
-        from models import Invoice, User
-
-        user = User.query.filter_by(id=user_id).first()
-        if not user:
-            return jsonify({'success': False, 'error': 'User not found'}), 404
-
-        invoices = Invoice.query.filter_by(user_id=user_id).all()
-        unpaid_invoices = [inv for inv in invoices if inv.status in ['sent', 'in progress', 'overdue']]
-
-        total_outstanding = get_total_revenue(unpaid_invoices, target_currency)
-
-        return jsonify({
-            'success': True,
-            'total_outstanding': total_outstanding,
-            'unpaid_invoices_count': len(unpaid_invoices),
-            'currency': target_currency
-        })
-
-    except Exception as e:
-        print(f"Error in outstanding endpoint: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
-
-
-@dashboard_bp.route('/api/dashboard/currencies', methods=['GET'])
-def get_supported_currencies():
-    """
-    Get list of supported currencies from CurrencyFreaks
-    """
-    try:
-        if not API_KEY:
-            # Without API key, only allow USD
-            return jsonify({
-                'success': True,
-                'currencies': ['USD']
-            })
-
-        response = requests.get(
-            "https://api.currencyfreaks.com/v2.0/rates/latest",
-            params={'apikey': API_KEY},
-            timeout=10
-        )
-        response.raise_for_status()
-        rates_data = response.json()
-        rates = rates_data.get('rates', {})
-
-        currencies = list(rates.keys())
-        # Ensure USD is included
-        if 'USD' not in currencies:
-            currencies.append('USD')
-
-        currencies.sort()
-
-        return jsonify({
-            'success': True,
-            'currencies': currencies
-        })
-    except Exception as e:
-        print(f"Error fetching currencies: {e}")
-        # Without API access, only allow USD
-        return jsonify({
-            'success': True,
-            'currencies': ['USD']
-        })

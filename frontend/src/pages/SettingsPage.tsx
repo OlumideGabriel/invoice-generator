@@ -6,6 +6,7 @@ import ProfileSection from '../components/ProfileSection';
 import MainMenu from '../components/MainMenu';
 import Navbar from '../components/Navbar';
 import TemplatesSection from '../components/TemplatesSection';
+import IntegrationsSection from '../components/IntegrationsSection';
 import {
   User,
   Mail,
@@ -18,7 +19,8 @@ import {
   CheckCircle2,
   AlertCircle,
   BriefcaseBusiness,
-  X
+  X,
+  Cog
 } from 'lucide-react';
 
 const SettingsPage = () => {
@@ -45,6 +47,7 @@ const SettingsPage = () => {
     { id: 'templates', label: 'Invoice Templates', icon: FileText },
     { id: 'business', label: 'Businesses', icon: BriefcaseBusiness },
     { id: 'billing', label: 'Billing', icon: CreditCard },
+    { id: 'integrations', label: 'Manage Integrations', icon: Cog },
   ];
 
   const showNotification = (message, type = 'success') => {
@@ -108,16 +111,17 @@ const SettingsPage = () => {
   );
 
   const renderActiveSection = () => {
-    const sections = {
-      profile: () => <ProfileSection showNotification={showNotification} />,
-      templates: () => <TemplatesSection showNotification={showNotification} />,
-      business: BusinessSectionWrapper,
-      billing: BillingSection,
-    };
-
-    const Component = sections[activeSection] || sections.profile;
-    return <Component />;
+  const sections = {
+    profile: () => <ProfileSection showNotification={showNotification} />,
+    templates: () => <TemplatesSection showNotification={showNotification} />,
+    business: BusinessSectionWrapper,
+    billing: BillingSection,
+    integrations: () => <IntegrationsSection showNotification={showNotification} />,
   };
+
+  const Component = sections[activeSection] || sections.profile;
+  return <Component />;
+};
 
   const Notification = ({ message, type }) => (
     <div className="fixed bottom-4 right-4 left-4 md:left-auto z-50">

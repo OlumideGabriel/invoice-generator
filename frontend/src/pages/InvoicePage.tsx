@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from "react-router-dom";
+
 import {
   ArrowLeft,
   Download,
@@ -28,12 +30,14 @@ import {
   Users,
   Hash,
   Menu,
-  Check
+  Check,
+  XCircle
 } from 'lucide-react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCurrency } from '../context/CurrencyContext';
 import { API_BASE_URL } from '../config/api';
+import SendInvoice from '../components/SendInvoice';
 import MainMenu from '../components/MainMenu';
 
 // Types from your original component
@@ -115,7 +119,7 @@ interface Invoice {
   business?: Business;
 }
 
-const InvoicePageRedesign = () => {
+const InvoicePage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -132,6 +136,9 @@ const InvoicePageRedesign = () => {
   const [fincraEnabled, setFincraEnabled] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [updatingStatus, setUpdatingStatus] = useState<boolean>(false);
+  const [showSend, setShowSend] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
+  const [showStatusDropdown, setShowStatusDropdown] = useState(false);
 
   useEffect(() => {
     if (id && user?.id) {
@@ -206,19 +213,11 @@ const InvoicePageRedesign = () => {
     }
   };
 
-  // In your InvoicePageRedesign component - FIX the handleEditInvoice function
-// In your InvoicePageRedesign component - UPDATE the handleEditInvoice function
-const handleEditInvoice = () => {
-  if (!invoice) return;
+  const handleEditInvoice = () => {
+    if (!invoice) return;
 
-  // Navigate to the invoice generator with the invoice ID
-  navigate('/new', {
-    state: {
-      editInvoiceId: invoice.id,
-      isEditing: true
-    }
-  });
-};
+    navigate(`/invoice/edit/${invoice.id}`)
+  };
 
   const handleEditClient = () => {
     if (client) {
@@ -234,24 +233,21 @@ const handleEditInvoice = () => {
     }
   };
 
-  // FIXED: Preview functionality using /preview-invoice
   const handlePreviewPDF = async () => {
     if (!invoice) return;
 
     try {
       setPreviewLoading(true);
 
-      // Use the correct endpoint and payload structure for your Flask backend
       const response = await fetch(`${API_BASE_URL}/preview-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(invoice.data) // Send invoice data directly as your Flask expects
+        body: JSON.stringify(invoice.data)
       });
 
       if (response.ok) {
-        // Since your backend returns a PNG image, create object URL for the image
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         setPreviewUrl(url);
@@ -266,20 +262,18 @@ const handleEditInvoice = () => {
     }
   };
 
-  // FIXED: Download functionality using /generate-invoice
   const handleDownloadPDF = async () => {
     if (!invoice) return;
 
     try {
       setDownloading(true);
 
-      // Use the correct endpoint and payload structure
       const response = await fetch(`${API_BASE_URL}/generate-invoice`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(invoice.data) // Send invoice data directly
+        body: JSON.stringify(invoice.data)
       });
 
       if (response.ok) {
@@ -304,8 +298,7 @@ const handleEditInvoice = () => {
     }
   };
 
-  // NEW: Mark as paid functionality
-  const handleMarkAsPaid = async () => {
+  const handleUpdateStatus = async (newStatus: string) => {
     if (!invoice || !user?.id) return;
 
     try {
@@ -317,39 +310,27 @@ const handleEditInvoice = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          status: 'paid',
+          status: newStatus,
           user_id: user.id
         })
       });
 
       if (response.ok) {
-        // Update local state
-        setInvoice(prev => prev ? { ...prev, status: 'paid' } : null);
-
-        // Show success message or notification
-        console.log('Invoice marked as paid successfully');
+        setInvoice(prev => prev ? { ...prev, status: newStatus } : null);
+        console.log(`Invoice status updated to ${newStatus} successfully`);
+        setShowStatusDropdown(false);
+        setShowMobileMenu(false);
       } else {
         throw new Error('Failed to update invoice status');
       }
     } catch (error) {
-      console.error('Error marking invoice as paid:', error);
-      setError('Failed to mark invoice as paid');
+      console.error('Error updating invoice status:', error);
+      setError(`Failed to mark invoice as ${newStatus}`);
     } finally {
       setUpdatingStatus(false);
     }
   };
 
-  // NEW: Send invoice functionality
-  const handleSendInvoice = async () => {
-    if (!invoice) return;
-
-    // This would integrate with your email sending functionality
-    // For now, just log and show a message
-    console.log('Sending invoice:', invoice.id);
-    // You can implement actual email sending here later
-  };
-
-  // Close preview and clean up URL
   const closePreview = () => {
     if (previewUrl) {
       window.URL.revokeObjectURL(previewUrl);
@@ -357,7 +338,6 @@ const handleEditInvoice = () => {
     setPreviewUrl(null);
   };
 
-  // Extract client name from "to" field as fallback
   const getClientFromInvoiceData = (): Client | null => {
     if (!invoice?.data.to) return null;
 
@@ -379,7 +359,6 @@ const handleEditInvoice = () => {
     };
   };
 
-  // UPDATED: Create fallback business from invoice data with better handling
   const getBusinessFromInvoiceData = (): Business | null => {
     if (!invoice?.data.from) return null;
 
@@ -400,101 +379,20 @@ const handleEditInvoice = () => {
     };
   };
 
-  // UPDATED: Use actual business data from API response or fallback
   const displayClient = client || getClientFromInvoiceData();
   const displayBusiness = business || getBusinessFromInvoiceData();
 
-  // UPDATED: Helper function to get business name with proper fallback
   const getBusinessName = (): string => {
-    // First priority: Business name from the API response
     if (business?.name) {
       return business.name;
     }
 
-    // Second priority: Business name extracted from invoice data
     if (invoice?.data.from) {
       const lines = invoice.data.from.split('\n');
       return lines[0] || 'Unknown Business';
     }
 
-    // Fallback
     return 'Unknown Business';
-  };
-
-  const generatePDF = async (action: 'download' | 'preview' = 'download') => {
-    if (!invoice) return;
-
-    try {
-      if (action === 'download') {
-        setDownloading(true);
-      } else {
-        setPreviewLoading(true);
-      }
-
-      const payload = {
-        user_id: user?.id,
-        invoice_data: {
-          from: invoice.data.from,
-          to: invoice.data.to,
-          items: invoice.data.items,
-          invoice_number: invoice.data.invoice_number,
-          issued_date: invoice.data.issued_date,
-          due_date: invoice.data.due_date,
-          payment_details: invoice.data.payment_details,
-          terms: invoice.data.terms,
-          tax_percent: invoice.data.tax_percent,
-          discount_percent: invoice.data.discount_percent,
-          shipping_amount: invoice.data.shipping_amount,
-          tax_type: invoice.data.tax_type,
-          discount_type: invoice.data.discount_type,
-          show_tax: invoice.data.show_tax,
-          show_discount: invoice.data.show_discount,
-          show_shipping: invoice.data.show_shipping,
-          logo_url: invoice.data.logo_url,
-          currency: invoice.data.currency || currentCurrency,
-          currency_symbol: invoice.data.currency_symbol,
-        }
-      };
-
-      const endpoint = action === 'download' ? 'generate-pdf' : 'preview-pdf';
-      const response = await fetch(`${API_BASE_URL}/api/invoices/${invoice.id}/${endpoint}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        if (action === 'download') {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.style.display = 'none';
-          a.href = url;
-          a.download = `invoice-${invoice.data.invoice_number}.pdf`;
-          document.body.appendChild(a);
-          a.click();
-          window.URL.revokeObjectURL(url);
-          document.body.removeChild(a);
-        } else {
-          const blob = await response.blob();
-          const url = window.URL.createObjectURL(blob);
-          setPreviewUrl(url);
-        }
-      } else {
-        throw new Error('Failed to generate PDF');
-      }
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      setError(`Failed to ${action} PDF`);
-    } finally {
-      if (action === 'download') {
-        setDownloading(false);
-      } else {
-        setPreviewLoading(false);
-      }
-    }
   };
 
   const calculateSubtotal = (items: InvoiceItem[]): number => {
@@ -503,29 +401,53 @@ const handleEditInvoice = () => {
     }, 0);
   };
 
+  const calculateDiscountAmount = (): number => {
+    if (!invoice?.data) return 0;
+
+    if (!invoice.data.show_discount || !invoice.data.discount_percent) return 0;
+
+    const subtotal = calculateSubtotal(invoice.data.items || []);
+
+    if (invoice.data.discount_type === 'percent') {
+      return (subtotal * invoice.data.discount_percent) / 100;
+    } else {
+      return invoice.data.discount_percent;
+    }
+  };
+
+  const calculateTaxAmount = (): number => {
+    if (!invoice?.data) return 0;
+
+    if (!invoice.data.show_tax || !invoice.data.tax_percent) return 0;
+
+    const subtotal = calculateSubtotal(invoice.data.items || []);
+    const discountAmount = calculateDiscountAmount();
+    const amountAfterDiscount = subtotal - discountAmount;
+
+    if (invoice.data.tax_type === 'percent') {
+      return (amountAfterDiscount * invoice.data.tax_percent) / 100;
+    } else {
+      return invoice.data.tax_percent;
+    }
+  };
+
+  const calculateShippingAmount = (): number => {
+    if (!invoice?.data) return 0;
+
+    if (!invoice.data.show_shipping || !invoice.data.shipping_amount) return 0;
+
+    return invoice.data.shipping_amount;
+  };
+
   const calculateTotal = (): number => {
     if (!invoice?.data) return 0;
 
     const subtotal = calculateSubtotal(invoice.data.items || []);
-    let total = subtotal;
+    const discountAmount = calculateDiscountAmount();
+    const taxAmount = calculateTaxAmount();
+    const shippingAmount = calculateShippingAmount();
 
-    if (invoice.data.show_discount && invoice.data.discount_percent) {
-      const discountAmount = invoice.data.discount_type === 'percent'
-        ? (subtotal * invoice.data.discount_percent) / 100
-        : invoice.data.discount_percent;
-      total -= discountAmount;
-    }
-
-    if (invoice.data.show_shipping && invoice.data.shipping_amount) {
-      total += invoice.data.shipping_amount;
-    }
-
-    if (invoice.data.show_tax && invoice.data.tax_percent) {
-      const taxAmount = invoice.data.tax_type === 'percent'
-        ? (total * invoice.data.tax_percent) / 100
-        : invoice.data.tax_percent;
-      total += taxAmount;
-    }
+    let total = subtotal - discountAmount + taxAmount + shippingAmount;
 
     return Math.max(0, total);
   };
@@ -554,7 +476,8 @@ const handleEditInvoice = () => {
           className: 'bg-gray-100 text-gray-800',
           icon: Clock,
           color: 'text-gray-600',
-          canMarkPaid: true
+          canMarkPaid: true,
+          canMarkUnpaid: false
         };
       case 'sent':
         return {
@@ -562,7 +485,8 @@ const handleEditInvoice = () => {
           className: 'bg-blue-100 text-blue-800',
           icon: CheckCircle2,
           color: 'text-blue-600',
-          canMarkPaid: true
+          canMarkPaid: true,
+          canMarkUnpaid: true
         };
       case 'paid':
         return {
@@ -570,7 +494,8 @@ const handleEditInvoice = () => {
           className: 'bg-green-100 text-green-800',
           icon: CheckCircle2,
           color: 'text-green-600',
-          canMarkPaid: false
+          canMarkPaid: false,
+          canMarkUnpaid: true
         };
       case 'overdue':
         return {
@@ -578,7 +503,8 @@ const handleEditInvoice = () => {
           className: 'bg-red-100 text-red-800',
           icon: AlertCircle,
           color: 'text-red-600',
-          canMarkPaid: true
+          canMarkPaid: true,
+          canMarkUnpaid: true
         };
       default:
         return {
@@ -586,7 +512,8 @@ const handleEditInvoice = () => {
           className: 'bg-gray-100 text-gray-800',
           icon: Clock,
           color: 'text-gray-600',
-          canMarkPaid: true
+          canMarkPaid: true,
+          canMarkUnpaid: true
         };
     }
   };
@@ -628,6 +555,9 @@ const handleEditInvoice = () => {
   }
 
   const subtotal = calculateSubtotal(invoice.data.items || []);
+  const discountAmount = calculateDiscountAmount();
+  const taxAmount = calculateTaxAmount();
+  const shippingAmount = calculateShippingAmount();
   const total = calculateTotal();
 
   return (
@@ -642,7 +572,7 @@ const handleEditInvoice = () => {
       <div className="min-h-screen bg-gray-100">
         {/* Mobile Header */}
         <div className="md:hidden bg-white border-b border-gray-200 sticky top-0 z-20">
-          <div className="px-4 py-3">
+          <div className="px-6 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <button
@@ -663,46 +593,114 @@ const handleEditInvoice = () => {
               </div>
 
               <div className="flex items-center space-x-2">
-                {/* NEW: Edit button for mobile */}
-                <button
-                  onClick={handleEditInvoice}
-                  className="p-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                  title="Edit Invoice"
-                >
-                  <Edit className="h-4 w-4" />
-                </button>
-
-                <button
-                  onClick={handlePreviewPDF}
-                  disabled={previewLoading}
-                  className="p-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                  title="Preview"
-                >
-                  {previewLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-
-                <button
-                  onClick={handleDownloadPDF}
-                  disabled={downloading}
-                  className="p-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
-                  title="Download"
-                >
-                  {downloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                </button>
-
                 {/* Mobile dropdown for additional actions */}
                 <div className="relative">
-                  <button className="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    <ChevronDown className="h-4 w-4" />
+                  <button
+                    onClick={() => setShowMobileMenu(!showMobileMenu)}
+                    className="p-2 bg-neutral-50 text-neutral-500 rounded-md border border-neutral-300 hover:bg-neutral-100 transition-colors"
+                  >
+                    <MoreVertical className="h-4 w-4" />
                   </button>
+
+                  {/* Mobile Dropdown Menu */}
+                  {showMobileMenu && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowMobileMenu(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        {/* Status Update Options */}
+                        {statusConfig.canMarkPaid && (
+                          <button
+                            onClick={() => handleUpdateStatus('paid')}
+                            disabled={updatingStatus}
+                            className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                          >
+                            {updatingStatus ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            )}
+                            <span className="font-medium text-gray-900">Mark as Paid</span>
+                          </button>
+                        )}
+
+                        {statusConfig.canMarkUnpaid && invoice.status !== 'draft' && (
+                          <button
+                            onClick={() => handleUpdateStatus('sent')}
+                            disabled={updatingStatus}
+                            className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                          >
+                            {updatingStatus ? (
+                              <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                            ) : (
+                              <XCircle className="h-4 w-4 text-orange-600" />
+                            )}
+                            <span className="font-medium text-gray-900">Mark as Unpaid</span>
+                          </button>
+                        )}
+
+                        {invoice?.status !== 'sent' && invoice?.status !== 'paid' && (
+                          <button
+                            onClick={() => {
+                              setShowSend(true);
+                              setShowMobileMenu(false);
+                            }}
+                            className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 text-sm"
+                          >
+                            <Mail className="h-4 w-4 text-gray-600" />
+                            <span className="font-medium text-gray-900">Send Invoice</span>
+                          </button>
+                        )}
+
+                        <div className="border-t border-gray-200 my-1" />
+
+                        <button
+                          onClick={() => {
+                            handleEditInvoice();
+                            setShowMobileMenu(false);
+                          }}
+                          className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 text-sm"
+                        >
+                          <Edit className="h-4 w-4 text-gray-600" />
+                          <span className="font-medium text-gray-900">Edit Invoice</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            handlePreviewPDF();
+                            setShowMobileMenu(false);
+                          }}
+                          disabled={previewLoading}
+                          className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                        >
+                          {previewLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                          ) : (
+                            <Eye className="h-4 w-4 text-gray-600" />
+                          )}
+                          <span className="font-medium text-gray-900">Preview PDF</span>
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            handleDownloadPDF();
+                            setShowMobileMenu(false);
+                          }}
+                          disabled={downloading}
+                          className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                        >
+                          {downloading ? (
+                            <Loader2 className="h-4 w-4 animate-spin text-gray-600" />
+                          ) : (
+                            <Download className="h-4 w-4 text-gray-600" />
+                          )}
+                          <span className="font-medium text-gray-900">Download PDF</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -730,70 +728,116 @@ const handleEditInvoice = () => {
               </div>
 
               <div className="flex items-center space-x-3">
-                {/* NEW: Edit button for desktop */}
                 <button
                   onClick={handleEditInvoice}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 transition-colors md:px-3"
                 >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Edit Invoice
+                  <Edit className="h-4 w-4 md:mr-0 xl:mr-2" />
+                  <span className="hidden xl:inline">Edit Invoice</span>
                 </button>
 
                 <button
                   onClick={handlePreviewPDF}
                   disabled={previewLoading}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors md:px-3"
                 >
                   {previewLoading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 md:mr-0 lg:mr-2 animate-spin" />
                   ) : (
-                    <Eye className="h-4 w-4 mr-2" />
+                    <Eye className="h-4 w-4 md:mr-0 xl:mr-2" />
                   )}
-                  Preview
+                  <span className="hidden xl:inline">Preview</span>
                 </button>
 
                 <button
                   onClick={handleDownloadPDF}
                   disabled={downloading}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors"
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 transition-colors md:px-3"
                 >
                   {downloading ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    <Loader2 className="h-4 w-4 md:mr-0 lg:mr-2 animate-spin" />
                   ) : (
-                    <Download className="h-4 w-4 mr-2" />
+                    <Download className="h-4 w-4 md:mr-0 xl:mr-2" />
                   )}
-                  Download
+                  <span className="hidden xl:inline">Download</span>
                 </button>
 
-                {/* Conditional button for mark as paid/send invoice */}
-                {invoice?.status === 'paid' ? (
-                  <button
-                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg cursor-default"
-                    disabled
-                  >
-                    <Check className="h-4 w-4 mr-2" />
-                    Paid Invoice
-                  </button>
-                ) : (
-                  <button
-                    onClick={handleMarkAsPaid}
-                    disabled={updatingStatus}
-                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                  >
-                    {updatingStatus ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                    )}
-                    Mark as Paid
-                  </button>
-                )}
+                {/* Status Dropdown */}
+                <div className="relative">
+                  {invoice?.status === 'paid' ? (
+                    <button
+                      onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                      className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <Check className="h-4 w-4 mr-2" />
+                      Paid Invoice
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowStatusDropdown(!showStatusDropdown)}
+                      disabled={updatingStatus}
+                      className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                    >
+                      {updatingStatus ? (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4 mr-2" />
+                      )}
+                      Update Status
+                      <ChevronDown className="h-4 w-4 ml-2" />
+                    </button>
+                  )}
 
-                {/* Send invoice button */}
-                {invoice?.status !== 'paid' && (
+                  {/* Status Dropdown Menu */}
+                  {showStatusDropdown && (
+                    <>
+                      <div
+                        className="fixed inset-0 z-40"
+                        onClick={() => setShowStatusDropdown(false)}
+                      />
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50">
+                        {statusConfig.canMarkPaid && (
+                          <button
+                            onClick={() => handleUpdateStatus('paid')}
+                            disabled={updatingStatus}
+                            className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                          >
+                            <CheckCircle2 className="h-4 w-4 text-green-600" />
+                            <span className="font-medium text-gray-900">Mark as Paid</span>
+                          </button>
+                        )}
+
+                        {statusConfig.canMarkUnpaid && invoice.status !== 'draft' && (
+                          <button
+                            onClick={() => handleUpdateStatus('sent')}
+                            disabled={updatingStatus}
+                            className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                          >
+                            <XCircle className="h-4 w-4 text-orange-600" />
+                            <span className="font-medium text-gray-900">Mark as Unpaid</span>
+                          </button>
+                        )}
+
+                        {invoice.status === 'draft' && (
+                          <button
+                            onClick={() => handleUpdateStatus('sent')}
+                            disabled={updatingStatus}
+                            className="w-full px-4 py-3 text-left flex items-center space-x-3 hover:bg-gray-50 disabled:opacity-50 text-sm"
+                          >
+                            <Mail className="h-4 w-4 text-blue-600" />
+                            <span className="font-medium text-gray-900">Mark as Sent</span>
+                          </button>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {invoice?.status !== 'sent' && invoice?.status !== 'paid' && (
                   <button
-                    onClick={handleSendInvoice}
-                    className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                    onClick={() => setShowSend(true)}
+                    className="inline-flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
                   >
                     <Mail className="h-4 w-4 mr-2" />
                     Send Invoice
@@ -845,21 +889,48 @@ const handleEditInvoice = () => {
                 </div>
 
                 <div className="space-y-3">
-                  {invoice.data.items?.map((item, index) => (
-                    <div key={item.id || index} className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm truncate flex-1 mr-2">{item.name}</span>
-                      <span className="font-medium text-sm whitespace-nowrap">
-                        {formatAmount(item.quantity * item.unit_cost)}
-                      </span>
-                    </div>
-                  ))}
-
-                  <div className="border-t border-gray-200 pt-3 mt-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600 text-sm">Subtotal</span>
-                      <span className="font-medium text-sm">{formatAmount(subtotal)}</span>
-                    </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Subtotal</span>
+                    <span className="font-medium text-gray-900">{formatAmount(subtotal)}</span>
                   </div>
+
+                  {/* Discount Row - Only show if discount is enabled and has value */}
+                  {invoice.data.show_discount && discountAmount > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        Discount
+                        {invoice.data.discount_type === 'percent' && invoice.data.discount_percent > 0 && (
+                          <span className="text-gray-400 ml-1">
+                            ({invoice.data.discount_percent}%)
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-medium text-red-600">-{formatAmount(discountAmount)}</span>
+                    </div>
+                  )}
+
+                  {/* Tax Row - Only show if tax is enabled and has value */}
+                  {invoice.data.show_tax && taxAmount > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">
+                        Tax
+                        {invoice.data.tax_type === 'percent' && invoice.data.tax_percent > 0 && (
+                          <span className="text-gray-400 ml-1">
+                            ({invoice.data.tax_percent}%)
+                          </span>
+                        )}
+                      </span>
+                      <span className="font-medium text-gray-900">{formatAmount(taxAmount)}</span>
+                    </div>
+                  )}
+
+                  {/* Shipping Row - Only show if shipping is enabled and has value */}
+                  {invoice.data.show_shipping && shippingAmount > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Shipping</span>
+                      <span className="font-medium text-gray-900">{formatAmount(shippingAmount)}</span>
+                    </div>
+                  )}
 
                   <div className="border-t border-gray-200 pt-3">
                     <div className="flex justify-between items-center">
@@ -903,9 +974,12 @@ const handleEditInvoice = () => {
                   </label>
                 </div>
 
-                <button className="w-full px-4 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors cursor-not-allowed">
-                  Manage integrations
-                </button>
+                <Link to="/settings?section=integrations">
+                  <button className="w-full px-4 py-2 bg-gray-50 text-gray-700 rounded-lg text-sm font-medium
+                    hover:bg-gray-100 transition-colors">
+                    Manage integrations
+                  </button>
+                </Link>
               </div>
             </div>
 
@@ -957,7 +1031,6 @@ const handleEditInvoice = () => {
                             </div>
                           )}
                           <div className="flex-1 min-w-0">
-                            {/* UPDATED: Use the helper function to get business name */}
                             <h4 className="font-medium text-gray-900 truncate">
                               {getBusinessName()}
                             </h4>
@@ -997,9 +1070,55 @@ const handleEditInvoice = () => {
                             </td>
                           </tr>
                         ))}
+
+                        {/* Subtotal Row */}
                         <tr className="border-t-2 border-gray-200">
                           <td className="py-4 px-2 font-semibold text-gray-900" colSpan={3}>Subtotal</td>
                           <td className="py-4 px-2 text-right font-semibold text-gray-900">{formatAmount(subtotal)}</td>
+                        </tr>
+
+                        {/* Discount Row - Only show if discount is enabled and has value */}
+                        {invoice.data.show_discount && discountAmount > 0 && (
+                          <tr>
+                            <td className="py-2 px-2 text-gray-600" colSpan={3}>
+                              Discount
+                              {invoice.data.discount_type === 'percent' && invoice.data.discount_percent > 0 && (
+                                <span className="text-gray-400 ml-1">
+                                  ({invoice.data.discount_percent}%)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-2 text-right font-medium text-red-600">-{formatAmount(discountAmount)}</td>
+                          </tr>
+                        )}
+
+                        {/* Tax Row - Only show if tax is enabled and has value */}
+                        {invoice.data.show_tax && taxAmount > 0 && (
+                          <tr>
+                            <td className="py-2 px-2 text-gray-600" colSpan={3}>
+                              Tax
+                              {invoice.data.tax_type === 'percent' && invoice.data.tax_percent > 0 && (
+                                <span className="text-gray-400 ml-1">
+                                  ({invoice.data.tax_percent}%)
+                                </span>
+                              )}
+                            </td>
+                            <td className="py-2 px-2 text-right font-medium text-gray-900">{formatAmount(taxAmount)}</td>
+                          </tr>
+                        )}
+
+                        {/* Shipping Row - Only show if shipping is enabled and has value */}
+                        {invoice.data.show_shipping && shippingAmount > 0 && (
+                          <tr>
+                            <td className="py-2 px-2 text-gray-600" colSpan={3}>Shipping</td>
+                            <td className="py-2 px-2 text-right font-medium text-gray-900">{formatAmount(shippingAmount)}</td>
+                          </tr>
+                        )}
+
+                        {/* Total Row */}
+                        <tr className="border-t-2 border-gray-200">
+                          <td className="py-4 px-2 font-bold text-gray-900" colSpan={3}>Total</td>
+                          <td className="py-4 px-2 text-right font-bold text-gray-900">{formatAmount(total)}</td>
                         </tr>
                       </tbody>
                     </table>
@@ -1048,8 +1167,17 @@ const handleEditInvoice = () => {
           </div>
         </div>
       )}
+
+      {showSend && invoice && (
+          <SendInvoice
+            invoice={invoice}
+            client={displayClient}
+            business={displayBusiness}  // Add this line
+            onClose={() => setShowSend(false)}
+          />
+        )}
     </>
   );
 };
 
-export default InvoicePageRedesign;
+export default InvoicePage;

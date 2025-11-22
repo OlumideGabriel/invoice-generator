@@ -76,7 +76,7 @@ const SaveButton: React.FC<SaveButtonProps> = ({
   // Size configurations
   const sizeConfig = {
     sm: { padding: 'px-6 py-2.5', text: 'text-sm', icon: 14, spinner: 'sm' as const },
-    md: { padding: 'px-4 py-2', text: 'text-sm', icon: 16, spinner: 'md' as const },
+    md: { padding: 'px-6 py-[0.78rem]', text: 'text-md', icon: 16, spinner: 'md' as const },
     lg: { padding: 'px-8 py-3.5', text: 'text-md', icon: 16, spinner: 'md' as const },
   };
 
@@ -95,8 +95,8 @@ const SaveButton: React.FC<SaveButtonProps> = ({
     mobile: isSaved
       ? 'bg-green-100 text-green-700 border-green-300'
       : isUserLoggedIn
-      ? 'bg-white text-black border-gray-900'
-      : 'bg-white text-gray-700 border-gray-400 cursor-pointer',
+      ? 'text-black bg-white border-gray-200 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white'
+      : 'bg-white text-gray-700 border-gray-200 cursor-pointer',
   };
 
   const buttonStyles = `${baseStyles} ${variantStyles[variant]}`;

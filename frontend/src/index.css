@@ -241,14 +241,18 @@ h1 {
 
 }
 
+.remove {
+ @apply bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500;
+}
+
 .small-icon {
-    background-color: var(--primary-1);
-    color: var(--gray-1);
+    @apply bg-neutral-100;
+    @apply text-neutral-500;
     cursor: pointer;
 }
 .small-icon:hover {
-    background-color: var(--primary);
-    color: var(--gray-1);
+    @apply bg-neutral-200;
+    @apply text-neutral-700;
 
 }
 /* Add this to your CSS file */

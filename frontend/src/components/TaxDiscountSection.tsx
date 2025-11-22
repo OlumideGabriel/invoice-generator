@@ -107,7 +107,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
   return (
     <div className="mb-6">
       {/* Toggle Buttons */}
-      <div className="flex justify-end gap-3 mb-4">
+      <div className="flex justify-end gap-2 mb-4">
 
         <a
           role="button"
@@ -152,10 +152,10 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
       </div>
 
       {/* Input Fields */}
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2">
         {/* Tax Input */}
         {showTax && (
-          <div className="flex text-box justify-end items-center gap-4 ">
+          <div className="flex text-box justify-end items-center gap-2 ">
             <label className="text-sm font-medium labels">Tax</label>
             <div className="flex relative items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
                 {taxType === 'fixed' && (
@@ -198,7 +198,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
               role="button"
               tabIndex={0}
               onClick={handleToggleTax}
-              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
+              className={`remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
                transition-colors duration-200`}
             >
               <X size={18} />
@@ -208,7 +208,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
 
         {/* Discount Input */}
         {showDiscount && (
-          <div className="flex text-box justify-end items-center gap-4">
+          <div className="flex text-box justify-end items-center gap-2">
             <label className="text-sm font-medium labels">Discount</label>
             <div className="flex relative  border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
               {discountType === 'fixed' && (
@@ -249,7 +249,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
               role="button"
               tabIndex={0}
               onClick={handleToggleDiscount}
-              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
+              className={`remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
                transition-colors duration-200`}
             >
               <X size={18} />
@@ -259,7 +259,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
 
         {/* Shipping Input */}
         {showShipping && (
-          <div className="flex justify-end items-center gap-4">
+          <div className="flex justify-end items-center gap-2">
             <label className="text-sm font-medium labels">Shipping</label>
             <div className=" relative flex items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
@@ -292,7 +292,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
               role="button"
               tabIndex={0}
               onClick={handleToggleShipping}
-              className={`small-icon inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
+              className={`remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
                transition-colors duration-200`}
             >
               <X size={18} />
