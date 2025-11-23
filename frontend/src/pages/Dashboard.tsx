@@ -422,7 +422,7 @@ const Dashboard = () => {
 
         const recentInvoices = (dashboardData.invoices || [])
             .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-            .slice(0, 4);
+            .slice(0, 5);
 
         return {
             totalInvoices: dashboardData.total_invoices || 0,
