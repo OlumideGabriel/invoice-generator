@@ -601,10 +601,14 @@ useEffect(() => {
         <MainMenu showLogo={false} />
       </div>
       <div className="md:hidden block">
-        <MainMenu />
+        <MainMenu background="bg-teal-100" />
+      </div>
+
+      <div className="md:hidden h-96 -z-10 -mb-96 top-5 bg-gradient-to-b from-teal-100 to-teal-0">
       </div>
 
       <div className="py-6 flex flex-col md:flex-col-reverse xl:flex-row mb-40 lg:mb-20 w-full xl:max-w-7xl m-auto justify-center gap-4 xl:gap-8 p-0 sm:p-8 pb-20">
+
         {/* Main Invoice Form */}
         <div className="block flex-col w-full gap-4">
           {/* Error Alert */}
