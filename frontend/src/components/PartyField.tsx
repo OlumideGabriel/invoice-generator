@@ -254,7 +254,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className={`absolute top-2 right-2 p-0.5 rounded-sm bg-neutral-500 hover:bg-neutral-600
+              className={`absolute top-2 right-2 p-0.5 rounded-sm bg-neutral-300 hover:bg-neutral-400
                 text-gray-300 hover:text-white transition-all duration-200
                 ${isHovering ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
               aria-label="Clear selection"
