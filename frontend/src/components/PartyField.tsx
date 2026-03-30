@@ -73,6 +73,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
   const [selectedItem, setSelectedItem] = useState<PartyItem | null>(null);
   const { user } = useAuth();
   const navigate = useNavigate();
+  const STORAGE_KEY = `selectedParty_${type}`;
 
   const handleSuccess = () => {
     setIsModalOpen(false);
@@ -207,18 +208,45 @@ const PartyField: React.FC<PartyFieldProps> = ({
     }
   }, [showDropdown]);
 
+  // ✅ Load selectedParty from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        setSelectedParty(JSON.parse(stored));
+      }
+    } catch {
+      // ignore
+    }
+  }, [STORAGE_KEY]);
+
+  // ✅ Save selectedParty to localStorage when it changes
+  useEffect(() => {
+    try {
+      if (selectedParty) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(selectedParty));
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch {
+      // ignore
+    }
+  }, [selectedParty, STORAGE_KEY]);
+
   const handlePartySelect = (party: PartyItem) => {
     onChange({
       target: { value: party.name },
     } as React.ChangeEvent<HTMLTextAreaElement>);
     if (onSelect) onSelect(party);
     setSelectedParty(party); // ✅ store selected party
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(party)); // ✅ persist immediately
     setShowDropdown(false);
   };
 
   // ✅ Clear selected party and reset field
   const handleClear = () => {
     setSelectedParty(null);
+    localStorage.removeItem(STORAGE_KEY); // ✅ clear from storage
     onChange({
       target: { value: "" },
     } as React.ChangeEvent<HTMLTextAreaElement>);

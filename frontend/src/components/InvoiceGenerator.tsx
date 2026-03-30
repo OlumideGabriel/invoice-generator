@@ -590,6 +590,8 @@ const InvoiceGenerator: React.FC = () => {
     setBusinessId(null);
     clearInvoiceFromLocalStorage();
     setLastSavedTime(null);
+    localStorage.removeItem("selectedParty_client");
+    localStorage.removeItem("selectedParty_business");
   };
 
   // ==================== DATABASE OPERATIONS ====================
