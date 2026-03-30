@@ -601,7 +601,7 @@ useEffect(() => {
         <MainMenu showLogo={false} />
       </div>
       <div className="md:hidden block">
-        <MainMenu background="bg-teal-100" />
+        <MainMenu  />
       </div>
 
       <div className="md:hidden h-96 -z-10 -mb-96 top-5 bg-gradient-to-b from-teal-100 to-teal-0">

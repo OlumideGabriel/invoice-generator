@@ -1,50 +1,60 @@
-import React from 'react';
-import { supabase } from '../lib/supabase'; // make sure you have this client setup
+import React from "react";
+import { supabase } from "../lib/supabase";
 
-const GoogleLoginButton: React.FC = () => {
+interface GoogleLoginButtonProps {
+  glow?: boolean;
+  disabled?: boolean;
+  loading?: boolean;
+}
+
+const GoogleLoginButton: React.FC<GoogleLoginButtonProps> = ({
+  glow = false,
+  disabled = false,
+  loading = false,
+}) => {
   const handleSignIn = async () => {
     const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
+      provider: "google",
       options: {
-        redirectTo: window.location.origin, // redirect after login
+        redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: {
-          access_type: 'offline', // get refresh token
-          prompt: 'consent',       // force consent screen first time
+          access_type: "offline",
+          prompt: "consent",
         },
       },
     });
 
     if (error) {
-      console.error('Google sign-in error:', error.message);
+      console.error("Google sign-in error:", error.message);
     }
   };
 
   return (
     <button
+      type="button"
       onClick={handleSignIn}
-      style={{
-        backgroundColor: '#fff',
-        border: '1px solid #ccc',
-        borderRadius: 4,
-        padding: '10px 20px',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '8px',
-      }}
+      disabled={disabled || loading}
+      className={`
+        flex items-center justify-center w-full px-6 py-3 gap-2
+        border rounded-xl text-emerald-900
+        transition-all duration-300
+        disabled:opacity-60 disabled:cursor-not-allowed
+        hover:shadow-sm
+        ${
+          glow
+            ? "animate-google-glow border-emerald-500"
+            : "border-gray-200 hover:border-gray-300"
+        }
+      `}
     >
       <img
         src="https://developers.google.com/identity/images/g-logo.png"
-        alt="Google logo"
-        width={18}
-        height={18}
+        alt="Google"
+        className="w-5 h-5"
       />
-      Continue with Google
+      <span>{loading ? "Redirecting..." : "Continue with Google"}</span>
     </button>
   );
 };
 
 export default GoogleLoginButton;
-
-
-

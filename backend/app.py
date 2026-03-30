@@ -68,6 +68,7 @@ CORS(app, resources={
             "https://envoyce.xyz",   # your frontend domain
             "http://localhost:5173", # dev
             "http://127.0.0.1:5173"  # dev alt
+            "http://127.0.0.1:5000"  # dev alt port
         ],
         "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
         "allow_headers": ["Content-Type", "Authorization"]
@@ -1193,19 +1194,47 @@ def get_supabase_jwks():
 
 @app.route('/api/auth/signin', methods=['POST'])
 def signin():
-    data = request.get_json()
-    email = data.get('email')
-    password = data.get('password')
-    if not email or not password:
-        return jsonify({'success': False, 'error': 'Email and password required.'}), 400
-    from models import User
-    user = User.query.filter_by(email=email).first()
-    if not user or not check_password_hash(user.password_hash, password):
-        return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
-    return jsonify({'success': True, 'user': {'id': str(user.id), 'email': user.email, 'first_name': user.first_name,
-                                              'last_name': user.last_name}})
+    try:
+        data = request.get_json()
+        email = data.get('email')
+        password = data.get('password')
 
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Email and password required.'}), 400
 
+        from models import User
+        user = User.query.filter_by(email=email).first()
+
+        if not user:
+            return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
+
+        # ✅ Google account detected — tell frontend to redirect to Google OAuth
+        if not user.password_hash:
+            return jsonify({
+                'success': False,
+                'auth_method': 'google',
+                'redirect': True,
+                'google_auth_url': '/auth/google',  # your Google OAuth route
+                'message': 'This account uses Google Sign-In. Redirecting...'
+            }), 200  # 200 so frontend handles it gracefully, not as an error
+
+        if not check_password_hash(user.password_hash, password):
+            return jsonify({'success': False, 'error': 'Invalid email or password.'}), 401
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'auth_method': 'native'
+            }
+        })
+
+    except Exception as e:
+        app.logger.error(f"Signin error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'An error occurred during sign in.'}), 500
 
 
 @app.route('/api/auth/status', methods=['GET'])

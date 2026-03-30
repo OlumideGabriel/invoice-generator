@@ -56,6 +56,21 @@ export default {
           5: "hsl(var(--chart-5))",
         },
       },
+      keyframes: {
+        googleGlow: {
+          "0%, 100%": {
+            boxShadow: "0 0 0 0 rgba(16, 185, 129, 0)",
+            borderColor: "rgba(16, 185, 129, 0.3)",
+          },
+          "50%": {
+            boxShadow: "0 0 0 6px rgba(16, 185, 129, 0.25)",
+            borderColor: "rgba(16, 185, 129, 1)",
+          },
+        },
+      },
+      animation: {
+        "google-glow": "googleGlow 1s ease-in-out infinite",
+      },
     },
   },
   plugins: [tailwindcssAnimate],

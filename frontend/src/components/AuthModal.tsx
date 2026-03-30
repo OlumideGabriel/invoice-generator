@@ -1,48 +1,49 @@
 // Components/AuthModal.tsx
-import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { supabase } from '../lib/supabase';
-import Modal from './Modal';
-import ReCAPTCHA from "react-google-recaptcha";
-
+import React, { useState, useEffect } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { supabase } from "../lib/supabase";
+import Modal from "./Modal";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  mode: 'signup' | 'login';
-  onModeChange: (mode: 'signup' | 'login') => void;
+  mode: "signup" | "login";
+  onModeChange: (mode: "signup" | "login") => void;
 }
 
 const AuthModal: React.FC<AuthModalProps> = ({
   isOpen,
   onClose,
   mode,
-  onModeChange
+  onModeChange,
 }) => {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [terms, setTerms] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleGlow, setGoogleGlow] = useState(false);
+  const [info, setInfo] = useState<string | null>(null);
 
   const { signinNative } = useAuth();
 
   useEffect(() => {
-    // Reset form when modal opens/closes or mode changes
     if (!isOpen) {
-      setFirstName('');
-      setLastName('');
-      setEmail('');
-      setPassword('');
+      setFirstName("");
+      setLastName("");
+      setEmail("");
+      setPassword("");
       setError(null);
+      setInfo(null);
       setTerms(false);
+      setGoogleGlow(false);
     }
-  }, [isOpen, mode]); // Added mode to dependency array
+  }, [isOpen, mode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,30 +51,42 @@ const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
 
     try {
-      const endpoint = mode === 'signup' ? 'api/auth/signup' : 'api/auth/signin';
-      const payload = mode === 'signup'
-        ? { first_name: firstName, last_name: lastName, email, password }
-        : { email, password };
+      const endpoint =
+        mode === "signup" ? "api/auth/signup" : "api/auth/signin";
+      const payload =
+        mode === "signup"
+          ? { first_name: firstName, last_name: lastName, email, password }
+          : { email, password };
 
       const apiUrl = import.meta.env.VITE_API_BASE_URL;
       const response = await fetch(`${apiUrl}/${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || 'Authentication failed');
+      // ✅ Google account detected — show error + glow the button
+      if (data.redirect && data.auth_method === "google") {
+        setInfo(
+          "This account uses Google Sign-In. Please use the button below.",
+        );
+        setGoogleGlow(true);
+        setTimeout(() => setGoogleGlow(false), 3000);
+        return;
+      }
+
+      if (!response.ok) throw new Error(data.error || "Authentication failed");
 
       if (data.success && data.user) {
         signinNative(data.user);
-        onClose(); // Close modal on successful auth
+        onClose();
       } else {
-        setError(data.error || 'Authentication failed');
+        setError(data.error || "Authentication failed");
       }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication');
+      setError(err.message || "An error occurred during authentication");
     } finally {
       setLoading(false);
     }
@@ -81,21 +94,22 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
+    setGoogleGlow(false); // stop glowing once they click
     setError(null);
+    setInfo(null);
 
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: { access_type: 'offline', prompt: 'consent' },
+          queryParams: { access_type: "offline", prompt: "consent" },
         },
       });
 
       if (error) throw new Error(error.message);
-      // Google login will redirect, so we don't need to close the modal here
     } catch (err: any) {
-      setError(err.message || 'Google login failed');
+      setError(err.message || "Google login failed");
       setGoogleLoading(false);
     }
   };
@@ -103,19 +117,19 @@ const AuthModal: React.FC<AuthModalProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
       <div className="w-full max-w-sm z-50 mx-auto">
-
         <h2 className="text-3xl font-regular text-neutral-800 mb-8 text-center">
-          {mode === 'signup' ? 'Create an account' : 'Sign in'}
+          {mode === "signup" ? "Create an account" : "Sign in"}
         </h2>
+
         <form className="space-y-4" onSubmit={handleSubmit}>
-          {mode === 'signup' && (
+          {mode === "signup" && (
             <div className="flex md:flex-row gap-4">
               <input
                 type="text"
                 placeholder="First name"
                 className="flex-1 w-32 input border px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500"
                 value={firstName}
-                onChange={e => setFirstName(e.target.value)}
+                onChange={(e) => setFirstName(e.target.value)}
                 required
               />
               <input
@@ -123,7 +137,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
                 placeholder="Last name"
                 className="flex-1 w-32 input border px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500"
                 value={lastName}
-                onChange={e => setLastName(e.target.value)}
+                onChange={(e) => setLastName(e.target.value)}
                 required
               />
             </div>
@@ -134,94 +148,140 @@ const AuthModal: React.FC<AuthModalProps> = ({
             placeholder="Email"
             className="w-full border input px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-emerald-500"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             required
           />
 
           <div className="relative">
             <input
-              type={showPassword ? 'text' : 'password'}
+              type={showPassword ? "text" : "password"}
               placeholder="Enter your password"
               className="w-full input border px-4 py-3 rounded-lg text-gray-900 focus:ring-2 focus:ring-neutral-500"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
             />
             <button
               type="button"
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
-              onClick={() => setShowPassword(v => !v)}
+              onClick={() => setShowPassword((v) => !v)}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
           </div>
 
-        {error && <div className="text-red-500 text-sm px-3 py-2 bg-red-50 rounded-lg">{error}</div>}
+          {/* Info message — neutral style */}
+          {info && (
+            <div className="text-gray-600 text-sm px-3 py-2 bg-gray-100 border border-gray-200 rounded-lg">
+              {info}
+            </div>
+          )}
+
+          {/* Error message — red style */}
+          {error && (
+            <div className="text-red-500 text-sm px-3 py-2 bg-red-50 rounded-lg">
+              {error}
+            </div>
+          )}
 
           <button
             type="submit"
             disabled={loading || googleLoading}
             className="w-full py-4 !bg-neutral-800 hover:!bg-neutral-900 text-white rounded-xl transition disabled:opacity-60"
           >
-            {loading ? (mode === 'signup' ? 'Creating account...' : 'Signing in...') : (mode === 'signup' ? 'Create account' : 'Sign in')}
+            {loading
+              ? mode === "signup"
+                ? "Creating account..."
+                : "Signing in..."
+              : mode === "signup"
+                ? "Create account"
+                : "Sign in"}
           </button>
 
           <div className="relative text-center text-gray-500 text-xs my-4">
-
-            <div className="absolute left-0 top-1/2 w-full border-t border-gray-200 " style={{ transform: 'translateY(-50%)' }}></div>
-            <span className="relative  px-2 bg-white">or</span>
+            <div
+              className="absolute left-0 top-1/2 w-full border-t border-gray-200"
+              style={{ transform: "translateY(-50%)" }}
+            />
+            <span className="relative px-2 bg-white">or</span>
           </div>
 
+          {/* ✅ Google button with glow animation */}
           <button
             type="button"
             disabled={loading || googleLoading}
-            className="flex items-center justify-center px-4 py-3 gap-2 border rounded-xl text-neutral-900 hover:shadow-sm transition disabled:opacity-60 w-full"
             onClick={handleGoogleLogin}
+            className={`
+              flex items-center justify-center px-4 py-3 gap-2 rounded-xl
+              text-neutral-900 transition-all duration-300 w-full
+              disabled:opacity-60 hover:shadow-sm
+              ${
+                googleGlow
+                  ? "border-2 border-emerald-500 animate-google-glow"
+                  : "border border-gray-200 hover:border-gray-300"
+              }
+            `}
           >
-            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" className="w-5 h-5" />
-            {googleLoading ? 'Redirecting...' : 'Continue with Google'}
+            <img
+              src="https://developers.google.com/identity/images/g-logo.png"
+              alt="Google"
+              className="w-5 h-5"
+            />
+            {googleLoading ? "Redirecting..." : "Continue with Google"}
           </button>
 
           <p className="text-gray-700 text-center pt-4 text-sm mb-6">
-          {mode === 'signup' ? (
-            <>
-              Already have an account?{' '}
-              <button
-                type="button"
-                className="text-neutral-700 hover:text-neutral-900 underline"
-                onClick={() => { onModeChange('login'); setError(null); }}
-              >
-                Log in
-              </button>
-            </>
-          ) : (
-            <>
-              Don&apos;t have an account?{' '}
-              <button
-                type="button"
-                className="text-gray-800 hover:text-gray-900 underline"
-                onClick={() => { onModeChange('signup'); setError(null); }}
-              >
-                Create one
-              </button>
-            </>
-          )}
-        </p>
+            {mode === "signup" ? (
+              <>
+                Already have an account?{" "}
+                <button
+                  type="button"
+                  className="text-neutral-700 hover:text-neutral-900 underline"
+                  onClick={() => {
+                    onModeChange("login");
+                    setError(null);
+                  }}
+                >
+                  Log in
+                </button>
+              </>
+            ) : (
+              <>
+                Don&apos;t have an account?{" "}
+                <button
+                  type="button"
+                  className="text-gray-800 hover:text-gray-900 underline"
+                  onClick={() => {
+                    onModeChange("signup");
+                    setError(null);
+                  }}
+                >
+                  Create one
+                </button>
+              </>
+            )}
+          </p>
 
-            <div className="m-10 pt-2">
+          <div className="m-10 pt-2">
             <p className="text-xs text-gray-400 text-center mt-4">
-              By clicking "Sign in", you accept Medium's{' '}
-              <a href="/terms-of-service" className="text-gray-400 underline hover:no-underline">
+              By clicking "Sign in", you accept our{" "}
+              <a
+                href="/terms-of-service"
+                className="text-gray-400 underline hover:no-underline"
+              >
                 Terms of Service
-              </a>{' '}
-              and{' '}
-              <a href="/privacy-policy" className="text-gray-400 underline hover:no-underline">
+              </a>{" "}
+              and{" "}
+              <a
+                href="/privacy-policy"
+                className="text-gray-400 underline hover:no-underline"
+              >
                 Privacy Policy
               </a>
               .
             </p>
-            </div>
+          </div>
         </form>
       </div>
     </Modal>
