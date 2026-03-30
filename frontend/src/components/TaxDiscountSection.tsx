@@ -1,7 +1,6 @@
-import React from 'react';
-import { ArrowRightLeft, X, Plus, Minus, SquareMinus } from 'lucide-react';
-import { useCurrency } from '../context/CurrencyContext';
-import Tooltip from './Tooltip';
+import React from "react";
+import { X, Plus } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 interface TaxDiscountSectionProps {
   taxPercent: number;
@@ -16,10 +15,10 @@ interface TaxDiscountSectionProps {
   setShowDiscount: (val: boolean) => void;
   showShipping: boolean;
   setShowShipping: (val: boolean) => void;
-  taxType: 'percent' | 'fixed';
-  setTaxType: (val: 'percent' | 'fixed') => void;
-  discountType: 'percent' | 'fixed';
-  setDiscountType: (val: 'percent' | 'fixed') => void;
+  taxType: "percent" | "fixed";
+  setTaxType: (val: "percent" | "fixed") => void;
+  discountType: "percent" | "fixed";
+  setDiscountType: (val: "percent" | "fixed") => void;
 }
 
 const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
@@ -41,16 +40,32 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
   setDiscountType,
 }) => {
   const [prevTaxPercent, setPrevTaxPercent] = React.useState(taxPercent);
-  const [prevDiscountPercent, setPrevDiscountPercent] = React.useState(discountPercent);
-  const [prevShippingAmount, setPrevShippingAmount] = React.useState(shippingAmount);
+  const [prevDiscountPercent, setPrevDiscountPercent] =
+    React.useState(discountPercent);
+  const [prevShippingAmount, setPrevShippingAmount] =
+    React.useState(shippingAmount);
+
+  // Separate display strings so "0" doesn't linger while typing
+  const [taxDisplay, setTaxDisplay] = React.useState(
+    taxPercent === 0 ? "" : String(taxPercent),
+  );
+  const [discountDisplay, setDiscountDisplay] = React.useState(
+    discountPercent === 0 ? "" : String(discountPercent),
+  );
+  const [shippingDisplay, setShippingDisplay] = React.useState(
+    shippingAmount === 0 ? "" : String(shippingAmount),
+  );
+
   const { currency } = useCurrency();
 
   const handleToggleTax = () => {
     if (showTax) {
       setPrevTaxPercent(taxPercent);
       setTaxPercent(0);
+      setTaxDisplay("");
     } else {
       setTaxPercent(prevTaxPercent);
+      setTaxDisplay(prevTaxPercent === 0 ? "" : String(prevTaxPercent));
     }
     setShowTax(!showTax);
   };
@@ -59,8 +74,12 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
     if (showDiscount) {
       setPrevDiscountPercent(discountPercent);
       setDiscountPercent(0);
+      setDiscountDisplay("");
     } else {
       setDiscountPercent(prevDiscountPercent);
+      setDiscountDisplay(
+        prevDiscountPercent === 0 ? "" : String(prevDiscountPercent),
+      );
     }
     setShowDiscount(!showDiscount);
   };
@@ -69,57 +88,76 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
     if (showShipping) {
       setPrevShippingAmount(shippingAmount);
       setShippingAmount(0);
+      setShippingDisplay("");
     } else {
       setShippingAmount(prevShippingAmount);
+      setShippingDisplay(
+        prevShippingAmount === 0 ? "" : String(prevShippingAmount),
+      );
     }
     setShowShipping(!showShipping);
   };
 
   const toggleTaxType = () => {
-    const newType = taxType === 'percent' ? 'fixed' : 'percent';
+    const newType = taxType === "percent" ? "fixed" : "percent";
     setTaxType(newType);
     setTaxPercent(0);
+    setTaxDisplay("");
   };
 
   const toggleDiscountType = () => {
-    const newType = discountType === 'percent' ? 'fixed' : 'percent';
+    const newType = discountType === "percent" ? "fixed" : "percent";
     setDiscountType(newType);
     setDiscountPercent(0);
+    setDiscountDisplay("");
   };
 
   const handleTaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
-    setTaxPercent(taxType === 'percent' ? Math.min(value, 100) : value);
+    const val = e.target.value;
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setTaxDisplay(val);
+      const parsed = parseFloat(val) || 0;
+      setTaxPercent(taxType === "percent" ? Math.min(parsed, 100) : parsed);
+    }
   };
 
   const handleDiscountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
-    setDiscountPercent(discountType === 'percent' ? Math.min(value, 100) : value);
+    const val = e.target.value;
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setDiscountDisplay(val);
+      const parsed = parseFloat(val) || 0;
+      setDiscountPercent(
+        discountType === "percent" ? Math.min(parsed, 100) : parsed,
+      );
+    }
   };
 
   const handleShippingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setShippingAmount(parseFloat(e.target.value) || 0);
+    const val = e.target.value;
+    if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
+      setShippingDisplay(val);
+      setShippingAmount(parseFloat(val) || 0);
+    }
   };
 
-
-  // Store previous values when closing a section
-  // (preserve advanced logic from user's working version)
   return (
     <div className="mb-6">
       {/* Toggle Buttons */}
       <div className="flex justify-end gap-2 mb-4">
-
         <a
           role="button"
           tabIndex={0}
           onClick={handleToggleTax}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-            showTax ? 'label-2' : 'label-1'
+            showTax ? "label-2" : "label-1"
           }`}
         >
-          <div className={` text-lg transition-transform duration-200 ease-in-out ${showTax ? 'rotate-45' : 'rotate-0'}`}>
-               <Plus size={18} />
-            </div> Tax
+          <div
+            className={`text-lg transition-transform duration-200 ease-in-out ${showTax ? "rotate-45" : "rotate-0"}`}
+          >
+            <Plus size={18} />
+          </div>{" "}
+          Tax
         </a>
 
         <a
@@ -127,13 +165,15 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
           tabIndex={0}
           onClick={handleToggleDiscount}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-            showDiscount ? 'label-2' : 'label-1'
+            showDiscount ? "label-2" : "label-1"
           }`}
         >
-
-          <div className={` text-lg transition-transform duration-200 ease-in-out ${showDiscount ? 'rotate-45' : 'rotate-0'}`}>
-               <Plus size={18} />
-            </div> Discount
+          <div
+            className={`text-lg transition-transform duration-200 ease-in-out ${showDiscount ? "rotate-45" : "rotate-0"}`}
+          >
+            <Plus size={18} />
+          </div>{" "}
+          Discount
         </a>
 
         <a
@@ -141,44 +181,43 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
           tabIndex={0}
           onClick={handleToggleShipping}
           className={`flex items-center gap-2 px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-            showShipping ? 'label-2' : 'label-1'
+            showShipping ? "label-2" : "label-1"
           }`}
         >
-          <div className={` text-lg transition-transform duration-200 ease-in-out ${showShipping ? 'rotate-45' : 'rotate-0'}`}>
-               <Plus size={18} />
-            </div> Shipping
+          <div
+            className={`text-lg transition-transform duration-200 ease-in-out ${showShipping ? "rotate-45" : "rotate-0"}`}
+          >
+            <Plus size={18} />
+          </div>{" "}
+          Shipping
         </a>
-
       </div>
 
       {/* Input Fields */}
       <div className="flex flex-col gap-2">
         {/* Tax Input */}
         {showTax && (
-          <div className="flex text-box justify-end items-center gap-2 ">
+          <div className="flex text-box justify-end items-center gap-2">
             <label className="text-sm font-medium labels">Tax</label>
             <div className="flex relative items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
-                {taxType === 'fixed' && (
+              {taxType === "fixed" && (
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
                   {currency.symbol}
                 </span>
               )}
               <input
-                type="number"
-                value={taxPercent}
-                min="0"
-                max={taxType === 'percent' ? '100' : undefined}
-                step={taxType === 'percent' ? '1' : '0.01'}
+                type="text"
+                inputMode="decimal"
+                value={taxDisplay}
                 onChange={handleTaxChange}
                 className="px-4 py-3 flex-1 text-center text-md border-none outline-none bg-transparent"
-                placeholder="Value"
+                placeholder="0"
               />
-              {taxType === 'percent' && (
+              {taxType === "percent" && (
                 <span className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
                   %
                 </span>
               )}
-
               <a
                 role="button"
                 tabIndex={0}
@@ -187,19 +226,26 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                 items-stretch border-3 border-green-300 transition-colors
                 duration-200 cursor-pointer flex items-center self-stretch justify-center"
               >
-                <svg className="w-6 h-[1.66rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <svg
+                  className="w-6 h-[1.66rem]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                  />
                 </svg>
               </a>
-
             </div>
             <button
               role="button"
               tabIndex={0}
               onClick={handleToggleTax}
-              className={`remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-               transition-colors duration-200`}
+              className="remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium transition-colors duration-200"
             >
               <X size={18} />
             </button>
@@ -210,23 +256,21 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
         {showDiscount && (
           <div className="flex text-box justify-end items-center gap-2">
             <label className="text-sm font-medium labels">Discount</label>
-            <div className="flex relative  border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
-              {discountType === 'fixed' && (
+            <div className="flex relative border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
+              {discountType === "fixed" && (
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
                   {currency.symbol}
                 </span>
               )}
               <input
-                type="number"
-                value={discountPercent}
-                min="0"
-                max={discountType === 'percent' ? '100' : undefined}
-                step={discountType === 'percent' ? '1' : '0.01'}
+                type="text"
+                inputMode="decimal"
+                value={discountDisplay}
                 onChange={handleDiscountChange}
                 className="px-4 py-3 flex-1 text-center text-md border-none outline-none bg-transparent"
-                placeholder="Value"
+                placeholder="0"
               />
-              {discountType === 'percent' && (
+              {discountType === "percent" && (
                 <span className="absolute right-14 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
                   %
                 </span>
@@ -236,12 +280,20 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
                 tabIndex={0}
                 onClick={toggleDiscountType}
                 className="small-icon absolute right-0 top-1/2 -translate-y-1/2 rounded-r-[7px] p-2
-                 transition-colors
-                duration-200 cursor-pointer flex items-center self-stretch justify-center"
+                transition-colors duration-200 cursor-pointer flex items-center self-stretch justify-center"
               >
-                <svg className="w-6 h-[1.66rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <svg
+                  className="w-6 h-[1.66rem]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                  />
                 </svg>
               </span>
             </div>
@@ -249,8 +301,7 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
               role="button"
               tabIndex={0}
               onClick={handleToggleDiscount}
-              className={`remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-               transition-colors duration-200`}
+              className="remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium transition-colors duration-200"
             >
               <X size={18} />
             </a>
@@ -261,49 +312,50 @@ const TaxDiscountSection: React.FC<TaxDiscountSectionProps> = ({
         {showShipping && (
           <div className="flex justify-end items-center gap-2">
             <label className="text-sm font-medium labels">Shipping</label>
-            <div className=" relative flex items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
+            <div className="relative flex items-stretch border border-gray-300 rounded-lg bg-white w-64 max-w-xs">
               <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 text-md font-medium">
-                  {currency.symbol}
-                </span>
+                {currency.symbol}
+              </span>
               <input
-                type="number"
-                value={shippingAmount}
-                min="0"
-                step="0.01"
+                type="text"
+                inputMode="decimal"
+                value={shippingDisplay}
                 onChange={handleShippingChange}
                 className="px-4 py-3 flex-1 text-center text-md border-none outline-none bg-transparent"
-                placeholder="Value"
+                placeholder="0"
               />
               <span
                 tabIndex={0}
                 className="absolute right-0 top-1/2 -translate-y-1/2 rounded-r-[7px] p-2
-                 transition-colors
-                duration-200 flex items-center opacity-0 self-stretch justify-center"
+                transition-colors duration-200 flex items-center opacity-0 self-stretch justify-center"
               >
-                <svg className="w-6 h-[1.66rem]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                  d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                <svg
+                  className="w-6 h-[1.66rem]"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"
+                  />
                 </svg>
               </span>
-
             </div>
-
             <a
               role="button"
               tabIndex={0}
               onClick={handleToggleShipping}
-              className={`remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium
-               transition-colors duration-200`}
+              className="remove inline-flex items-center rounded-md bg-indigo-900 px-1 py-1 text-xs font-medium transition-colors duration-200"
             >
               <X size={18} />
             </a>
           </div>
         )}
       </div>
-
-
     </div>
-
   );
 };
 

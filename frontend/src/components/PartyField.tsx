@@ -278,16 +278,30 @@ const PartyField: React.FC<PartyFieldProps> = ({
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
           >
-            {/* X button — appears on hover */}
+            {/*
+              X button design:
+              - Mobile: always visible (opacity-100), standard size
+              - Desktop (md+): hidden by default, fades in on hover with slight scale-up
+              - Shape: circle, red on hover for clear destructive affordance
+              - Size: w-7 h-7 (28px) — large enough to tap comfortably on mobile
+            */}
             <button
               type="button"
               onClick={handleClear}
-              className={`absolute top-2 right-2 p-0.5 rounded-sm bg-neutral-400 hover:bg-neutral-400
-                text-neutral-100 hover:text-white transition-all duration-200
-                ${isHovering ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
+              className={`
+                absolute top-2 right-2
+                flex items-center justify-center
+                w-6 h-6 rounded-md
+                bg-neutral-400 hover:bg-red-500
+                text-white shadow-sm
+                transition-all duration-200 ease-in-out
+                opacity-100 scale-100
+                md:opacity-0 md:scale-90
+                ${isHovering ? "md:opacity-100 md:scale-100" : ""}
+              `}
               aria-label="Clear selection"
             >
-              <X size={14} />
+              <X size={14} strokeWidth={2.5} />
             </button>
 
             {/* Selected party info — not clickable */}
