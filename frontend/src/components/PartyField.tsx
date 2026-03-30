@@ -246,7 +246,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
         {/* ✅ Selected party block */}
         {selectedParty ? (
           <div
-            className="relative group rounded-md bg-neutral-700 border border-gray-300 p-3 min-h-[80px]"
+            className="relative group rounded-md bg-neutral-200 border border-gray-300 p-3 min-h-[80px]"
             onMouseEnter={() => setIsHovering(true)}
             onMouseLeave={() => setIsHovering(false)}
           >
@@ -254,7 +254,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
             <button
               type="button"
               onClick={handleClear}
-              className={`absolute top-2 right-2 p-0.5 rounded-full bg-neutral-600 hover:bg-red-500
+              className={`absolute top-2 right-2 p-0.5 rounded-sm bg-neutral-500 hover:bg-neutral-600
                 text-gray-300 hover:text-white transition-all duration-200
                 ${isHovering ? "opacity-100 scale-100" : "opacity-0 scale-90"}`}
               aria-label="Clear selection"
@@ -264,17 +264,17 @@ const PartyField: React.FC<PartyFieldProps> = ({
 
             {/* Selected party info — not clickable */}
             <div className="flex items-center gap-3 pointer-events-none">
-              <div className="w-8 h-8 bg-emerald-500 rounded-md flex items-center justify-center flex-shrink-0">
+              <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-sm font-semibold">
                   {selectedParty.logo}
                 </span>
               </div>
               <div>
-                <p className="text-white font-medium text-sm">
+                <p className="text-neutral-800 font-medium text-sm">
                   {selectedParty.name}
                 </p>
                 {selectedParty.email && (
-                  <p className="text-neutral-400 text-xs">
+                  <p className="text-neutral-600 text-xs">
                     {selectedParty.email}
                   </p>
                 )}
@@ -362,7 +362,7 @@ const PartyField: React.FC<PartyFieldProps> = ({
                             </p>
                           )}
                         </div>
-                        <div className="w-7 h-7 bg-emerald-500 rounded-md flex items-center justify-center flex-shrink-0">
+                        <div className="w-7 h-7 bg-blue-500 rounded-md flex items-center justify-center flex-shrink-0">
                           <span className="text-white text-sm font-medium">
                             {party.logo}
                           </span>
