@@ -1,14 +1,18 @@
 import requests
 import time
 import os
+from dotenv import load_dotenv
 
-BREVO_API_KEY = os.getenv('BREVO_API_KEY')
+load_dotenv()  # ← add this before os.getenv
+
+# BREVO_API_KEY = os.getenv('BREVO_API_KEY')
+# BREVO_API_KEY = "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"
+
 
 
 class InvoiceEmailSender:
-    def __init__(self, brevo_api_key=BREVO_API_KEY):
-        self.brevo_api_key = brevo_api_key
-        self.base_url = 'https://api.brevo.com/v3/smtp/email'
+    def __init__(self, brevo_api_key=None):
+         self.brevo_api_key = brevo_api_key or os.getenv('BREVO_API_KEY') or "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"
 
     def load_template(self, template_path='templates/invoice_email.html'):
         """Load and return the HTML email template"""
@@ -116,7 +120,7 @@ class InvoiceEmailSender:
                 headers={
                     'accept': 'application/json',
                     'content-type': 'application/json',
-                    'api-key': self.brevo_api_key
+                    'api-key': self.brevo_api_key,
                 },
                 json=email_payload,
                 timeout=30  # 30 second timeout
@@ -147,16 +151,9 @@ class InvoiceEmailSender:
             }
 
 
-# Create a default instance for easy importing
-invoice_sender = InvoiceEmailSender()
-
-
-# Convenience function for quick usage
 def send_invoice(recipients, template_data, message='', attach_pdf=True, pdf_url=None):
-    """
-    Convenience function to send invoice email quickly
-    """
-    return invoice_sender.send_invoice_email(
+    sender = InvoiceEmailSender()  # creates fresh instance with current env
+    return sender.send_invoice_email(
         recipients=recipients,
         template_data=template_data,
         message=message,
