@@ -912,7 +912,7 @@ const InvoicesPage = () => {
                                 )}
                               </div>
                               <div className="text-sm text-gray-500">
-                                {invoice.data?.currency ||
+                                {invoice.data?.currency?.code ||
                                   invoice.currency?.code ||
                                   "GBP"}
                               </div>

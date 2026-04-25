@@ -45,4 +45,3 @@ def send_email(to_email, subject, issue_type, details, user_name, user_email, us
     except Exception as e:
         return {"success": False, "error": str(e)}
 
-
