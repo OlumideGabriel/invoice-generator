@@ -7,50 +7,42 @@ invoice_bp = Blueprint('invoice', __name__)
 
 @invoice_bp.route('/send-invoice', methods=['POST'])
 def handle_send_invoice():
-    """
-    Handle invoice sending request
-    """
     data = request.get_json()
 
-    # Validate required data
     if not data:
-        return jsonify({
-            "success": False,
-            "error": "No JSON data provided"
-        }), 400
+        return jsonify({"success": False, "error": "No JSON data provided"}), 400
 
-    recipients = data.get('recipients', [])
+    # ✅ Match frontend field names
+    email = data.get('email')
+    recipients = [email] if email else []
     message = data.get('message', '')
-    attach_pdf = data.get('attachPdf', True)
-    invoice_data = data.get('invoiceData', {})
-    client_data = data.get('clientData', {})
+    invoice = data.get('invoice', {})
+    client = data.get('client', {})
+    business = data.get('business', {})
 
-    # Validate recipients
     if not recipients:
-        return jsonify({
-            "success": False,
-            "error": "No recipients provided"
-        }), 400
+        return jsonify({"success": False, "error": "No recipients provided"}), 400
 
-    # Merge invoice and client data for template
-    template_data = {**invoice_data, **client_data}
+    # Build template data from all three objects
+    template_data = {
+        **invoice.get('data', {}),
+        **client,
+        **business,
+        'INVOICE_NUMBER': invoice.get('invoice_number', ''),
+    }
 
-    # Set PDF URL (you can make this dynamic based on your needs)
     pdf_url = "https://drive.google.com/file/d/1lDbReqwQuV735OQ_hmmlw2Smtgvh-VSY/view?usp=sharing"
 
-    # Use the send_invoice function
     result = send_invoice(
         recipients=recipients,
         template_data=template_data,
         message=message,
-        attach_pdf=attach_pdf,
+        attach_pdf=True,
         pdf_url=pdf_url
     )
 
-    # Return appropriate response
     status_code = 200 if result['success'] else 400
     return jsonify(result), status_code
-
 
 @invoice_bp.route('/send-test-invoice', methods=['POST'])
 def send_test_invoice():

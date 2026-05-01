@@ -1,10 +1,15 @@
+from dotenv import load_dotenv
+import os
+from pathlib import Path
+
+load_dotenv(Path(__file__).parent / '.env')  # explicit path
+
 from flask import Flask, render_template, request, jsonify, make_response, send_file
 import requests
 from message import send_email
 from flask_migrate import Migrate
 from flask_cors import CORS
 from weasyprint import HTML
-from dotenv import load_dotenv
 from datetime import datetime
 from werkzeug.security import generate_password_hash, check_password_hash
 from db import db
@@ -15,8 +20,6 @@ from business import Businesses
 from invoices import InvoiceOperations
 from notifications import Notifications
 from io import BytesIO
-import os
-from pathlib import Path
 import tempfile
 from pdf2image import convert_from_bytes
 import ssl, certifi, os, logging
@@ -28,16 +31,15 @@ import sib_api_v3_sdk
 from sib_api_v3_sdk.rest import ApiException
 # Register the blueprint in your main app
 from routes.dashboard import dashboard_bp
+from routes.paystack import paystack_bp
 
 logging.basicConfig(level=logging.DEBUG)
 
 app = Flask(__name__)
-load_dotenv()
 DB_PASSWORD = os.getenv('DB_PASSWORD', '')
 DATABASE_URL = os.environ.get("DATABASE_URL")
 SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
-BREVO_API_KEY = os.getenv("BREVO_API_KEY")
 
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -67,7 +69,7 @@ CORS(app, resources={
         "origins": [
             "https://envoyce.xyz",   # your frontend domain
             "http://localhost:5173", # dev
-            "http://127.0.0.1:5173"  # dev alt
+            "http://127.0.0.1:5173",  # dev alt
             "http://127.0.0.1:5000"  # dev alt port
         ],
         "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"],
@@ -80,6 +82,7 @@ UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.register_blueprint(dashboard_bp)
+app.register_blueprint(paystack_bp)
 
 
 @app.after_request
@@ -607,7 +610,7 @@ def send_invoice():
             headers={
                 'accept': 'application/json',
                 'content-type': 'application/json',
-                'api-key': BREVO_API_KEY
+                'api-key': os.getenv('BREVO_API_KEY')
             },
             json=payload,
             timeout=15
@@ -1038,6 +1041,77 @@ def get_invoice_for_edit(invoice_id):
     except Exception as e:
         app.logger.error(f"Error getting invoice for edit {invoice_id}: {str(e)}", exc_info=True)
         return jsonify({'success': False, 'error': 'Failed to get invoice data for editing'}), 500
+
+
+# Public payment page + handler
+@app.route('/pay/<uuid:invoice_id>', methods=['GET', 'POST'])
+def pay_invoice(invoice_id):
+    """Public invoice payment page (GET) and payment handler (POST).
+
+    - GET: renders the invoice using `templates/invoice.html` so customers can view it.
+    - POST: accepts JSON or form data with optional `payment_details` / `payment_info`,
+      updates the invoice record (sets status to 'paid' and records payment metadata).
+    """
+    try:
+        # Fetch invoice
+        invoice = db.session.query(Invoice).filter_by(id=invoice_id).first()
+        if not invoice:
+            return ("Invoice not found"), 404
+
+        # Normalize invoice data
+        invoice_data = invoice.data if invoice.data else {}
+
+        if request.method == 'GET':
+            # Try to format template data using existing helper
+            try:
+                template_data = parse_invoice_data(invoice_data)
+            except Exception:
+                # Fallback: provide raw fields expected by template
+                template_data = {
+                    'date': invoice_data.get('issued_date') or format_date(invoice.issued_date),
+                    'from': invoice_data.get('from', ''),
+                    'to': invoice_data.get('to', ''),
+                    'items': invoice_data.get('items', []),
+                    'subtotal': invoice_data.get('subtotal', 0),
+                    'tax_percent': invoice_data.get('tax_percent', 0),
+                    'tax_amount': invoice_data.get('tax_amount', 0),
+                    'discount_percent': invoice_data.get('discount_percent', 0),
+                    'discount_amount': invoice_data.get('discount_amount', 0),
+                    'shipping_amount': invoice_data.get('shipping_amount', 0),
+                    'total': invoice_data.get('total', 0),
+                    'invoice_number': invoice_data.get('invoice_number', ''),
+                }
+
+            # Add payment-specific fields
+            template_data['payment_details'] = invoice_data.get('payment_details', '')
+            template_data['payment_instructions'] = invoice_data.get('payment_instructions', '')
+
+            return render_template('invoice.html', **template_data)
+
+        # POST: treat as payment notification (no gateway integration here)
+        data = request.get_json(silent=True) or request.form.to_dict()
+        payment_info = data.get('payment_details') or data.get('payment_info') or data.get('payment') or ''
+
+        # Persist payment metadata on the invoice
+        invdata = invoice.data if invoice.data else {}
+        if payment_info:
+            invdata['payment_details'] = payment_info
+        invdata['paid_at'] = datetime.utcnow().isoformat()
+        invoice.data = invdata
+        invoice.status = 'paid'
+        db.session.commit()
+
+        # Return JSON for API clients; render a simple success page for browser/form submissions
+        if request.is_json:
+            return jsonify({'success': True, 'message': 'Payment recorded', 'invoice_id': str(invoice.id)})
+        else:
+            amount = invdata.get('total') or invoice_data.get('total') or ''
+            return render_template('payment_success.html', invoice_id=str(invoice.id), amount=amount)
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Error in /pay/{invoice_id}: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Add delete functionality (NEW)
 @app.route('/api/invoices/<invoice_id>', methods=['DELETE'])

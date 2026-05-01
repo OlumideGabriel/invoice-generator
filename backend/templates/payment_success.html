@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Payment Successful</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; text-align: center; }
+    .card { max-width: 600px; margin: 3rem auto; padding: 2rem; border: 1px solid #eee; border-radius: 8px; }
+    h1 { color: #2b8a3e; }
+    .meta { margin-top: 1rem; color: #555; }
+    a.button { display: inline-block; margin-top: 1.5rem; padding: 0.6rem 1rem; background: #2563eb; color: #fff; text-decoration: none; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>Payment Received</h1>
+    <p class="meta">Thank you — your payment has been recorded.</p>
+    {% if invoice_id %}
+      <p class="meta">Invoice ID: <strong>{{ invoice_id }}</strong></p>
+    {% endif %}
+    {% if amount %}
+      <p class="meta">Amount: <strong>{{ amount }}</strong></p>
+    {% endif %}
+    <a class="button" href="/">Return to Home</a>
+  </div>
+</body>
+</html>

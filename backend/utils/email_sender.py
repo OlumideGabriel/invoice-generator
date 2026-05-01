@@ -5,14 +5,15 @@ from dotenv import load_dotenv
 
 load_dotenv()  # ← add this before os.getenv
 
-# BREVO_API_KEY = os.getenv('BREVO_API_KEY')
-# BREVO_API_KEY = "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"
+BREVO_API_KEY = os.getenv('BREVO_API_KEY')
+print("🔑 BREVO KEY:", repr(BREVO_API_KEY))
 
 
 
 class InvoiceEmailSender:
-    def __init__(self, brevo_api_key=None):
-         self.brevo_api_key = brevo_api_key or os.getenv('BREVO_API_KEY') or "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"
+    def __init__(self, brevo_api_key=BREVO_API_KEY):
+        self.brevo_api_key = brevo_api_key
+        self.base_url = 'https://api.brevo.com/v3/smtp/email'
 
     def load_template(self, template_path='templates/invoice_email.html'):
         """Load and return the HTML email template"""

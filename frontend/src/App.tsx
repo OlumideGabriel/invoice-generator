@@ -1,30 +1,36 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
-import SideMenu from './components/SideMenu';
-import { CurrencyProvider } from './context/CurrencyContext';
-import { AuthProvider, useAuth } from './context/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import InvoiceGenerator from './components/InvoiceGenerator';
-import PartyField from './components/PartyField';
-import MainMenu from './components/MainMenu';
-import Footer from './components/Footer';
-import useInvoice from './hooks/useInvoice';
-import AuthPage from './pages/AuthPage';
-import AuthModal from './components/AuthModal';
-import AuthCallback from './pages/AuthCallback';
-import Dashboard from './pages/Dashboard';
-import SettingsPage from './pages/SettingsPage';
-import InvoicesPage from './pages/InvoicesPage';
-import InvoicePage from './pages/InvoicePage';
-import InvoiceEdit from './components/InvoiceEdit'
-import ClientsPage from './pages/ClientsPage';
-import Home from './pages/Home';
-import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
-import TermsOfServicePage from './pages/TermsOfServicePage';
-import SupportForm from './pages/SupportForm';
-import ComingSoon from './pages/ComingSoon';
-import Notifications from './pages/Notifications'
-
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  useLocation,
+  Navigate,
+} from "react-router-dom";
+import SideMenu from "./components/SideMenu";
+import { CurrencyProvider } from "./context/CurrencyContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import ProtectedRoute from "./components/ProtectedRoute";
+import InvoiceGenerator from "./components/InvoiceGenerator";
+import PartyField from "./components/PartyField";
+import MainMenu from "./components/MainMenu";
+import Footer from "./components/Footer";
+import useInvoice from "./hooks/useInvoice";
+import AuthPage from "./pages/AuthPage";
+import AuthModal from "./components/AuthModal";
+import AuthCallback from "./pages/AuthCallback";
+import Dashboard from "./pages/Dashboard";
+import SettingsPage from "./pages/SettingsPage";
+import InvoicesPage from "./pages/InvoicesPage";
+import InvoicePage from "./pages/InvoicePage";
+import InvoiceEdit from "./components/InvoiceEdit";
+import ClientsPage from "./pages/ClientsPage";
+import Home from "./pages/Home";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
+import SupportForm from "./pages/SupportForm";
+import ComingSoon from "./pages/ComingSoon";
+import Notifications from "./pages/Notifications";
+import PaymentPage from "./pages/PaymentPage";
 
 const App: React.FC = () => {
   const invoice = useInvoice();
@@ -41,9 +47,10 @@ const App: React.FC = () => {
 
 const AppContent: React.FC = () => {
   const location = useLocation();
-  const isAuthPage = location.pathname === '/auth';
-  const isHomePage = location.pathname === '/';
-  const { user, loading, authModalOpen, authModalMode, closeAuthModal } = useAuth();
+  const isAuthPage = location.pathname === "/auth";
+  const isHomePage = location.pathname === "/";
+  const { user, loading, authModalOpen, authModalMode, closeAuthModal } =
+    useAuth();
 
   if (loading) return null;
 
@@ -89,18 +96,74 @@ const AppContent: React.FC = () => {
             />
 
             {/* Protected routes */}
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/auth/callback" element={<ProtectedRoute><AuthCallback /></ProtectedRoute>} />
-            <Route path="/clients" element={<ProtectedRoute><ClientsPage /></ProtectedRoute>} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/auth/callback"
+              element={
+                <ProtectedRoute>
+                  <AuthCallback />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/clients"
+              element={
+                <ProtectedRoute>
+                  <ClientsPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/clients/new" element={<ClientsPage />} />
             <Route path="/clients/edit/:id" element={<ClientsPage />} />
-            <Route path="/settings" element={<ProtectedRoute><SettingsPage /></ProtectedRoute>} />
-            <Route path="/invoices" element={<ProtectedRoute><InvoicesPage /></ProtectedRoute>} />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/invoices"
+              element={
+                <ProtectedRoute>
+                  <InvoicesPage />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/invoice/:id" element={<InvoicePage />} />
-            <Route path="/kalistus001" element={<ProtectedRoute><ComingSoon /></ProtectedRoute>} />
-            <Route path="/support" element={<ProtectedRoute><SupportForm /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-
+            <Route path="/pay/:id" element={<PaymentPage />} />
+            <Route
+              path="/kalistus001"
+              element={
+                <ProtectedRoute>
+                  <ComingSoon />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/support"
+              element={
+                <ProtectedRoute>
+                  <SupportForm />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <Notifications />
+                </ProtectedRoute>
+              }
+            />
 
             {/* Public routes */}
             <Route path="/new" element={<InvoiceGenerator />} />

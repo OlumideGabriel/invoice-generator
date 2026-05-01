@@ -7,7 +7,11 @@ import {
   X
 } from 'lucide-react';
 
-const IntegrationsSection = ({ showNotification }) => {
+interface IntegrationsSectionProps {
+  showNotification: (message: string, type?: 'success' | 'error') => void;
+}
+
+const IntegrationsSection: React.FC<IntegrationsSectionProps> = ({ showNotification }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [showApiKeyModal, setShowApiKeyModal] = useState(false);
   const [apiCredentials, setApiCredentials] = useState({
@@ -39,9 +43,9 @@ const IntegrationsSection = ({ showNotification }) => {
     showNotification('Fincra connected successfully', 'success');
   };
 
-  const handleInputChange = (e) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setApiCredentials(prev => ({ ...prev, [name]: value }));
+    setApiCredentials(prev => ({ ...prev, [name as 'publicKey' | 'secretKey']: value }));
   };
 
 return (
