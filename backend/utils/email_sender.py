@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 load_dotenv()  # ← add this before os.getenv
 
 BREVO_API_KEY = os.getenv('BREVO_API_KEY')
-print("🔑 BREVO KEY:", repr(BREVO_API_KEY))
-
 
 
 class InvoiceEmailSender:
