@@ -3,14 +3,14 @@ import time
 import os
 from dotenv import load_dotenv
 
-load_dotenv()  # ← add this before os.getenv
+load_dotenv()
 
 BREVO_API_KEY = os.getenv('BREVO_API_KEY')
 
 
 class InvoiceEmailSender:
-    def __init__(self, brevo_api_key=BREVO_API_KEY):
-        self.brevo_api_key = brevo_api_key
+    def __init__(self, brevo_api_key=None):
+        self.brevo_api_key = brevo_api_key or os.getenv('BREVO_API_KEY')
         self.base_url = 'https://api.brevo.com/v3/smtp/email'
 
     def load_template(self, template_path='templates/invoice_email.html'):
