@@ -474,6 +474,19 @@ const InvoicesPage = () => {
     return matchesSearch && matchesStatus;
   });
 
+  // Helper to get symbol from invoice (add near top of component)
+  const getSymbol = (invoice: Invoice) =>
+    invoice.data?.currency_symbol ||
+    (typeof invoice.currency === "object" ? invoice.currency?.symbol : null) ||
+    "₦";
+
+  const getCode = (invoice: Invoice) =>
+    invoice.data?.currency?.code ||
+    (typeof invoice.currency === "object"
+      ? invoice.currency?.code
+      : (invoice.currency as unknown as string)) ||
+    "NGN";
+
   const formatAmount = (amount: number = 0, currencySymbol: string = "£") => {
     return `${currencySymbol}${amount.toLocaleString("en-US", {
       minimumFractionDigits: 2,
@@ -908,13 +921,13 @@ const InvoicesPage = () => {
                                   totalAmount,
                                   invoice.data?.currency_symbol ||
                                     invoice.currency?.symbol ||
-                                    "£",
+                                    getSymbol(invoice),
                                 )}
                               </div>
                               <div className="text-sm text-gray-500">
                                 {invoice.data?.currency?.code ||
                                   invoice.currency?.code ||
-                                  "GBP"}
+                                  getCode(invoice)}
                               </div>
                             </td>
                             <td className="px-6 py-4">
