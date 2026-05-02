@@ -93,11 +93,11 @@ def create_subaccount():
         f'{PAYSTACK_BASE}/subaccount',
         headers=paystack_headers(),
         json={
-            'business_name':    business_name,
-            'settlement_bank':  bank_code,
-            'account_number':   account_number,
+            'business_name':     business_name,
+            'settlement_bank':   bank_code,
+            'account_number':    account_number,
             'percentage_charge': ENVOYCE_SPLIT_PERCENT,
-            'description':      f'Envoyce subaccount for {business_name}',
+            'description':       f'Envoyce subaccount for {business_name}',
         }
     )
     result = res.json()
@@ -140,163 +140,6 @@ def create_subaccount():
 
 
 # ─── 4. Subaccount status ─────────────────────────────────────────────────────
-#
-# Uses GET /subaccount (list endpoint) instead of making one request per code.
-# The list returns all subaccounts on this Paystack integration, so we:
-#   1. Fetch once from Paystack
-#   2. Build a lookup by subaccount_code
-#   3. Match against our stored codes — any stored code absent from Paystack is pruned
-#
-# Paystack list response shape per item:
-#   id, subaccount_code, business_name, description, settlement_bank,
-#   account_number, currency, active (integer 0/1), percentage_charge,
-#   bank_id, metadata, primary_contact_*
-#
-# NOTE: active is returned as an integer (1/0) in the list endpoint,
-# unlike the single-fetch endpoint which returns a boolean.
-# We normalise it to bool with bool(d.get('active', 0)).
-# ─────────────────────────────────────────────────────────────────────────────
-
-# @paystack_bp.route('/api/paystack/subaccount-status', methods=['GET'])
-# def subaccount_status():
-#     from models import User
-#     user_id = request.args.get('user_id')
-#     if not user_id:
-#         return jsonify({'success': False, 'error': 'user_id required'}), 400
-
-#     user = User.query.filter_by(id=user_id).first()
-#     if not user:
-#         return jsonify({'success': False, 'error': 'User not found'}), 404
-
-#     user_data = user.data or {}
-#     stored    = user_data.get('paystack_subaccounts', [])
-
-#     # ── Migrate legacy single-account users ONCE ──────────────────────────────
-#     if 'paystack_subaccounts' not in user_data and user_data.get('paystack_subaccount_code'):
-#         stored = [{
-#             'subaccount_code': user_data['paystack_subaccount_code'],
-#             'account_number':  user_data.get('paystack_account_number'),
-#             'bank_code':       user_data.get('paystack_bank_code'),
-#             'account_name':    user_data.get('paystack_account_name'),
-#             'business_name':   user_data.get('paystack_business_name'),
-#             'created_at':      user_data.get('paystack_setup_at'),
-#         }]
-#         user_data['paystack_subaccounts'] = stored
-#         user.data = user_data
-#         flag_modified(user, 'data')
-#         db.session.commit()
-
-#     if not stored:
-#         return jsonify({'success': True, 'has_subaccount': False, 'subaccounts': []})
-
-#     # ── Fetch all subaccounts from Paystack in ONE request ────────────────────
-#     # GET /subaccount returns up to perPage=100 per page. For most users this
-#     # is more than enough. Add pagination here if you ever need >100.
-#     paystack_lookup = {}  # subaccount_code -> Paystack data dict
-#     paystack_available = True
-
-#     try:
-#         res = requests.get(
-#             f'{PAYSTACK_BASE}/subaccount?perPage=100&page=1',
-#             headers=paystack_headers(),
-#             timeout=10,
-#         )
-#         result = res.json()
-#         if res.status_code == 200 and result.get('status'):
-#             for item in result.get('data', []):
-#                 code = item.get('subaccount_code')
-#                 if code:
-#                     paystack_lookup[code] = item
-#         else:
-#             # Paystack returned an error — don't prune, return stored data
-#             paystack_available = False
-#     except Exception:
-#         paystack_available = False
-
-#     # ── Match stored entries against live Paystack data ───────────────────────
-#     subaccounts = []
-#     pruned      = False
-
-#     for entry in stored:
-#         code = entry.get('subaccount_code')
-#         if not code:
-#             pruned = True  # corrupt entry — drop it
-#             continue
-
-#         if not paystack_available:
-#             # Network failure — return stored data as-is, don't prune anything
-#             subaccounts.append({
-#                 'subaccount_code': code,
-#                 'id':              None,
-#                 'business_name':   entry.get('business_name'),
-#                 'bank_name':       entry.get('bank_name'),
-#                 'bank_code':       entry.get('bank_code'),
-#                 'account_name':    entry.get('account_name'),
-#                 'account_number':  entry.get('account_number'),
-#                 'is_verified':     False,
-#                 'active':          False,
-#                 'created_at':      entry.get('created_at'),
-#                 'updated_at':      None,
-#                 '_source':         'stored_fallback',
-#             })
-#             continue
-
-#         d = paystack_lookup.get(code)
-
-#         if d:
-#             # Subaccount exists on Paystack — use live data.
-#             # active comes back as integer 1/0 from list endpoint → normalise to bool.
-#             subaccounts.append({
-#                 'subaccount_code': d.get('subaccount_code', code),
-#                 'id':              d.get('id'),
-#                 'business_name':   d.get('business_name') or entry.get('business_name'),
-#                 'bank_name':       d.get('settlement_bank') or entry.get('bank_name'),
-#                 'bank_code':       entry.get('bank_code'),          # not in list response
-#                 'account_name':    entry.get('account_name'),       # not in list response
-#                 'account_number':  d.get('account_number') or entry.get('account_number'),
-#                 'percentage_charge': d.get('percentage_charge'),
-#                 'currency':        d.get('currency', 'NGN'),
-#                 'is_verified':     False,                           # not in list response
-#                 'active':          bool(d.get('active', 0)),        # integer in list endpoint
-#                 'created_at':      entry.get('created_at'),         # not in list response
-#                 'updated_at':      None,                            # not in list response
-#             })
-#         else:
-#             # Code not found in Paystack's list — it was deleted from the dashboard.
-#             # Prune it from our DB and exclude from response.
-#             pruned = True
-
-#     # ── Persist pruned list back to DB if anything was removed ───────────────
-#     if pruned:
-#         surviving_codes = {s['subaccount_code'] for s in subaccounts}
-#         clean = [e for e in stored if e.get('subaccount_code') in surviving_codes]
-#         user_data['paystack_subaccounts'] = clean
-
-#         if clean:
-#             first = clean[0]
-#             user_data['paystack_subaccount_code'] = first['subaccount_code']
-#             user_data['paystack_account_number']  = first.get('account_number')
-#             user_data['paystack_bank_code']       = first.get('bank_code')
-#             user_data['paystack_account_name']    = first.get('account_name')
-#             user_data['paystack_business_name']   = first.get('business_name')
-#         else:
-#             for key in ['paystack_subaccount_code', 'paystack_account_number',
-#                         'paystack_bank_code', 'paystack_account_name',
-#                         'paystack_business_name', 'paystack_setup_at']:
-#                 user_data.pop(key, None)
-
-#         user.data = user_data
-#         flag_modified(user, 'data')
-#         if hasattr(user, 'updated_at'):
-#             user.updated_at = datetime.utcnow()
-#         db.session.commit()
-
-#     return jsonify({
-#         'success':        True,
-#         'has_subaccount': len(subaccounts) > 0,
-#         'subaccounts':    subaccounts,
-#     })
-
 
 @paystack_bp.route('/api/paystack/subaccount-status', methods=['GET'])
 def subaccount_status():
@@ -390,9 +233,6 @@ def subaccount_status():
         d = paystack_lookup.get(code)
 
         if d:
-            # Subaccount exists on Paystack — use live data.
-            # Single-fetch endpoint returns is_verified as a proper boolean
-            # and active as a boolean (unlike the list endpoint which uses 0/1).
             subaccounts.append({
                 'subaccount_code':   d.get('subaccount_code', code),
                 'id':                d.get('id'),
@@ -409,8 +249,7 @@ def subaccount_status():
                 'updated_at':        d.get('updatedAt'),
             })
         else:
-            # Code not found (404 earlier) — deleted from Paystack dashboard.
-            # Prune it from our DB and exclude from response.
+            # Code not found (404 earlier) — deleted from Paystack dashboard. Prune it.
             pruned = True
 
     # ── Persist pruned list back to DB if anything was removed ───────────────
@@ -443,6 +282,7 @@ def subaccount_status():
         'has_subaccount': len(subaccounts) > 0,
         'subaccounts':    subaccounts,
     })
+
 
 # ─── 5. Initialize payment ────────────────────────────────────────────────────
 
@@ -494,12 +334,16 @@ def initialize_payment():
             tax = invoice_data['tax_percent']
 
     shipping    = invoice_data.get('shipping_amount', 0) if invoice_data.get('show_shipping') else 0
-    total_ngn   = subtotal - discount + tax + shipping
-    amount_kobo = int(total_ngn * 100)
+    total_ngn   = max(0, subtotal - discount + tax + shipping)
+    amount_kobo = int(round(total_ngn * 100))
 
     invoice_number = invoice_data.get('invoice_number', str(invoice_id)[:8])
     business_name  = invoice_data.get('from', '').split('\n')[0] or 'Business'
-    callback_url   = f"{os.getenv('FRONTEND_URL', 'https://envoyce.xyz')}/pay/{invoice_id}?status=success"
+
+    # FIX: Do NOT append ?status=success here — Paystack appends its own
+    # status, trxref, and reference params after payment. Hardcoding
+    # ?status=success causes the verify flow to fire on every page visit.
+    callback_url = f"{os.getenv('FRONTEND_URL', 'https://envoyce.xyz')}/pay/{invoice_id}"
 
     payload = {
         'email':        payer_email,
@@ -516,9 +360,13 @@ def initialize_payment():
     }
 
     if subaccount_code:
-        payload['subaccount']         = subaccount_code
-        payload['transaction_charge'] = 0
-        payload['bearer']             = 'subaccount'
+        payload['subaccount'] = subaccount_code
+        # FIX: bearer='account' means YOUR platform absorbs the Paystack
+        # transaction fee. bearer='subaccount' would deduct it from the
+        # seller on top of your 2% split, which is almost never intended.
+        payload['bearer'] = 'account'
+        # transaction_charge is only needed when splitting a fixed flat fee.
+        # With percentage_charge set on the subaccount, omit it entirely.
 
     res = requests.post(
         f'{PAYSTACK_BASE}/transaction/initialize',
@@ -565,12 +413,25 @@ def verify_payment(reference):
     if not invoice:
         return jsonify({'success': False, 'error': 'Invoice not found'}), 404
 
+    # FIX: Idempotency guard — if already paid (e.g. webhook beat us here),
+    # return success immediately without writing duplicate data.
+    if invoice.status == 'paid':
+        return jsonify({
+            'success':    True,
+            'message':    'Invoice already marked as paid',
+            'invoice_id': invoice_id,
+            'amount':     tx['amount'] / 100,
+            'reference':  reference,
+        })
+
     invoice.status = 'paid'
     inv_data = invoice.data or {}
     inv_data['paid_at']            = datetime.utcnow().isoformat()
     inv_data['paystack_reference'] = reference
     inv_data['paystack_amount']    = tx['amount'] / 100
     invoice.data = inv_data
+    # FIX: flag_modified required for SQLAlchemy to detect JSON field mutation
+    flag_modified(invoice, 'data')
     db.session.commit()
 
     return jsonify({
@@ -590,7 +451,10 @@ def webhook():
 
     signature = request.headers.get('x-paystack-signature', '')
     body      = request.get_data()
-    expected  = hmac.new(
+
+    # FIX: original code used hmac.new() — confirmed correct Python stdlib call.
+    # Verified: hmac.new(key: bytes, msg: bytes, digestmod) -> HMAC object
+    expected = hmac.new(
         PAYSTACK_SECRET_KEY.encode('utf-8'),
         body,
         hashlib.sha512,
@@ -614,6 +478,8 @@ def webhook():
                 inv_data['paystack_reference'] = tx.get('reference')
                 inv_data['paystack_amount']    = tx.get('amount', 0) / 100
                 invoice.data = inv_data
+                # FIX: flag_modified required for SQLAlchemy JSON field mutation
+                flag_modified(invoice, 'data')
                 db.session.commit()
 
     return jsonify({'status': 'ok'}), 200
@@ -641,7 +507,7 @@ def remove_subaccount():
     user_data['paystack_subaccounts'] = updated
 
     # Best-effort deactivation on Paystack (no DELETE endpoint exists).
-    # Ignore errors — the subaccount may already be gone from their dashboard.
+    # Ignore all errors — the subaccount may already be gone from their dashboard.
     try:
         requests.put(
             f'{PAYSTACK_BASE}/subaccount/{subaccount_code}',
@@ -652,7 +518,7 @@ def remove_subaccount():
     except Exception:
         pass
 
-    # Re-sync legacy keys
+    # Re-sync legacy keys to the first remaining account (or clear them)
     if updated:
         first = updated[0]
         user_data['paystack_subaccount_code'] = first['subaccount_code']
@@ -675,6 +541,8 @@ def remove_subaccount():
     return jsonify({'success': True, 'message': 'Subaccount removed'})
 
 
+# ─── 9. Debug (remove before production) ─────────────────────────────────────
+
 @paystack_bp.route('/api/paystack/debug-user', methods=['GET'])
 def debug_user():
     from models import User
@@ -683,7 +551,7 @@ def debug_user():
     if not user:
         return jsonify({'error': 'User not found'}), 404
     return jsonify({
-        'user_id':    user.id,
-        'data_keys':  list((user.data or {}).keys()),
-        'raw_data':   user.data,
+        'user_id':   user.id,
+        'data_keys': list((user.data or {}).keys()),
+        'raw_data':  user.data,
     })
