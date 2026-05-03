@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
-import { X, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { X, Plus, AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 interface SendInvoiceProps {
   invoice: any;
@@ -8,14 +9,21 @@ interface SendInvoiceProps {
   onClose: () => void;
 }
 
-export default function SendInvoice({ invoice, client, business, onClose }: SendInvoiceProps) {
-  const clientEmail = client?.email || '';
-  const clientName = client?.name || '';
+export default function SendInvoice({
+  invoice,
+  client,
+  business,
+  onClose,
+}: SendInvoiceProps) {
+  const clientEmail = client?.email || "";
+  const clientName = client?.name || "";
 
-  const [recipients, setRecipients] = useState<Array<{ email: string; name: string }>>([]);
+  const [recipients, setRecipients] = useState<
+    Array<{ email: string; name: string }>
+  >([]);
   const [showAddEmail, setShowAddEmail] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [message, setMessage] = useState('');
+  const [newEmail, setNewEmail] = useState("");
+  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
@@ -26,9 +34,9 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
   }, [clientEmail, clientName]);
 
   const handleAddEmail = () => {
-    if (newEmail && newEmail.includes('@')) {
+    if (newEmail && newEmail.includes("@")) {
       setRecipients([...recipients, { email: newEmail, name: newEmail }]);
-      setNewEmail('');
+      setNewEmail("");
       setShowAddEmail(false);
     }
   };
@@ -40,7 +48,7 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
   // Helper functions for calculations
   const calculateSubtotal = (items: any[]) => {
     return items.reduce((total: number, item: any) => {
-      return total + (item.quantity * item.unit_cost);
+      return total + item.quantity * item.unit_cost;
     }, 0);
   };
 
@@ -49,19 +57,23 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
 
     const subtotal = calculateSubtotal(invoiceData.items || []);
 
-    if (invoiceData.discount_type === 'percent') {
+    if (invoiceData.discount_type === "percent") {
       return (subtotal * invoiceData.discount_percent) / 100;
     } else {
       return invoiceData.discount_percent;
     }
   };
 
-  const calculateTaxAmount = (invoiceData: any, subtotal: number, discountAmount: number) => {
+  const calculateTaxAmount = (
+    invoiceData: any,
+    subtotal: number,
+    discountAmount: number,
+  ) => {
     if (!invoiceData.show_tax || !invoiceData.tax_percent) return 0;
 
     const amountAfterDiscount = subtotal - discountAmount;
 
-    if (invoiceData.tax_type === 'percent') {
+    if (invoiceData.tax_type === "percent") {
       return (amountAfterDiscount * invoiceData.tax_percent) / 100;
     } else {
       return invoiceData.tax_percent;
@@ -73,21 +85,27 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
     return invoiceData.shipping_amount;
   };
 
-  const calculateTotal = (invoiceData: any, subtotal: number, discountAmount: number, taxAmount: number, shippingAmount: number) => {
+  const calculateTotal = (
+    invoiceData: any,
+    subtotal: number,
+    discountAmount: number,
+    taxAmount: number,
+    shippingAmount: number,
+  ) => {
     let total = subtotal - discountAmount + taxAmount + shippingAmount;
     return Math.max(0, total);
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
   const escapeHtml = (text: string) => {
-    const div = document.createElement('div');
+    const div = document.createElement("div");
     div.textContent = text;
     return div.innerHTML;
   };
@@ -98,65 +116,126 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
     const discountAmount = calculateDiscountAmount(invoiceData);
     const taxAmount = calculateTaxAmount(invoiceData, subtotal, discountAmount);
     const shippingAmount = calculateShippingAmount(invoiceData);
-    const total = calculateTotal(invoiceData, subtotal, discountAmount, taxAmount, shippingAmount);
+    const total = calculateTotal(
+      invoiceData,
+      subtotal,
+      discountAmount,
+      taxAmount,
+      shippingAmount,
+    );
 
-    const currencySymbol = invoiceData.currency_symbol || invoice.currency?.symbol || '£';
+    const currencySymbol =
+      invoiceData.currency_symbol || invoice.currency?.symbol || "£";
 
     // Generate line items HTML
-    const lineItemsHTML = invoiceData.items?.map((item: any) => `
+    const lineItemsHTML =
+      invoiceData.items
+        ?.map(
+          (item: any) => `
       <tr>
         <td>
           <div class="item-name">${escapeHtml(item.name)}</div>
-          ${item.showDesc && item.description ? `<div class="item-description">${escapeHtml(item.description)}</div>` : ''}
+          ${item.showDesc && item.description ? `<div class="item-description">${escapeHtml(item.description)}</div>` : ""}
         </td>
         <td class="item-qty">${item.quantity}</td>
-        <td class="item-rate">${currencySymbol}${item.unit_cost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
-        <td class="item-amount">${currencySymbol}${(item.quantity * item.unit_cost).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td class="item-rate">${currencySymbol}${item.unit_cost.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+        <td class="item-amount">${currencySymbol}${(item.quantity * item.unit_cost).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
       </tr>
-    `).join('') || '';
+    `,
+        )
+        .join("") || "";
 
     // Generate discount section if applicable
-    const discountSection = invoiceData.show_discount && discountAmount > 0 ? `
+    const discountSection =
+      invoiceData.show_discount && discountAmount > 0
+        ? `
       <div class="calculation-row">
         <span class="calculation-label">
           Discount
-          ${invoiceData.discount_type === 'percent' && invoiceData.discount_percent > 0 ?
-            `(${invoiceData.discount_percent}%)` : ''}
+          ${
+            invoiceData.discount_type === "percent" &&
+            invoiceData.discount_percent > 0
+              ? `(${invoiceData.discount_percent}%)`
+              : ""
+          }
         </span>
-        <span class="discount-amount">-${currencySymbol}${discountAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span class="discount-amount">-${currencySymbol}${discountAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
-    ` : '';
+    `
+        : "";
 
     // Generate tax section if applicable
-    const taxSection = invoiceData.show_tax && taxAmount > 0 ? `
+    const taxSection =
+      invoiceData.show_tax && taxAmount > 0
+        ? `
       <div class="calculation-row">
         <span class="calculation-label">
           Tax
-          ${invoiceData.tax_type === 'percent' && invoiceData.tax_percent > 0 ?
-            `(${invoiceData.tax_percent}%)` : ''}
+          ${
+            invoiceData.tax_type === "percent" && invoiceData.tax_percent > 0
+              ? `(${invoiceData.tax_percent}%)`
+              : ""
+          }
         </span>
-        <span class="calculation-amount">${currencySymbol}${taxAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span class="calculation-amount">${currencySymbol}${taxAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
-    ` : '';
+    `
+        : "";
 
     // Generate shipping section if applicable
-    const shippingSection = invoiceData.show_shipping && shippingAmount > 0 ? `
+    const shippingSection =
+      invoiceData.show_shipping && shippingAmount > 0
+        ? `
       <div class="calculation-row">
         <span class="calculation-label">Shipping</span>
-        <span class="calculation-amount">${currencySymbol}${shippingAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        <span class="calculation-amount">${currencySymbol}${shippingAmount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
       </div>
-    ` : '';
+    `
+        : "";
 
-    const businessName = business?.name || 'Your Business';
-    const businessEmail = business?.email || 'business@example.com';
-    const companyInitial = businessName.charAt(0).toUpperCase();
+    const businessName = business?.name || "Your Business";
+    const businessEmail = business?.email || "business@example.com";
+    const invoiceNumber =
+      invoiceData.invoice_number || invoice.invoice_number || "";
+    const clientNameSafe = client?.name || invoiceData.to || "Valued Client";
 
-
+    return `
+      <html>
+        <body style="font-family: Arial, sans-serif; color: #333; margin: 0; padding: 24px;">
+          <div style="max-width: 700px; margin: auto;">
+            <h1 style="margin-bottom: 0.5rem;">Invoice ${escapeHtml(invoiceNumber)}</h1>
+            <p style="margin-top: 0;">Hello ${escapeHtml(clientNameSafe)},</p>
+            <p>${escapeHtml(message || "")}</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 24px;">
+              <thead>
+                <tr>
+                  <th style="text-align:left; padding: 8px 12px; border-bottom: 2px solid #e5e7eb;">Item</th>
+                  <th style="text-align:right; padding: 8px 12px; border-bottom: 2px solid #e5e7eb;">Qty</th>
+                  <th style="text-align:right; padding: 8px 12px; border-bottom: 2px solid #e5e7eb;">Rate</th>
+                  <th style="text-align:right; padding: 8px 12px; border-bottom: 2px solid #e5e7eb;">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${lineItemsHTML}
+              </tbody>
+            </table>
+            ${discountSection}
+            ${taxSection}
+            ${shippingSection}
+            <div style="margin-top: 24px; font-weight: 700; font-size: 1.1rem;">Total: ${currencySymbol}${total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div style="margin-top: 32px; font-size: 0.95rem; color: #555;">
+              <p><strong>From:</strong> ${escapeHtml(businessName)}</p>
+              <p><strong>Email:</strong> ${escapeHtml(businessEmail)}</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
   };
 
   const handleSend = async () => {
     if (recipients.length === 0) {
-      setResult({ success: false, error: 'Please add at least one recipient' });
+      setResult({ success: false, error: "Please add at least one recipient" });
       return;
     }
 
@@ -168,16 +247,16 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
       const emailTemplate = generateEmailTemplate();
 
       // Send complete invoice data with business and client info
-      const res = await fetch('/api/send-invoice', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch(`${API_BASE_URL}/api/send-invoice`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: recipients[0].email,
           message: message.trim(),
           invoice: invoice, // Complete invoice object
           client: client, // Complete client object
           business: business, // Complete business object
-          emailTemplate: emailTemplate // Send the enhanced template
+          emailTemplate: emailTemplate, // Send the enhanced template
         }),
       });
 
@@ -190,7 +269,7 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
     } catch (err) {
       setResult({
         success: false,
-        error: 'Unable to connect. Please check your network.'
+        error: "Unable to connect. Please check your network.",
       });
     } finally {
       setLoading(false);
@@ -198,7 +277,7 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
   };
 
   const getInitials = (name: string) => {
-    if (!name) return '?';
+    if (!name) return "?";
     return name.charAt(0).toUpperCase();
   };
 
@@ -220,26 +299,40 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
         <div className="p-6 space-y-4">
           {/* Result Message */}
           {result && (
-            <div className={`flex items-start gap-3 p-4 rounded-xl border-2 ${
-              result.success
-                ? 'bg-emerald-50 border-emerald-200'
-                : 'bg-red-50 border-red-200'
-            }`}>
-              <div className={`mt-0.5 ${result.success ? 'text-emerald-600' : 'text-red-600'}`}>
-                {result.success ? <CheckCircle size={22} /> : <AlertCircle size={22} />}
+            <div
+              className={`flex items-start gap-3 p-4 rounded-xl border-2 ${
+                result.success
+                  ? "bg-emerald-50 border-emerald-200"
+                  : "bg-red-50 border-red-200"
+              }`}
+            >
+              <div
+                className={`mt-0.5 ${result.success ? "text-emerald-600" : "text-red-600"}`}
+              >
+                {result.success ? (
+                  <CheckCircle size={22} />
+                ) : (
+                  <AlertCircle size={22} />
+                )}
               </div>
               <div className="flex-1">
-                <p className={`font-semibold ${result.success ? 'text-emerald-900' : 'text-red-900'}`}>
-                  {result.success ? 'Email Sent Successfully!' : 'Failed to Send'}
+                <p
+                  className={`font-semibold ${result.success ? "text-emerald-900" : "text-red-900"}`}
+                >
+                  {result.success
+                    ? "Email Sent Successfully!"
+                    : "Failed to Send"}
                 </p>
-                <p className={`text-sm mt-1 ${result.success ? 'text-emerald-700' : 'text-red-700'}`}>
+                <p
+                  className={`text-sm mt-1 ${result.success ? "text-emerald-700" : "text-red-700"}`}
+                >
                   {result.message || result.error}
                 </p>
               </div>
             </div>
           )}
 
-{/* Recipients Section */}
+          {/* Recipients Section */}
           <div>
             <div className="flex items-center gap-2 flex-wrap">
               {recipients.map((recipient, index) => (
@@ -269,7 +362,9 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
                         type="email"
                         value={newEmail}
                         onChange={(e) => setNewEmail(e.target.value)}
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddEmail()}
+                        onKeyPress={(e) =>
+                          e.key === "Enter" && handleAddEmail()
+                        }
                         placeholder="email@example.com"
                         className="px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
                         autoFocus
@@ -283,7 +378,7 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
                       <button
                         onClick={() => {
                           setShowAddEmail(false);
-                          setNewEmail('');
+                          setNewEmail("");
                         }}
                         className="p-1 rounded-full hover:bg-neutral-100 text-gray-400 hover:text-gray-600"
                       >
@@ -338,7 +433,7 @@ export default function SendInvoice({ invoice, client, business, onClose }: Send
                 Sending...
               </>
             ) : (
-              'Send'
+              "Send"
             )}
           </button>
         </div>
