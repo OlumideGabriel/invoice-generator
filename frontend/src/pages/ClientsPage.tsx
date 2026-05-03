@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { API_BASE_URL } from '../config/api';
-import ClientModal from '../components/ClientModal';
-import Navbar from '../components/Navbar';
-import MainMenu from '../components/MainMenu';
+import React, { useState, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "react-router-dom";
+import { API_BASE_URL } from "../config/api";
+import ClientModal from "../components/ClientModal";
+import Navbar from "../components/Navbar";
+import MainMenu from "../components/MainMenu";
 import {
   Search,
   Plus,
@@ -22,28 +22,55 @@ import {
   AlertCircle,
   CheckCircle2,
   Users,
-  ArrowLeft
-} from 'lucide-react';
+  ArrowLeft,
+} from "lucide-react";
+
+interface Client {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  invoice_count?: number;
+  created_at?: string;
+  [key: string]: any;
+}
+
+interface Pagination {
+  pages: number;
+  per_page: number;
+  total: number;
+  has_prev: boolean;
+  has_next: boolean;
+  [key: string]: any;
+}
+
+interface Notification {
+  message: string;
+  type: "success" | "error";
+}
+
+type DropdownRefMap = Record<string, HTMLDivElement | null>;
 
 const ClientsPage = () => {
-  const [clients, setClients] = useState([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [pagination, setPagination] = useState({});
+  const [pagination, setPagination] = useState<Pagination | null>(null);
   const [showModal, setShowModal] = useState(false);
-  const [modalType, setModalType] = useState('create');
-  const [selectedClient, setSelectedClient] = useState(null);
-  const [selectedClients, setSelectedClients] = useState([]);
+  const [modalType, setModalType] = useState<"create" | "edit">("create");
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [selectedClients, setSelectedClients] = useState<string[]>([]);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [notification, setNotification] = useState(null);
-  const [dropdownOpen, setDropdownOpen] = useState(null);
+  const [notification, setNotification] = useState<Notification | null>(null);
+  const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
   const [isMobileView, setIsMobileView] = useState(false);
 
-  const dropdownRefs = useRef({});
+  const dropdownRefs = useRef<DropdownRefMap>({});
 
   const { user } = useAuth();
-  const userId = user.id;
+  const userId = user?.id || "";
 
   // Check for mobile view on mount and resize
   useEffect(() => {
@@ -52,23 +79,27 @@ const ClientsPage = () => {
     };
 
     checkMobileView();
-    window.addEventListener('resize', checkMobileView);
-    return () => window.removeEventListener('resize', checkMobileView);
+    window.addEventListener("resize", checkMobileView);
+    return () => window.removeEventListener("resize", checkMobileView);
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (dropdownOpen && dropdownRefs.current[dropdownOpen]) {
         const dropdownElement = dropdownRefs.current[dropdownOpen];
-        if (dropdownElement && !dropdownElement.contains(event.target)) {
+        if (
+          dropdownElement &&
+          event.target instanceof Node &&
+          !dropdownElement.contains(event.target)
+        ) {
           setDropdownOpen(null);
         }
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [dropdownOpen]);
 
@@ -82,8 +113,8 @@ const ClientsPage = () => {
       const params = new URLSearchParams({
         user_id: userId,
         page: currentPage.toString(),
-        per_page: isMobileView ? '5' : '10',
-        ...(searchTerm && { search: searchTerm })
+        per_page: isMobileView ? "5" : "10",
+        ...(searchTerm && { search: searchTerm }),
       });
 
       const response = await fetch(`${API_BASE_URL}/api/clients?${params}`);
@@ -93,38 +124,43 @@ const ClientsPage = () => {
         setClients(data.clients);
         setPagination(data.pagination);
       } else {
-        showNotification('Error fetching clients', 'error');
+        showNotification("Error fetching clients", "error");
       }
     } catch (error) {
-      showNotification('Failed to fetch clients', 'error');
+      showNotification("Failed to fetch clients", "error");
     }
     setLoading(false);
   };
 
-  const showNotification = (message, type = 'success') => {
+  const showNotification = (
+    message: string,
+    type: "success" | "error" = "success",
+  ) => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const handleSearch = (e) => {
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1);
   };
 
   const handleCreateClient = () => {
-    setModalType('create');
+    setModalType("create");
     setSelectedClient(null);
     setShowModal(true);
   };
 
-  const handleEditClient = (client) => {
-    setModalType('edit');
+  const handleEditClient = (client: Client | null) => {
+    if (!client) return;
+    setModalType("edit");
     setSelectedClient(client);
     setShowModal(true);
     setDropdownOpen(null);
   };
 
-  const handleDeleteClient = (client) => {
+  const handleDeleteClient = (client: Client | null) => {
+    if (!client) return;
     setSelectedClient(client);
     setShowDeleteModal(true);
     setDropdownOpen(null);
@@ -140,7 +176,7 @@ const ClientsPage = () => {
     setSelectedClient(null);
   };
 
-  const handleModalSuccess = (message) => {
+  const handleModalSuccess = (message: string) => {
     showNotification(message);
     setShowModal(false);
     setSelectedClient(null);
@@ -150,29 +186,37 @@ const ClientsPage = () => {
   const confirmDelete = async () => {
     try {
       if (selectedClients.length > 0) {
-        const response = await fetch(`${API_BASE_URL}/api/clients/bulk-delete`, {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ client_ids: selectedClients })
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/clients/bulk-delete`,
+          {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ client_ids: selectedClients }),
+          },
+        );
 
         const data = await response.json();
         if (data.success) {
-          showNotification(`Successfully deleted ${data.deleted_count} clients`);
+          showNotification(
+            `Successfully deleted ${data.deleted_count} clients`,
+          );
           setSelectedClients([]);
         } else {
-          showNotification(data.error || 'Failed to delete clients', 'error');
+          showNotification(data.error || "Failed to delete clients", "error");
         }
       } else if (selectedClient) {
-        const response = await fetch(`${API_BASE_URL}/api/clients/${selectedClient.id}`, {
-          method: 'DELETE'
-        });
+        const response = await fetch(
+          `${API_BASE_URL}/api/clients/${selectedClient.id}`,
+          {
+            method: "DELETE",
+          },
+        );
 
         const data = await response.json();
         if (data.success) {
-          showNotification('Client deleted successfully');
+          showNotification("Client deleted successfully");
         } else {
-          showNotification(data.error || 'Failed to delete client', 'error');
+          showNotification(data.error || "Failed to delete client", "error");
         }
       }
 
@@ -180,15 +224,15 @@ const ClientsPage = () => {
       setSelectedClient(null);
       fetchClients();
     } catch (error) {
-      showNotification('Network error occurred', 'error');
+      showNotification("Network error occurred", "error");
     }
   };
 
-  const toggleClientSelection = (clientId) => {
-    setSelectedClients(prev =>
+  const toggleClientSelection = (clientId: string) => {
+    setSelectedClients((prev) =>
       prev.includes(clientId)
-        ? prev.filter(id => id !== clientId)
-        : [...prev, clientId]
+        ? prev.filter((id) => id !== clientId)
+        : [...prev, clientId],
     );
   };
 
@@ -196,11 +240,14 @@ const ClientsPage = () => {
     if (selectedClients.length === clients.length) {
       setSelectedClients([]);
     } else {
-      setSelectedClients(clients.map(client => client.id));
+      setSelectedClients(clients.map((client) => client.id));
     }
   };
 
-  const toggleDropdown = (clientId, event) => {
+  const toggleDropdown = (
+    clientId: string,
+    event?: React.MouseEvent<HTMLButtonElement>,
+  ) => {
     if (event) {
       event.stopPropagation();
     }
@@ -208,7 +255,7 @@ const ClientsPage = () => {
   };
 
   // Mobile-friendly client card component
-  const ClientCard = ({ client }) => (
+  const ClientCard = ({ client }: { client: Client }) => (
     <div className="bg-white rounded-lg border border-gray-200 p-4 mb-3 shadow-sm">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center">
@@ -217,7 +264,9 @@ const ClientsPage = () => {
               {client.name.charAt(0).toUpperCase()}
             </span>
           </div>
-          <div className="ml-2 font-semibold text-gray-900 text-base">{client.name}</div>
+          <div className="ml-2 font-semibold text-gray-900 text-base">
+            {client.name}
+          </div>
         </div>
         <button
           onClick={(e) => toggleDropdown(client.id, e)}
@@ -256,7 +305,10 @@ const ClientsPage = () => {
             {client.invoice_count || 0} invoices
           </div>
           <div className="text-xs text-gray-400">
-            Added {new Date(client.created_at).toLocaleDateString()}
+            Added{" "}
+            {client.created_at
+              ? new Date(client.created_at).toLocaleDateString()
+              : "-"}
           </div>
         </div>
       </div>
@@ -274,9 +326,14 @@ const ClientsPage = () => {
 
       {/* Dropdown Portals - Fixed z-index */}
       {dropdownOpen && (
-        <div className="fixed inset-0 z-50" onClick={() => setDropdownOpen(null)}>
+        <div
+          className="fixed inset-0 z-50"
+          onClick={() => setDropdownOpen(null)}
+        >
           {(() => {
-            const buttonElement = document.querySelector(`[data-dropdown-button="${dropdownOpen}"]`);
+            const buttonElement = document.querySelector(
+              `[data-dropdown-button="${dropdownOpen}"]`,
+            );
             if (!buttonElement) return null;
 
             const rect = buttonElement.getBoundingClientRect();
@@ -290,22 +347,32 @@ const ClientsPage = () => {
                 className="absolute w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-60"
                 style={{
                   top: rect.bottom + 8,
-                  left: isMobile ? Math.max(16, rect.left - 96) : rect.right - 192,
-                  right: isMobile ? '16px' : 'auto',
-                  maxWidth: isMobile ? 'calc(100vw - 32px)' : 'none',
+                  left: isMobile
+                    ? Math.max(16, rect.left - 96)
+                    : rect.right - 192,
+                  right: isMobile ? "16px" : "auto",
+                  maxWidth: isMobile ? "calc(100vw - 32px)" : "none",
                 }}
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="py-1">
                   <button
-                    onClick={() => handleEditClient(clients.find(c => c.id === dropdownOpen))}
+                    onClick={() =>
+                      handleEditClient(
+                        clients.find((c) => c.id === dropdownOpen) ?? null,
+                      )
+                    }
                     className="group flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
                   >
                     <Edit className="h-4 w-4 mr-3 text-gray-400 group-hover:text-gray-500" />
                     Edit Client
                   </button>
                   <button
-                    onClick={() => handleDeleteClient(clients.find(c => c.id === dropdownOpen))}
+                    onClick={() =>
+                      handleDeleteClient(
+                        clients.find((c) => c.id === dropdownOpen) ?? null,
+                      )
+                    }
                     className="group flex items-center px-4 py-2 text-sm text-red-700 hover:bg-red-50 w-full text-left"
                   >
                     <Trash2 className="h-4 w-4 mr-3 text-red-400 group-hover:text-red-500" />
@@ -332,7 +399,9 @@ const ClientsPage = () => {
                 </button>
 
                 <div>
-                  <h1 className="text-xl md:text-3xl font-bold text-gray-900">Clients</h1>
+                  <h1 className="text-xl md:text-3xl font-bold text-gray-900">
+                    Clients
+                  </h1>
                 </div>
               </div>
               <button
@@ -340,7 +409,9 @@ const ClientsPage = () => {
                 className="inline-flex items-center p-2 md:px-4 md:py-3 !bg-neutral-900 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 shadow-lg hover:shadow-xl"
               >
                 <Plus className="h-4 w-4 md:h-5 md:w-5 mr-1 md:mr-2" />
-                <span className="text-sm md:text-base">Add <span className="hidden sm:inline">Client</span></span>
+                <span className="text-sm md:text-base">
+                  Add <span className="hidden sm:inline">Client</span>
+                </span>
               </button>
             </div>
           </div>
@@ -384,14 +455,20 @@ const ClientsPage = () => {
             {loading ? (
               <div className="flex items-center justify-center py-8 md:py-12">
                 <div className="animate-spin rounded-full h-6 w-6 md:h-8 md:w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3 text-gray-500 text-sm md:text-base">Loading clients...</span>
+                <span className="ml-3 text-gray-500 text-sm md:text-base">
+                  Loading clients...
+                </span>
               </div>
             ) : clients.length === 0 ? (
               <div className="text-center py-8 md:py-12">
                 <Users className="h-8 w-8 md:h-12 md:w-12 text-gray-300 mx-auto mb-3 md:mb-4" />
-                <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">No clients found</h3>
+                <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">
+                  No clients found
+                </h3>
                 <p className="text-gray-500 text-sm md:text-base mb-4 px-4">
-                  {searchTerm ? 'No clients match your search criteria.' : 'Get started by adding your first client.'}
+                  {searchTerm
+                    ? "No clients match your search criteria."
+                    : "Get started by adding your first client."}
                 </p>
                 {!searchTerm && (
                   <button
@@ -420,7 +497,10 @@ const ClientsPage = () => {
                         <input
                           type="checkbox"
                           className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                          checked={selectedClients.length === clients.length && clients.length > 0}
+                          checked={
+                            selectedClients.length === clients.length &&
+                            clients.length > 0
+                          }
                           onChange={toggleAllClients}
                         />
                       </th>
@@ -443,7 +523,10 @@ const ClientsPage = () => {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {clients.map((client) => (
-                      <tr key={client.id} className="hover:bg-gray-50 transition-colors">
+                      <tr
+                        key={client.id}
+                        className="hover:bg-gray-50 transition-colors"
+                      >
                         <td className="px-4 md:px-6 py-4">
                           <input
                             type="checkbox"
@@ -459,16 +542,19 @@ const ClientsPage = () => {
                                 <span className="text-white text-sm font-medium">
                                   {client.name.charAt(0).toUpperCase()}
                                 </span>
-
                               </div>
                             </div>
                             <div className="ml-3 md:ml-4">
-                             <div className="text-sm font-medium text-gray-900">{client.name}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {client.name}
+                              </div>
 
                               {client.address && (
                                 <div className="flex items-center text-sm text-gray-500 mt-1">
                                   <MapPin className="h-3 w-3 mr-1" />
-                                  <span className="truncate max-w-xs">{client.address}</span>
+                                  <span className="truncate max-w-xs">
+                                    {client.address}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -493,11 +579,15 @@ const ClientsPage = () => {
                         <td className="px-4 md:px-6 py-4">
                           <div className="flex items-center">
                             <FileText className="h-4 w-4 text-gray-400 mr-2" />
-                            <span className="text-sm text-gray-900">{client.invoice_count || 0}</span>
+                            <span className="text-sm text-gray-900">
+                              {client.invoice_count || 0}
+                            </span>
                           </div>
                         </td>
                         <td className="px-4 md:px-6 py-4 text-sm text-gray-500">
-                          {new Date(client.created_at).toLocaleDateString()}
+                          {client.created_at
+                            ? new Date(client.created_at).toLocaleDateString()
+                            : "-"}
                         </td>
                         <td className="px-4 md:px-6 py-4 text-right relative">
                           <div className="relative inline-block text-left">
@@ -521,11 +611,18 @@ const ClientsPage = () => {
             {pagination && pagination.pages > 1 && (
               <div className="bg-white px-4 md:px-6 py-3 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0">
                 <div className="text-sm text-gray-500 text-center sm:text-left">
-                  Showing {((currentPage - 1) * pagination.per_page) + 1} to {Math.min(currentPage * pagination.per_page, pagination.total)} of {pagination.total} clients
+                  Showing {(currentPage - 1) * pagination.per_page + 1} to{" "}
+                  {Math.min(
+                    currentPage * pagination.per_page,
+                    pagination.total,
+                  )}{" "}
+                  of {pagination.total} clients
                 </div>
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) => Math.max(1, prev - 1))
+                    }
                     disabled={!pagination.has_prev}
                     className="inline-flex items-center px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -536,7 +633,11 @@ const ClientsPage = () => {
                     {currentPage} / {pagination.pages}
                   </span>
                   <button
-                    onClick={() => setCurrentPage(prev => Math.min(pagination.pages, prev + 1))}
+                    onClick={() =>
+                      setCurrentPage((prev) =>
+                        Math.min(pagination.pages, prev + 1),
+                      )
+                    }
                     disabled={!pagination.has_next}
                     className="inline-flex items-center px-2 md:px-3 py-1 md:py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-500 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -555,7 +656,7 @@ const ClientsPage = () => {
           onClose={handleModalClose}
           onSuccess={handleModalSuccess}
           client={selectedClient}
-          mode={modalType}
+          modalType={modalType}
         />
 
         {/* Delete Confirmation Modal */}
@@ -577,8 +678,7 @@ const ClientsPage = () => {
                 <p className="text-sm text-gray-500 mb-4 md:mb-6">
                   {selectedClients.length > 0
                     ? `Are you sure you want to delete ${selectedClients.length} selected clients? This action cannot be undone.`
-                    : `Are you sure you want to delete "${selectedClient?.name}"? This action cannot be undone.`
-                  }
+                    : `Are you sure you want to delete "${selectedClient?.name}"? This action cannot be undone.`}
                 </p>
 
                 <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3">
@@ -606,17 +706,21 @@ const ClientsPage = () => {
         {/* Notification */}
         {notification && (
           <div className="fixed bottom-4 right-4 left-4 md:left-auto z-70 max-w-sm md:max-w-md">
-            <div className={`flex items-center p-3 md:p-4 rounded-lg shadow-lg ${
-              notification.type === 'success'
-                ? 'bg-green-100 border border-green-200 text-green-800'
-                : 'bg-red-100 border border-red-200 text-red-800'
-            }`}>
-              {notification.type === 'success' ? (
+            <div
+              className={`flex items-center p-3 md:p-4 rounded-lg shadow-lg ${
+                notification.type === "success"
+                  ? "bg-green-100 border border-green-200 text-green-800"
+                  : "bg-red-100 border border-red-200 text-red-800"
+              }`}
+            >
+              {notification.type === "success" ? (
                 <CheckCircle2 className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-green-600" />
               ) : (
                 <AlertCircle className="h-4 w-4 md:h-5 md:w-5 mr-2 md:mr-3 text-red-600" />
               )}
-              <span className="text-sm font-medium flex-1">{notification.message}</span>
+              <span className="text-sm font-medium flex-1">
+                {notification.message}
+              </span>
               <button
                 onClick={() => setNotification(null)}
                 className="ml-2 text-gray-400 hover:text-gray-600"
