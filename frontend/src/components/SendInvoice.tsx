@@ -26,6 +26,7 @@ export default function SendInvoice({
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
+  const [showSuggestion, setShowSuggestion] = useState(false);
 
   useEffect(() => {
     if (clientEmail) {
@@ -38,6 +39,7 @@ export default function SendInvoice({
       setRecipients([...recipients, { email: newEmail, name: newEmail }]);
       setNewEmail("");
       setShowAddEmail(false);
+      setShowSuggestion(false);
     }
   };
 
@@ -357,28 +359,66 @@ export default function SendInvoice({
               {recipients.length === 0 && (
                 <>
                   {showAddEmail ? (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="email"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        onKeyPress={(e) =>
-                          e.key === "Enter" && handleAddEmail()
-                        }
-                        placeholder="email@example.com"
-                        className="px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
-                        autoFocus
-                      />
-                      <button
-                        onClick={handleAddEmail}
-                        className="p-2 hidden bg-teal-600 text-white rounded-lg hover:bg-teal-700"
-                      >
-                        <Plus size={16} />
-                      </button>
+                    <div className="flex items-center gap-2 relative">
+                      <div className="relative">
+                        <input
+                          type="email"
+                          value={newEmail}
+                          onChange={(e) => {
+                            setNewEmail(e.target.value);
+                            setShowSuggestion(
+                              e.target.value.includes("@") &&
+                                e.target.value.length > 3,
+                            );
+                          }}
+                          onKeyPress={(e) =>
+                            e.key === "Enter" && handleAddEmail()
+                          }
+                          onFocus={() =>
+                            setShowSuggestion(
+                              newEmail.includes("@") && newEmail.length > 3,
+                            )
+                          }
+                          onBlur={() =>
+                            setTimeout(() => setShowSuggestion(false), 150)
+                          }
+                          placeholder="email@example.com"
+                          className="px-3 py-2 border border-gray-300 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-teal-500"
+                          autoFocus
+                        />
+
+                        {/* Floating suggestion dropdown */}
+                        {showSuggestion && (
+                          <div className="absolute left-0 top-full mt-1.5 z-50 w-full min-w-[220px]">
+                            <button
+                              onMouseDown={(e) => {
+                                e.preventDefault(); // prevent blur firing before click
+                                handleAddEmail();
+                                setShowSuggestion(false);
+                              }}
+                              className="w-full flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-lg hover:bg-teal-50 hover:border-teal-300 transition-colors text-left"
+                            >
+                              <div className="w-6 h-6 bg-teal-500 rounded-full flex items-center justify-center text-white text-xs font-medium flex-shrink-0">
+                                {newEmail.charAt(0).toUpperCase()}
+                              </div>
+                              <div className="flex flex-col min-w-0">
+                                <span className="text-xs text-gray-400 leading-none mb-0.5">
+                                  Invite
+                                </span>
+                                <span className="text-sm font-medium text-teal-700 truncate">
+                                  {newEmail}
+                                </span>
+                              </div>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
                       <button
                         onClick={() => {
                           setShowAddEmail(false);
                           setNewEmail("");
+                          setShowSuggestion(false);
                         }}
                         className="p-1 rounded-full hover:bg-neutral-100 text-gray-400 hover:text-gray-600"
                       >
