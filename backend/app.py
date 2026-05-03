@@ -875,32 +875,82 @@ def save_invoice():
 #         }), 500
 
 
-# Additional helper routes you might need
+# ─────────────────────────────────────────────────────────────────────────────
+# PATCH: Replace the existing get_invoice route in app.py with this version.
+#
+# Changes vs original:
+#   • Accepts ?include_client=true and ?include_business=true query params
+#   • No user_id required — this is a public route (payment page uses it)
+#   • Client email is returned so PaymentPage can pre-fill the email field
+#   • Business email is returned so paystack.py can send payment notifications
+# ─────────────────────────────────────────────────────────────────────────────
 
 @app.route('/api/invoices/<uuid:invoice_id>', methods=['GET'])
 def get_invoice(invoice_id):
-    """Get a specific invoice by ID"""
+    """Get a specific invoice by ID.
+
+    Query params (all optional):
+        user_id          – if provided, enforces ownership check
+        include_client   – "true" to embed client {id, name, email}
+        include_business – "true" to embed business {id, name, email}
+    """
     try:
-        # Get invoice using SQLAlchemy
-        invoice = db.session.query(Invoice).filter_by(id=invoice_id).first()
+        from models import Invoice, Client, Business
+
+        user_id          = request.args.get('user_id')
+        include_client   = request.args.get('include_client', '').lower() == 'true'
+        include_business = request.args.get('include_business', '').lower() == 'true'
+
+        # Build base query
+        query = db.session.query(Invoice).filter_by(id=invoice_id)
+
+        # Optional ownership check (authenticated views pass user_id)
+        if user_id:
+            query = query.filter_by(user_id=user_id)
+
+        invoice = query.first()
         if not invoice:
             return jsonify({'success': False, 'error': 'Invoice not found'}), 404
 
-        return jsonify({
-            'success': True,
-            'invoice': {
-                'id': str(invoice.id),
-                'user_id': str(invoice.user_id),
-                'client_id': str(invoice.client_id) if invoice.client_id else None,
-                'business_id': str(invoice.business_id) if invoice.business_id else None,
-                'data': invoice.data,
-                'status': invoice.status,
-                'created_at': invoice.created_at.isoformat() if invoice.created_at else None,
-                'updated_at': invoice.updated_at.isoformat() if hasattr(invoice, 'updated_at') and invoice.updated_at else None,
-                'issued_date': invoice.issued_date.isoformat() if invoice.issued_date else None,
-                'due_date': invoice.due_date.isoformat() if invoice.due_date else None
-            }
-        })
+        result = {
+            'id':          str(invoice.id),
+            'user_id':     str(invoice.user_id),
+            'client_id':   str(invoice.client_id)   if invoice.client_id   else None,
+            'business_id': str(invoice.business_id) if invoice.business_id else None,
+            'data':        invoice.data,
+            'status':      invoice.status,
+            'currency':    invoice.currency,
+            'created_at':  invoice.created_at.isoformat()  if invoice.created_at  else None,
+            'updated_at':  invoice.updated_at.isoformat()  if invoice.updated_at  else None,
+            'issued_date': invoice.issued_date.isoformat() if invoice.issued_date else None,
+            'due_date':    invoice.due_date.isoformat()    if invoice.due_date    else None,
+        }
+
+        # ── Embed client ──────────────────────────────────────────────────────
+        if include_client and invoice.client_id:
+            client = db.session.query(Client).filter_by(id=invoice.client_id).first()
+            if client:
+                result['client'] = {
+                    'id':    str(client.id),
+                    'name':  client.name  or '',
+                    # Client.email is a real column — used to pre-fill
+                    # the email field on the PaymentPage
+                    'email': client.email or '',
+                }
+
+        # ── Embed business ────────────────────────────────────────────────────
+        if include_business and invoice.business_id:
+            business = db.session.query(Business).filter_by(id=invoice.business_id).first()
+            if business:
+                result['business'] = {
+                    'id':    str(business.id),
+                    'name':  business.name  or '',
+                    # Business.email is a real column — used as the
+                    # "To:" address for payment-received notifications
+                    'email': business.email or '',
+                }
+
+        return jsonify({'success': True, 'invoice': result})
 
     except Exception as e:
         app.logger.error(f"Error getting invoice {invoice_id}: {str(e)}", exc_info=True)

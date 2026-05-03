@@ -2,7 +2,7 @@ import os
 import hmac
 import hashlib
 import requests
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from sqlalchemy.orm.attributes import flag_modified
 from db import db
 from datetime import datetime
@@ -13,30 +13,204 @@ paystack_bp = Blueprint('paystack', __name__)
 PAYSTACK_SECRET_KEY = os.getenv('PAYSTACK_SECRET_KEY')
 PAYSTACK_BASE = 'https://api.paystack.co'
 ENVOYCE_SPLIT_PERCENT = 2
+BREVO_API_KEY = os.getenv('BREVO_API_KEY')
+FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://envoyce.xyz')
 
 
 def paystack_headers():
     return {
         'Authorization': f'Bearer {PAYSTACK_SECRET_KEY}',
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
     }
+
+
+# ─── Email notification helper ────────────────────────────────────────────────
+#
+# Sends via Brevo (same provider used everywhere else in app.py).
+# Silently swallows all errors — a mail failure must never break the payment.
+
+def _send_payment_notification(
+    *,
+    to_email: str,
+    to_name: str,
+    business_name: str,
+    invoice_number: str,
+    amount: float,
+    currency_symbol: str,
+    payer_email: str,
+    invoice_id: str,
+):
+    if not to_email:
+        return
+
+    try:
+        amount_fmt   = f"{currency_symbol}{amount:,.2f}"
+        invoice_url  = f"{FRONTEND_URL}/invoice/{invoice_id}"
+
+        subject = f"💰 Payment received — Invoice #{invoice_number}"
+
+        html_content = f"""
+        <div style="font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;
+                    max-width:520px;margin:0 auto;padding:32px 24px;color:#111827;">
+
+          <div style="margin-bottom:24px;">
+            <span style="font-size:13px;font-weight:700;color:#0f766e;
+                         letter-spacing:0.05em;">envoyce</span>
+          </div>
+
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;
+                      padding:20px 24px;margin-bottom:24px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:4px;">💰</div>
+            <div style="font-size:22px;font-weight:800;color:#14532d;">
+              Payment Received
+            </div>
+            <div style="font-size:13px;color:#166534;margin-top:4px;">
+              Invoice #{invoice_number}
+            </div>
+          </div>
+
+          <p style="margin:0 0 16px;font-size:14px;line-height:1.6;color:#374151;">
+            Hi <strong>{business_name}</strong>,<br>
+            A payment has just been confirmed for one of your invoices.
+          </p>
+
+          <table style="width:100%;border-collapse:collapse;margin-bottom:24px;
+                        font-size:13px;">
+            <tr style="border-bottom:1px solid #e5e7eb;">
+              <td style="padding:10px 0;color:#6b7280;">Invoice</td>
+              <td style="padding:10px 0;text-align:right;font-weight:600;
+                         color:#111827;">#{invoice_number}</td>
+            </tr>
+            <tr style="border-bottom:1px solid #e5e7eb;">
+              <td style="padding:10px 0;color:#6b7280;">Amount paid</td>
+              <td style="padding:10px 0;text-align:right;font-weight:700;
+                         color:#14532d;font-size:16px;">{amount_fmt}</td>
+            </tr>
+            <tr>
+              <td style="padding:10px 0;color:#6b7280;">Paid by</td>
+              <td style="padding:10px 0;text-align:right;color:#111827;">
+                {payer_email}
+              </td>
+            </tr>
+          </table>
+
+          <a href="{invoice_url}"
+             style="display:block;text-align:center;background:#111827;color:#fff;
+                    text-decoration:none;padding:13px 20px;border-radius:10px;
+                    font-weight:700;font-size:14px;margin-bottom:24px;">
+            View Invoice →
+          </a>
+
+          <p style="margin:0;font-size:12px;color:#9ca3af;text-align:center;">
+            The invoice has been automatically marked as paid.<br>
+            Paystack will settle the funds per your settlement schedule.
+          </p>
+        </div>
+        """
+
+        payload = {
+            "sender": {
+                "name":  "envoyce",
+                "email": "support@envoyce.xyz"
+            },
+            "to": [{"email": to_email, "name": to_name}],
+            "subject": subject,
+            "htmlContent": html_content,
+        }
+
+        res = requests.post(
+            'https://api.brevo.com/v3/smtp/email',
+            headers={
+                'accept':       'application/json',
+                'content-type': 'application/json',
+                'api-key':      BREVO_API_KEY,
+            },
+            json=payload,
+            timeout=10,
+        )
+
+        if res.status_code != 201:
+            current_app.logger.warning(
+                f"[paystack] Brevo notification failed ({res.status_code}): {res.text}"
+            )
+
+    except Exception as exc:
+        current_app.logger.error(
+            f"[paystack] _send_payment_notification error → {exc}"
+        )
+
+
+def _notify_from_invoice(invoice, tx_amount_kobo: int, payer_email: str):
+    """
+    Resolve business email from the Business table (preferred) or
+    fall back to the invoice owner's User.email, then send the notification.
+
+    Business.email  → real DB column ✓
+    User.email      → real DB column ✓
+    """
+    from models import User, Business
+
+    inv_data       = invoice.data or {}
+    currency_sym   = inv_data.get('currency_symbol', '₦')
+    invoice_number = inv_data.get('invoice_number', str(invoice.id)[:8])
+    amount         = tx_amount_kobo / 100
+
+    # Derive the display business name from invoice data first-line
+    business_name = inv_data.get('from', '').split('\n')[0] or 'there'
+
+    # ── Prefer Business.email (has its own column in models.py) ──────────────
+    to_email = None
+    to_name  = business_name
+
+    if invoice.business_id:
+        biz = db.session.query(Business).filter_by(id=invoice.business_id).first()
+        if biz and biz.email:
+            to_email = biz.email
+            to_name  = biz.name or business_name
+
+    # ── Fall back to invoice owner's User.email ───────────────────────────────
+    if not to_email:
+        owner = db.session.query(User).filter_by(id=invoice.user_id).first()
+        if owner and owner.email:
+            to_email = owner.email
+            to_name  = (
+                f"{owner.first_name or ''} {owner.last_name or ''}".strip()
+                or business_name
+            )
+
+    if not to_email:
+        current_app.logger.warning(
+            f"[paystack] No notification email found for invoice {invoice.id}"
+        )
+        return
+
+    _send_payment_notification(
+        to_email=to_email,
+        to_name=to_name,
+        business_name=business_name,
+        invoice_number=invoice_number,
+        amount=amount,
+        currency_symbol=currency_sym,
+        payer_email=payer_email or 'your client',
+        invoice_id=str(invoice.id),
+    )
 
 
 # ─── 1. Verify bank account ───────────────────────────────────────────────────
 
 @paystack_bp.route('/api/paystack/verify-account', methods=['POST'])
 def verify_account():
-    data = request.get_json()
+    data           = request.get_json()
     account_number = data.get('account_number')
     bank_code      = data.get('bank_code')
 
     if not account_number or not bank_code:
         return jsonify({'success': False, 'error': 'account_number and bank_code required'}), 400
 
-    res = requests.get(
+    res    = requests.get(
         f'{PAYSTACK_BASE}/bank/resolve',
         params={'account_number': account_number, 'bank_code': bank_code},
-        headers=paystack_headers()
+        headers=paystack_headers(),
     )
     result = res.json()
     if result.get('status'):
@@ -52,9 +226,9 @@ def verify_account():
 
 @paystack_bp.route('/api/paystack/banks', methods=['GET'])
 def get_banks():
-    res = requests.get(
+    res    = requests.get(
         f'{PAYSTACK_BASE}/bank?currency=NGN&perPage=100',
-        headers=paystack_headers()
+        headers=paystack_headers(),
     )
     result = res.json()
     if result.get('status'):
@@ -98,7 +272,7 @@ def create_subaccount():
             'account_number':    account_number,
             'percentage_charge': ENVOYCE_SPLIT_PERCENT,
             'description':       f'Envoyce subaccount for {business_name}',
-        }
+        },
     )
     result = res.json()
     if not result.get('status'):
@@ -117,7 +291,6 @@ def create_subaccount():
     existing.append(new_entry)
     user_data['paystack_subaccounts'] = existing
 
-    # Keep legacy single-account keys in sync for backwards compatibility
     if len(existing) == 1:
         user_data['paystack_subaccount_code'] = subaccount_code
         user_data['paystack_account_number']  = account_number
@@ -155,7 +328,7 @@ def subaccount_status():
     user_data = user.data or {}
     stored    = user_data.get('paystack_subaccounts', [])
 
-    # ── Migrate legacy single-account users ONCE ──────────────────────────────
+    # Migrate legacy single-account users
     if 'paystack_subaccounts' not in user_data and user_data.get('paystack_subaccount_code'):
         stored = [{
             'subaccount_code': user_data['paystack_subaccount_code'],
@@ -173,11 +346,7 @@ def subaccount_status():
     if not stored:
         return jsonify({'success': True, 'has_subaccount': False, 'subaccounts': []})
 
-    # ── Fetch each subaccount individually from Paystack ─────────────────────
-    # GET /subaccount/:code returns is_verified (boolean).
-    # The list endpoint (GET /subaccount) does NOT include is_verified.
-    # Most users have 1-3 accounts so the extra round-trips are negligible.
-    paystack_lookup    = {}   # subaccount_code -> Paystack data dict
+    paystack_lookup    = {}
     paystack_available = True
 
     for entry in stored:
@@ -185,7 +354,7 @@ def subaccount_status():
         if not code:
             continue
         try:
-            res = requests.get(
+            res    = requests.get(
                 f'{PAYSTACK_BASE}/subaccount/{code}',
                 headers=paystack_headers(),
                 timeout=10,
@@ -194,26 +363,22 @@ def subaccount_status():
             if res.status_code == 200 and result.get('status'):
                 paystack_lookup[code] = result['data']
             elif res.status_code == 404:
-                # Deleted from Paystack dashboard — will be pruned below.
-                pass
+                pass  # pruned below
             else:
-                # Any other Paystack error — don't prune, return stored data.
                 paystack_available = False
         except Exception:
             paystack_available = False
 
-    # ── Match stored entries against live Paystack data ───────────────────────
     subaccounts = []
     pruned      = False
 
     for entry in stored:
         code = entry.get('subaccount_code')
         if not code:
-            pruned = True  # corrupt entry — drop it
+            pruned = True
             continue
 
         if not paystack_available:
-            # Network/API failure — return stored data as-is, don't prune.
             subaccounts.append({
                 'subaccount_code': code,
                 'id':              None,
@@ -222,7 +387,7 @@ def subaccount_status():
                 'bank_code':       entry.get('bank_code'),
                 'account_name':    entry.get('account_name'),
                 'account_number':  entry.get('account_number'),
-                'is_verified':     None,   # unknown — API unavailable
+                'is_verified':     None,
                 'active':          False,
                 'created_at':      entry.get('created_at'),
                 'updated_at':      None,
@@ -231,14 +396,13 @@ def subaccount_status():
             continue
 
         d = paystack_lookup.get(code)
-
         if d:
             subaccounts.append({
                 'subaccount_code':   d.get('subaccount_code', code),
                 'id':                d.get('id'),
                 'business_name':     d.get('business_name') or entry.get('business_name'),
                 'bank_name':         d.get('settlement_bank') or entry.get('bank_name'),
-                'bank_code':         entry.get('bank_code'),        # not in single response
+                'bank_code':         entry.get('bank_code'),
                 'account_name':      d.get('account_name') or entry.get('account_name'),
                 'account_number':    d.get('account_number') or entry.get('account_number'),
                 'percentage_charge': d.get('percentage_charge'),
@@ -249,10 +413,8 @@ def subaccount_status():
                 'updated_at':        d.get('updatedAt'),
             })
         else:
-            # Code not found (404 earlier) — deleted from Paystack dashboard. Prune it.
             pruned = True
 
-    # ── Persist pruned list back to DB if anything was removed ───────────────
     if pruned:
         surviving_codes = {s['subaccount_code'] for s in subaccounts}
         clean = [e for e in stored if e.get('subaccount_code') in surviving_codes]
@@ -340,10 +502,8 @@ def initialize_payment():
     invoice_number = invoice_data.get('invoice_number', str(invoice_id)[:8])
     business_name  = invoice_data.get('from', '').split('\n')[0] or 'Business'
 
-    # FIX: Do NOT append ?status=success here — Paystack appends its own
-    # status, trxref, and reference params after payment. Hardcoding
-    # ?status=success causes the verify flow to fire on every page visit.
-    callback_url = f"{os.getenv('FRONTEND_URL', 'https://envoyce.xyz')}/pay/{invoice_id}"
+    # FIX: No ?status=success — Paystack appends its own params after payment
+    callback_url = f"{FRONTEND_URL}/pay/{invoice_id}"
 
     payload = {
         'email':        payer_email,
@@ -355,20 +515,18 @@ def initialize_payment():
             'invoice_id':     str(invoice_id),
             'invoice_number': invoice_number,
             'business_name':  business_name,
-            'cancel_action':  f"{os.getenv('FRONTEND_URL', 'https://envoyce.xyz')}/pay/{invoice_id}",
+            'cancel_action':  f"{FRONTEND_URL}/pay/{invoice_id}",
         },
     }
 
     if subaccount_code:
         payload['subaccount'] = subaccount_code
-        # FIX: bearer='account' means YOUR platform absorbs the Paystack
-        # transaction fee. bearer='subaccount' would deduct it from the
-        # seller on top of your 2% split, which is almost never intended.
+        # FIX: 'account' means the platform (envoyce) absorbs the Paystack
+        # transaction fee. 'subaccount' would charge it to the seller on
+        # top of the 2% split, which is not the intended behaviour.
         payload['bearer'] = 'account'
-        # transaction_charge is only needed when splitting a fixed flat fee.
-        # With percentage_charge set on the subaccount, omit it entirely.
 
-    res = requests.post(
+    res    = requests.post(
         f'{PAYSTACK_BASE}/transaction/initialize',
         headers=paystack_headers(),
         json=payload,
@@ -393,46 +551,48 @@ def initialize_payment():
 def verify_payment(reference):
     from models import Invoice
 
-    res = requests.get(
+    current_app.logger.info(f"[verify] Called with reference={reference}")
+    
+    res    = requests.get(
         f'{PAYSTACK_BASE}/transaction/verify/{reference}',
         headers=paystack_headers(),
     )
     result = res.json()
+    
+    current_app.logger.info(f"[verify] Paystack response status={result.get('status')}")
+    
     if not result.get('status'):
         return jsonify({'success': False, 'error': 'Could not verify payment'}), 400
 
     tx = result['data']
+    current_app.logger.info(f"[verify] TX status={tx['status']}, invoice_id={tx.get('metadata', {}).get('invoice_id')}")
+    
     if tx['status'] != 'success':
         return jsonify({'success': False, 'error': f"Payment status: {tx['status']}"}), 400
 
     invoice_id = tx.get('metadata', {}).get('invoice_id')
-    if not invoice_id:
-        return jsonify({'success': False, 'error': 'Invoice ID missing from transaction'}), 400
-
     invoice = Invoice.query.filter_by(id=invoice_id).first()
-    if not invoice:
-        return jsonify({'success': False, 'error': 'Invoice not found'}), 404
+    
+    current_app.logger.info(f"[verify] Invoice found={invoice is not None}, current_status={invoice.status if invoice else 'N/A'}")
 
-    # FIX: Idempotency guard — if already paid (e.g. webhook beat us here),
-    # return success immediately without writing duplicate data.
-    if invoice.status == 'paid':
-        return jsonify({
-            'success':    True,
-            'message':    'Invoice already marked as paid',
-            'invoice_id': invoice_id,
-            'amount':     tx['amount'] / 100,
-            'reference':  reference,
-        })
+    already_paid = invoice.status == 'paid'
 
-    invoice.status = 'paid'
-    inv_data = invoice.data or {}
-    inv_data['paid_at']            = datetime.utcnow().isoformat()
-    inv_data['paystack_reference'] = reference
-    inv_data['paystack_amount']    = tx['amount'] / 100
-    invoice.data = inv_data
-    # FIX: flag_modified required for SQLAlchemy to detect JSON field mutation
-    flag_modified(invoice, 'data')
-    db.session.commit()
+    if not already_paid:
+        invoice.status = 'paid'
+        inv_data = dict(invoice.data or {})
+        inv_data['paid_at']            = datetime.utcnow().isoformat()
+        inv_data['paystack_reference'] = reference
+        inv_data['paystack_amount']    = tx['amount'] / 100
+        inv_data['payer_email']        = tx.get('customer', {}).get('email', '')
+        invoice.data = inv_data
+        flag_modified(invoice, 'data')
+        db.session.commit()
+        current_app.logger.info(f"[verify] Committed status=paid for invoice {invoice_id}")
+    else:
+        current_app.logger.info(f"[verify] Invoice already paid, skipping write")
+
+    # Send notification regardless — Brevo deduplication is fine
+    _notify_from_invoice(invoice, tx['amount'], payer_email)
 
     return jsonify({
         'success':    True,
@@ -451,10 +611,7 @@ def webhook():
 
     signature = request.headers.get('x-paystack-signature', '')
     body      = request.get_data()
-
-    # FIX: original code used hmac.new() — confirmed correct Python stdlib call.
-    # Verified: hmac.new(key: bytes, msg: bytes, digestmod) -> HMAC object
-    expected = hmac.new(
+    expected  = hmac.new(
         PAYSTACK_SECRET_KEY.encode('utf-8'),
         body,
         hashlib.sha512,
@@ -469,18 +626,27 @@ def webhook():
     if event_type == 'charge.success':
         tx         = event['data']
         invoice_id = tx.get('metadata', {}).get('invoice_id')
+
         if invoice_id:
             invoice = Invoice.query.filter_by(id=invoice_id).first()
+
             if invoice and invoice.status != 'paid':
-                invoice.status = 'paid'
-                inv_data = invoice.data or {}
+                invoice.status                 = 'paid'
+                inv_data                       = invoice.data or {}
                 inv_data['paid_at']            = datetime.utcnow().isoformat()
                 inv_data['paystack_reference'] = tx.get('reference')
                 inv_data['paystack_amount']    = tx.get('amount', 0) / 100
+                inv_data['payer_email']        = tx.get('customer', {}).get('email', '')
                 invoice.data = inv_data
-                # FIX: flag_modified required for SQLAlchemy JSON field mutation
                 flag_modified(invoice, 'data')
                 db.session.commit()
+
+                # Notify the business owner via Brevo
+                _notify_from_invoice(
+                    invoice,
+                    tx.get('amount', 0),
+                    tx.get('customer', {}).get('email', ''),
+                )
 
     return jsonify({'status': 'ok'}), 200
 
@@ -506,8 +672,7 @@ def remove_subaccount():
     updated     = [s for s in subaccounts if s.get('subaccount_code') != subaccount_code]
     user_data['paystack_subaccounts'] = updated
 
-    # Best-effort deactivation on Paystack (no DELETE endpoint exists).
-    # Ignore all errors — the subaccount may already be gone from their dashboard.
+    # Best-effort deactivation — Paystack has no DELETE endpoint
     try:
         requests.put(
             f'{PAYSTACK_BASE}/subaccount/{subaccount_code}',
@@ -518,7 +683,6 @@ def remove_subaccount():
     except Exception:
         pass
 
-    # Re-sync legacy keys to the first remaining account (or clear them)
     if updated:
         first = updated[0]
         user_data['paystack_subaccount_code'] = first['subaccount_code']
@@ -547,7 +711,7 @@ def remove_subaccount():
 def debug_user():
     from models import User
     user_id = request.args.get('user_id')
-    user = User.query.filter_by(id=user_id).first()
+    user    = User.query.filter_by(id=user_id).first()
     if not user:
         return jsonify({'error': 'User not found'}), 404
     return jsonify({

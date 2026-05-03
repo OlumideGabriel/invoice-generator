@@ -3,12 +3,12 @@ import { useParams, useSearchParams } from "react-router-dom";
 import { API_BASE_URL } from "../config/api";
 import {
   CheckCircle2,
-  Clock,
   AlertCircle,
   ArrowLeft,
   Loader2,
   ChevronRight,
   Mail,
+  BadgeCheck,
 } from "lucide-react";
 import { initializePayment, verifyPayment } from "../hooks/usePaystack";
 
@@ -38,23 +38,37 @@ interface InvoiceData {
   from: string;
   logo_url?: string;
   payment_details?: string;
+  paid_at?: string;
+  paystack_reference?: string;
+  payer_email?: string;
+}
+interface InvoiceClient {
+  id: string;
+  name: string;
+  email: string;
+}
+interface InvoiceBusiness {
+  id: string;
+  name: string;
+  email?: string;
 }
 interface Invoice {
   id: string;
   status: string;
   data: InvoiceData;
   user_id: string;
+  client?: InvoiceClient;
+  business?: InvoiceBusiness;
 }
-type Screen =
-  | "summary"
-  | "email-input"
-  | "processing"
-  | "success"
-  | "already-paid";
+
+type Screen = "summary" | "email-input" | "processing" | "already-paid";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const fmt = (sym: string, n: number) =>
-  `${sym}${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  `${sym}${n.toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 
 const fmtDate = (s: string) => {
   try {
@@ -99,6 +113,369 @@ const calcTotals = (data: InvoiceData) => {
 
 const base = API_BASE_URL || "http://127.0.0.1:5000";
 
+// ─── Paid Invoice Card ────────────────────────────────────────────────────────
+function PaidInvoiceCard({
+  invoice,
+  justPaid,
+}: {
+  invoice: Invoice;
+  justPaid: boolean;
+}) {
+  const data = invoice.data;
+  const { subtotal, discount, tax, shipping, total } = calcTotals(data);
+  const sym = data.currency_symbol || "₦";
+  const businessName = data.from?.split("\n")[0] || "Business";
+  const paidAt = data.paid_at
+    ? fmtDate(data.paid_at)
+    : fmtDate(new Date().toISOString());
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Banner */}
+      <div
+        style={{
+          background: justPaid ? "#dcfce7" : "#f0fdf4",
+          border: `1px solid ${justPaid ? "#86efac" : "#bbf7d0"}`,
+          borderRadius: 16,
+          padding: "20px 24px",
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+        }}
+      >
+        <div
+          style={{
+            width: 48,
+            height: 48,
+            borderRadius: "50%",
+            background: "#16a34a",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0,
+          }}
+        >
+          <BadgeCheck size={28} color="#fff" />
+        </div>
+        <div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: "#14532d" }}>
+            {justPaid ? "Payment Successful!" : "Invoice Already Paid"}
+          </div>
+          <div style={{ fontSize: 13, color: "#166534", marginTop: 2 }}>
+            {justPaid
+              ? `Paid on ${paidAt} · ${businessName} has been notified.`
+              : `This invoice was settled on ${paidAt}.`}
+          </div>
+          {data.payer_email && (
+            <div style={{ fontSize: 12, color: "#166534", marginTop: 2 }}>
+              Paid by: {data.payer_email}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Invoice card with PAID stamp */}
+      <div
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          border: "1px solid #e5e7eb",
+          overflow: "hidden",
+          position: "relative",
+        }}
+      >
+        {/* Watermark */}
+        <div
+          style={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%) rotate(-25deg)",
+            border: "4px solid rgba(22,163,74,0.15)",
+            borderRadius: 8,
+            padding: "6px 18px",
+            color: "rgba(22,163,74,0.15)",
+            fontSize: 52,
+            fontWeight: 900,
+            letterSpacing: 6,
+            pointerEvents: "none",
+            userSelect: "none",
+            whiteSpace: "nowrap",
+            zIndex: 1,
+          }}
+        >
+          PAID
+        </div>
+
+        {/* Header */}
+        <div
+          style={{
+            padding: "20px 24px",
+            borderBottom: "1px solid #f3f4f6",
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+          }}
+        >
+          {data.logo_url ? (
+            <img
+              src={data.logo_url}
+              alt={businessName}
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                objectFit: "cover",
+              }}
+            />
+          ) : (
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: "50%",
+                background: "#0f766e",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                flexShrink: 0,
+              }}
+            >
+              <span style={{ color: "#fff", fontWeight: 700, fontSize: 16 }}>
+                {businessName.charAt(0)}
+              </span>
+            </div>
+          )}
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>
+              {businessName}
+            </div>
+            <div style={{ fontSize: 12, color: "#6b7280" }}>
+              Invoice #{data.invoice_number}
+            </div>
+          </div>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 4,
+              background: "#dcfce7",
+              color: "#15803d",
+              border: "1px solid #86efac",
+              borderRadius: 99,
+              padding: "4px 10px",
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: "0.04em",
+            }}
+          >
+            <CheckCircle2 size={12} /> PAID
+          </span>
+        </div>
+
+        {/* Dates */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            borderBottom: "1px solid #f3f4f6",
+          }}
+        >
+          {[
+            ["Issued", data.issued_date],
+            ["Due", data.due_date],
+          ].map(([label, date], i) => (
+            <div
+              key={label}
+              style={{
+                padding: "12px 20px",
+                borderRight: i === 0 ? "1px solid #f3f4f6" : "none",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: "#9ca3af",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  marginBottom: 2,
+                }}
+              >
+                {label}
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#374151" }}>
+                {fmtDate(date as string)}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Items */}
+        {(data.items || []).map((item, i) => (
+          <div
+            key={item.id || i}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "11px 20px",
+              borderBottom: "1px solid #f9fafb",
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#111827" }}>
+                {item.name}
+              </div>
+              <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 1 }}>
+                {item.quantity} × {fmt(sym, item.unit_cost)}
+              </div>
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "#111827" }}>
+              {fmt(sym, item.quantity * item.unit_cost)}
+            </div>
+          </div>
+        ))}
+
+        {/* Totals */}
+        <div
+          style={{
+            borderTop: "2px solid #f3f4f6",
+            padding: "12px 20px",
+            display: "flex",
+            flexDirection: "column",
+            gap: 7,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              fontSize: 12,
+              color: "#6b7280",
+            }}
+          >
+            <span>Subtotal</span>
+            <span style={{ color: "#374151", fontWeight: 500 }}>
+              {fmt(sym, subtotal)}
+            </span>
+          </div>
+          {discount > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
+              <span>
+                Discount
+                {data.discount_type === "percent"
+                  ? ` (${data.discount_percent}%)`
+                  : ""}
+              </span>
+              <span style={{ color: "#dc2626", fontWeight: 500 }}>
+                -{fmt(sym, discount)}
+              </span>
+            </div>
+          )}
+          {tax > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
+              <span>
+                Tax
+                {data.tax_type === "percent" ? ` (${data.tax_percent}%)` : ""}
+              </span>
+              <span style={{ color: "#374151", fontWeight: 500 }}>
+                {fmt(sym, tax)}
+              </span>
+            </div>
+          )}
+          {shipping > 0 && (
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                fontSize: 12,
+                color: "#6b7280",
+              }}
+            >
+              <span>Shipping</span>
+              <span style={{ color: "#374151", fontWeight: 500 }}>
+                {fmt(sym, shipping)}
+              </span>
+            </div>
+          )}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              borderTop: "1px solid #e5e7eb",
+              paddingTop: 10,
+              marginTop: 2,
+            }}
+          >
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#111827" }}>
+              Total Paid
+            </span>
+            <span style={{ fontSize: 20, fontWeight: 800, color: "#16a34a" }}>
+              {fmt(sym, total)}
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div
+          style={{
+            background: "#f0fdf4",
+            borderTop: "1px solid #dcfce7",
+            padding: "10px 20px",
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+          }}
+        >
+          <CheckCircle2 size={13} color="#16a34a" />
+          <span style={{ fontSize: 12, color: "#15803d" }}>
+            Payment confirmed · {paidAt}
+          </span>
+          {data.paystack_reference && (
+            <span
+              style={{
+                marginLeft: "auto",
+                fontSize: 11,
+                color: "#9ca3af",
+                fontFamily: "monospace",
+              }}
+            >
+              Ref: {data.paystack_reference.slice(-8).toUpperCase()}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Branding */}
+      <div style={{ textAlign: "center" }}>
+        <span style={{ fontSize: 12, color: "#9ca3af" }}>Secured by </span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#0f766e" }}>
+          Paystack
+        </span>
+        <span style={{ fontSize: 12, color: "#9ca3af" }}> · Powered by </span>
+        <span style={{ fontSize: 12, fontWeight: 700, color: "#0f766e" }}>
+          envoyce
+        </span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function PaymentPage() {
   const { id } = useParams<{ id: string }>();
@@ -108,46 +485,94 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [screen, setScreen] = useState<Screen>("summary");
+  const [justPaid, setJustPaid] = useState(false); // true = came from payment, false = was already paid
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [verifying, setVerifying] = useState(false);
 
-  // Check if returning from Paystack redirect
-  useEffect(() => {
-    const status = searchParams.get("status");
-    const reference =
-      searchParams.get("trxref") || searchParams.get("reference");
-
-    if (status === "success" && reference) {
-      setScreen("processing");
-      verifyPayment(reference).then((result) => {
-        if (result.success) {
-          setScreen("success");
-          // Update invoice status locally
-          setInvoice((prev) => (prev ? { ...prev, status: "paid" } : null));
-        } else {
-          setError(result.error || "Payment verification failed");
-          setScreen("summary");
-        }
-      });
-    }
-  }, [searchParams]);
-
+  // ── Step 1: Fetch invoice ─────────────────────────────────────────────────
   useEffect(() => {
     if (!id) return;
-    fetch(`${base}/api/invoices/${id}`)
+
+    // If this is a Paystack redirect, Step 2 will handle everything.
+    // Don't change the screen here — let Step 2 set it after verification.
+    const isRedirect =
+      searchParams.get("status") === "success" &&
+      !!(searchParams.get("trxref") || searchParams.get("reference"));
+
+    fetch(
+      `${base}/api/invoices/${id}?include_client=true&include_business=true`,
+    )
       .then((r) => r.json())
       .then((d) => {
         if (d.success && d.invoice) {
           setInvoice(d.invoice);
-          if (d.invoice.status === "paid") setScreen("already-paid");
+          // Only act on status if this is NOT a redirect — Step 2 owns that case
+          if (!isRedirect && d.invoice.status === "paid") {
+            setJustPaid(false);
+            setScreen("already-paid");
+          }
+          if (d.invoice.client?.email) setEmail(d.invoice.client.email);
         } else {
           setError("Invoice not found");
         }
       })
       .catch(() => setError("Failed to load invoice"))
-      .finally(() => setLoading(false));
-  }, [id]);
+      .finally(() => {
+        if (!isRedirect) setLoading(false);
+        // If it IS a redirect, Step 2 will clear the processing screen itself
+      });
+  }, [id]); // intentionally omit searchParams — Step 2 owns the redirect case
+
+  // ── Step 2: Handle Paystack redirect ─────────────────────────────────────
+  useEffect(() => {
+    const status = searchParams.get("status");
+    const reference =
+      searchParams.get("trxref") || searchParams.get("reference");
+    if (status !== "success" || !reference || !id) return;
+
+    setScreen("processing");
+
+    verifyPayment(reference).then(async (result) => {
+      if (result.success) {
+        // ── Fetch updated invoice — backend already set status to 'paid' ──
+        // No manual PUT needed. verifyPayment backend is the single source
+        // of truth. Just re-fetch the invoice to get the current state.
+        try {
+          const res = await fetch(
+            `${base}/api/invoices/${id}?include_client=true&include_business=true`,
+          );
+          const d = await res.json();
+          if (d.success && d.invoice) {
+            setInvoice(d.invoice);
+          }
+        } catch {
+          // Non-fatal — merge locally as fallback
+          setInvoice((prev) =>
+            prev
+              ? {
+                  ...prev,
+                  status: "paid",
+                  data: {
+                    ...prev.data,
+                    paid_at: new Date().toISOString(),
+                    paystack_reference: reference,
+                    payer_email: email || prev.client?.email || "",
+                  },
+                }
+              : null,
+          );
+        }
+
+        setJustPaid(true);
+        setScreen("already-paid");
+      } else {
+        setError(result.error || "Payment verification failed");
+        setScreen("summary");
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, id]);
 
   const handlePay = async () => {
     if (!email || !email.includes("@")) {
@@ -155,14 +580,10 @@ export default function PaymentPage() {
       return;
     }
     if (!id) return;
-
     setEmailError("");
     setVerifying(true);
-
     const result = await initializePayment(id, email);
-
     if (result.success && result.authorization_url) {
-      // Redirect to Paystack hosted payment page
       window.location.href = result.authorization_url;
     } else {
       setEmailError(result.error || "Failed to initialize payment. Try again.");
@@ -170,7 +591,7 @@ export default function PaymentPage() {
     }
   };
 
-  // ── Styles ──────────────────────────────────────────────────────────────────
+  // ── Shared styles ─────────────────────────────────────────────────────────
   const wrap: React.CSSProperties = {
     minHeight: "100vh",
     background: "#f3f4f6",
@@ -180,14 +601,15 @@ export default function PaymentPage() {
     padding: "32px 16px 64px",
     fontFamily: "'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif",
   };
-  const card: React.CSSProperties = { width: "100%", maxWidth: 440 };
+  const cardWrap: React.CSSProperties = { width: "100%", maxWidth: 440 };
 
+  // ── Loading / processing ──────────────────────────────────────────────────
   if (loading || screen === "processing")
     return (
       <div style={wrap}>
         <div
           style={{
-            ...card,
+            ...cardWrap,
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
@@ -202,20 +624,21 @@ export default function PaymentPage() {
           />
           <p style={{ fontSize: 14, color: "#6b7280" }}>
             {screen === "processing"
-              ? "Verifying your payment..."
-              : "Loading invoice..."}
+              ? "Verifying your payment…"
+              : "Loading invoice…"}
           </p>
           <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
         </div>
       </div>
     );
 
+  // ── Error ─────────────────────────────────────────────────────────────────
   if (error && !invoice)
     return (
       <div style={wrap}>
         <div
           style={{
-            ...card,
+            ...cardWrap,
             background: "#fff",
             borderRadius: 20,
             padding: "48px 32px",
@@ -246,145 +669,21 @@ export default function PaymentPage() {
   const sym = data.currency_symbol || "₦";
   const businessName = data.from?.split("\n")[0] || "Business";
 
-  // ── Success screen ───────────────────────────────────────────────────────────
-  if (screen === "success")
-    return (
-      <div style={wrap}>
-        <div style={card}>
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 20,
-              padding: "48px 32px",
-              textAlign: "center",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <div
-              style={{
-                width: 72,
-                height: 72,
-                borderRadius: "50%",
-                background: "#dcfce7",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 20px",
-              }}
-            >
-              <CheckCircle2 size={36} color="#16a34a" />
-            </div>
-            <div
-              style={{
-                fontSize: 22,
-                fontWeight: 800,
-                color: "#111827",
-                marginBottom: 8,
-              }}
-            >
-              Payment Successful!
-            </div>
-            <div style={{ fontSize: 14, color: "#6b7280", marginBottom: 24 }}>
-              Invoice #{data.invoice_number} has been paid. {businessName} will
-              be notified.
-            </div>
-            <div
-              style={{
-                background: "#f9fafb",
-                borderRadius: 12,
-                padding: "16px 20px",
-              }}
-            >
-              <div style={{ fontSize: 12, color: "#9ca3af", marginBottom: 4 }}>
-                Amount Paid
-              </div>
-              <div style={{ fontSize: 28, fontWeight: 800, color: "#111827" }}>
-                {fmt(sym, total)}
-              </div>
-            </div>
-          </div>
-          <div style={{ textAlign: "center", marginTop: 20 }}>
-            <span style={{ fontSize: 12, color: "#9ca3af" }}>Secured by </span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0f766e" }}>
-              Paystack
-            </span>
-            <span style={{ fontSize: 12, color: "#9ca3af" }}>
-              {" "}
-              · Powered by{" "}
-            </span>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#0f766e" }}>
-              envoyce
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-
-  // ── Already paid ─────────────────────────────────────────────────────────────
+  // ── Already paid (covers both fresh payment and returning visitor) ────────
   if (screen === "already-paid")
     return (
       <div style={wrap}>
-        <div style={card}>
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 20,
-              padding: "40px 32px",
-              textAlign: "center",
-              border: "1px solid #e5e7eb",
-            }}
-          >
-            <div
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: "50%",
-                background: "#dcfce7",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 16px",
-              }}
-            >
-              <CheckCircle2 size={30} color="#16a34a" />
-            </div>
-            <div
-              style={{
-                fontSize: 18,
-                fontWeight: 700,
-                color: "#111827",
-                marginBottom: 6,
-              }}
-            >
-              Already Paid
-            </div>
-            <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 20 }}>
-              Invoice #{data.invoice_number} has been settled.
-            </div>
-            <div
-              style={{
-                background: "#f9fafb",
-                borderRadius: 10,
-                padding: "12px 16px",
-              }}
-            >
-              <div style={{ fontSize: 11, color: "#9ca3af", marginBottom: 2 }}>
-                Total
-              </div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#111827" }}>
-                {fmt(sym, total)}
-              </div>
-            </div>
-          </div>
+        <div style={cardWrap}>
+          <PaidInvoiceCard invoice={invoice} justPaid={justPaid} />
         </div>
       </div>
     );
 
-  // ── Email input screen ───────────────────────────────────────────────────────
+  // ── Email input ───────────────────────────────────────────────────────────
   if (screen === "email-input")
     return (
       <div style={wrap}>
-        <div style={card}>
+        <div style={cardWrap}>
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <button
               onClick={() => setScreen("summary")}
@@ -403,6 +702,7 @@ export default function PaymentPage() {
               <ArrowLeft size={16} /> Back
             </button>
 
+            {/* Amount summary */}
             <div
               style={{
                 background: "#fff",
@@ -439,6 +739,7 @@ export default function PaymentPage() {
               </div>
             </div>
 
+            {/* Email field */}
             <div
               style={{
                 background: "#fff",
@@ -458,7 +759,9 @@ export default function PaymentPage() {
                 Your email address
               </div>
               <div style={{ fontSize: 13, color: "#6b7280", marginBottom: 16 }}>
-                We'll send your payment receipt here.
+                {email
+                  ? "Confirm your email — your receipt will be sent here."
+                  : "We'll send your payment receipt here."}
               </div>
 
               <div style={{ position: "relative", marginBottom: 8 }}>
@@ -528,7 +831,7 @@ export default function PaymentPage() {
                       size={18}
                       style={{ animation: "spin 1s linear infinite" }}
                     />{" "}
-                    Redirecting to Paystack...
+                    Redirecting to Paystack…
                   </>
                 ) : (
                   `Pay ${fmt(sym, total)}`
@@ -565,10 +868,10 @@ export default function PaymentPage() {
       </div>
     );
 
-  // ── Summary screen ───────────────────────────────────────────────────────────
+  // ── Summary (default) ─────────────────────────────────────────────────────
   return (
     <div style={wrap}>
-      <div style={card}>
+      <div style={cardWrap}>
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {/* Header */}
           <div
@@ -844,8 +1147,7 @@ export default function PaymentPage() {
                 color: "#dc2626",
               }}
             >
-              <AlertCircle size={16} />
-              {error}
+              <AlertCircle size={16} /> {error}
             </div>
           )}
 
@@ -868,8 +1170,7 @@ export default function PaymentPage() {
               gap: 8,
             }}
           >
-            Pay {fmt(sym, total)}
-            <ChevronRight size={18} />
+            Pay {fmt(sym, total)} <ChevronRight size={18} />
           </button>
 
           <div style={{ textAlign: "center" }}>
