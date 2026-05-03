@@ -1481,6 +1481,78 @@ def update_profile():
         }), 500
 
 
+@app.route('/api/auth/supabase-login', methods=['POST'])
+def supabase_login():
+    """Handle login/signup for Supabase users (Google OAuth or email auth)"""
+    try:
+        data = request.get_json()
+        supabase_user_id = data.get('id')
+        email = data.get('email')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        google_id = data.get('google_id')
+        auth_provider = data.get('auth_provider', 'supabase')
+
+        if not supabase_user_id or not email:
+            return jsonify({'success': False, 'error': 'Missing user data'}), 400
+
+        from models import User
+
+        # Try to find existing user by supabase_user_id (id) or google_id or email
+        user = User.query.filter(
+            (User.id == supabase_user_id) |
+            ((User.google_id == google_id) if google_id else False) |
+            (User.email == email)
+        ).first()
+
+        if user:
+            # Update user info if needed
+            if not user.first_name and first_name:
+                user.first_name = first_name
+            if not user.last_name and last_name:
+                user.last_name = last_name
+            if google_id and not user.google_id:
+                user.google_id = google_id
+            if not user.auth_provider:
+                user.auth_provider = auth_provider
+            db.session.commit()
+        else:
+            # Create new user
+            user = User(
+                id=supabase_user_id,  # Use Supabase user ID as primary key
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                google_id=google_id,
+                auth_provider=auth_provider,
+                email_verified=True  # Assume verified since they authenticated with Supabase
+            )
+            db.session.add(user)
+            db.session.commit()
+
+        return jsonify({
+            'success': True,
+            'user': {
+                'id': str(user.id),
+                'email': user.email,
+                'first_name': user.first_name,
+                'last_name': user.last_name,
+                'google_id': user.google_id,
+                'auth_provider': user.auth_provider,
+                'auth_method': 'google' if user.google_id else 'native',
+                'email_verified': user.email_verified,
+                'profile_picture_url': user.profile_picture_url,
+                'data': user.data if user.data else {},
+                'created_at': user.created_at.isoformat() if user.created_at else None,
+                'updated_at': user.updated_at.isoformat() if user.updated_at else None
+            }
+        })
+
+    except Exception as e:
+        db.session.rollback()
+        app.logger.error(f"Supabase login error: {str(e)}", exc_info=True)
+        return jsonify({'success': False, 'error': 'Failed to authenticate'}), 500
+
 
 # Debug route to check database connection
 @app.route('/db-info')

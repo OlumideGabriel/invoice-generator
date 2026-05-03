@@ -31,6 +31,7 @@ import SupportForm from "./pages/SupportForm";
 import ComingSoon from "./pages/ComingSoon";
 import Notifications from "./pages/Notifications";
 import PaymentPage from "./pages/PaymentPage";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const App: React.FC = () => {
   const invoice = useInvoice();
@@ -168,6 +169,7 @@ const AppContent: React.FC = () => {
             {/* Public routes */}
             <Route path="/new" element={<InvoiceGenerator />} />
             <Route path="/invoice/edit/:id" element={<InvoiceEdit />} />
+            <Route path="/verify-email" element={<VerifyEmail />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
           </Routes>

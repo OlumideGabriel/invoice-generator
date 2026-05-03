@@ -34,14 +34,49 @@ const AuthPage: React.FC = () => {
       } = await supabase.auth.getSession();
       if (session?.user) {
         // Fetch the user from our database instead of raw Google JSON
-        const res = await fetch(
+        let res = await fetch(
           `${import.meta.env.VITE_API_BASE_URL}/api/users/${session.user.id}`,
         );
-        if (res.ok) {
-          const user = await res.json();
-          signinNative(user);
-          navigate("/new");
+        if (!res.ok) {
+          // User not found, try to create/login via Supabase
+          const createRes = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL}/api/auth/supabase-login`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                id: session.user.id,
+                email: session.user.email,
+                first_name:
+                  session.user.user_metadata?.first_name ||
+                  session.user.user_metadata?.name?.split(" ")[0],
+                last_name:
+                  session.user.user_metadata?.last_name ||
+                  session.user.user_metadata?.name?.split(" ")[1],
+                google_id:
+                  session.user.user_metadata?.sub ||
+                  session.user.app_metadata?.provider === "google"
+                    ? session.user.id
+                    : null,
+                auth_provider:
+                  session.user.app_metadata?.provider || "supabase",
+              }),
+            },
+          );
+          if (createRes.ok) {
+            const data = await createRes.json();
+            if (data.success && data.user) {
+              signinNative(data.user);
+              navigate("/new");
+              return;
+            }
+          }
+          // If creation failed, stay on auth page
+          return;
         }
+        const user = await res.json();
+        signinNative(user);
+        navigate("/new");
       }
     };
     checkSession();
