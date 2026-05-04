@@ -88,11 +88,7 @@ app.register_blueprint(paystack_bp)
 @app.after_request
 def after_request(response):
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS')
-    return response
-
-@app.after_request
-def add_permissions_policy_header(response):
+    response.headers.add('Access-Control-Allow-Methods', 'GET,POST,OPTIONS,PUT,DELETE')
     response.headers['Permissions-Policy'] = 'payment=*'
     return response
 
@@ -948,6 +944,8 @@ def get_invoice(invoice_id):
                     # Business.email is a real column — used as the
                     # "To:" address for payment-received notifications
                     'email': business.email or '',
+                    'paystack_subaccount_code': business.paystack_subaccount_code or None,
+                    'is_verified': business.is_verified or False,
                 }
 
         return jsonify({'success': True, 'invoice': result})

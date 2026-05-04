@@ -20,6 +20,8 @@ class Businesses:
             'address': business.address,
             'phone': business.phone,
             'tax_id': business.tax_id,
+            'paystack_subaccount_code': business.paystack_subaccount_code,
+            'is_verified': business.is_verified, 
             'data': business.data,
             'created_at': business.created_at.isoformat() if business.created_at else None,
             'updated_at': business.updated_at.isoformat() if business.updated_at else None
@@ -242,6 +244,10 @@ class Businesses:
                 business.tax_id = data['tax_id']
             if 'data' in data:
                 business.data = data['data']
+            if 'paystack_subaccount_code' in data:            
+                business.paystack_subaccount_code = data['paystack_subaccount_code']
+            if 'is_verified' in data:                         
+                business.is_verified = data['is_verified']
 
             business.updated_at = datetime.utcnow()
             db.session.commit()

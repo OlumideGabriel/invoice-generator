@@ -25,9 +25,6 @@ def paystack_headers():
 
 
 # ─── Email notification helper ────────────────────────────────────────────────
-#
-# Sends via Brevo (same provider used everywhere else in app.py).
-# Silently swallows all errors — a mail failure must never break the payment.
 
 def _send_payment_notification(
     *,
@@ -86,7 +83,7 @@ def _send_payment_notification(
               <td style="padding:10px 0;text-align:right;font-weight:700;
                          color:#14532d;font-size:16px;">{amount_fmt}</td>
             </tr>
-            <tr>
+            <tr style="border-bottom:1px solid #e5e7eb;">
               <td style="padding:10px 0;color:#6b7280;">Paid by</td>
               <td style="padding:10px 0;text-align:right;color:#111827;">
                 {payer_email}
@@ -141,13 +138,6 @@ def _send_payment_notification(
 
 
 def _notify_from_invoice(invoice, tx_amount_kobo: int, payer_email: str):
-    """
-    Resolve business email from the Business table (preferred) or
-    fall back to the invoice owner's User.email, then send the notification.
-
-    Business.email  → real DB column ✓
-    User.email      → real DB column ✓
-    """
     from models import User, Business
 
     inv_data       = invoice.data or {}
@@ -155,10 +145,8 @@ def _notify_from_invoice(invoice, tx_amount_kobo: int, payer_email: str):
     invoice_number = inv_data.get('invoice_number', str(invoice.id)[:8])
     amount         = tx_amount_kobo / 100
 
-    # Derive the display business name from invoice data first-line
     business_name = inv_data.get('from', '').split('\n')[0] or 'there'
 
-    # ── Prefer Business.email (has its own column in models.py) ──────────────
     to_email = None
     to_name  = business_name
 
@@ -168,7 +156,6 @@ def _notify_from_invoice(invoice, tx_amount_kobo: int, payer_email: str):
             to_email = biz.email
             to_name  = biz.name or business_name
 
-    # ── Fall back to invoice owner's User.email ───────────────────────────────
     if not to_email:
         owner = db.session.query(User).filter_by(id=invoice.user_id).first()
         if owner and owner.email:
@@ -241,7 +228,7 @@ def get_banks():
 
 @paystack_bp.route('/api/paystack/create-subaccount', methods=['POST'])
 def create_subaccount():
-    from models import User
+    from models import User, Business
     data = request.get_json()
 
     user_id        = data.get('user_id')
@@ -249,6 +236,7 @@ def create_subaccount():
     account_number = data.get('account_number')
     bank_code      = data.get('bank_code')
     account_name   = data.get('account_name')
+    business_id    = data.get('business_id')
 
     if not all([user_id, business_name, account_number, bank_code]):
         return jsonify({'success': False, 'error': 'Missing required fields'}), 400
@@ -287,6 +275,7 @@ def create_subaccount():
         'account_name':    account_name or business_name,
         'business_name':   business_name,
         'created_at':      datetime.utcnow().isoformat(),
+        'is_verified':     True,  # Mark as verified immediately
     }
     existing.append(new_entry)
     user_data['paystack_subaccounts'] = existing
@@ -305,6 +294,18 @@ def create_subaccount():
         user.updated_at = datetime.utcnow()
     db.session.commit()
 
+    # ─── Set is_verified = TRUE on Business record immediately ───
+    if business_id:
+        biz = Business.query.filter_by(id=business_id).first()
+        if biz:
+            biz.paystack_subaccount_code = subaccount_code
+            biz.is_verified = True  # ← FIX: Immediately mark as verified
+            biz.updated_at = datetime.utcnow()
+            db.session.commit()
+            current_app.logger.info(
+                f"[create_subaccount] Set is_verified=True for business {business_id}"
+            )
+
     return jsonify({
         'success':         True,
         'subaccount_code': subaccount_code,
@@ -316,7 +317,7 @@ def create_subaccount():
 
 @paystack_bp.route('/api/paystack/subaccount-status', methods=['GET'])
 def subaccount_status():
-    from models import User
+    from models import User, Business
     user_id = request.args.get('user_id')
     if not user_id:
         return jsonify({'success': False, 'error': 'user_id required'}), 400
@@ -337,6 +338,7 @@ def subaccount_status():
             'account_name':    user_data.get('paystack_account_name'),
             'business_name':   user_data.get('paystack_business_name'),
             'created_at':      user_data.get('paystack_setup_at'),
+            'is_verified':     True,
         }]
         user_data['paystack_subaccounts'] = stored
         user.data = user_data
@@ -363,7 +365,7 @@ def subaccount_status():
             if res.status_code == 200 and result.get('status'):
                 paystack_lookup[code] = result['data']
             elif res.status_code == 404:
-                pass  # pruned below
+                pass
             else:
                 paystack_available = False
         except Exception:
@@ -387,7 +389,7 @@ def subaccount_status():
                 'bank_code':       entry.get('bank_code'),
                 'account_name':    entry.get('account_name'),
                 'account_number':  entry.get('account_number'),
-                'is_verified':     None,
+                'is_verified':     entry.get('is_verified', True),  # Default to True from stored
                 'active':          False,
                 'created_at':      entry.get('created_at'),
                 'updated_at':      None,
@@ -397,6 +399,11 @@ def subaccount_status():
 
         d = paystack_lookup.get(code)
         if d:
+            biz = Business.query.filter_by(paystack_subaccount_code=code).first()
+            # Prefer is_verified from business record if available
+            db_verified = biz.is_verified if (biz and biz.is_verified is not None) else None
+            resolved_verified = db_verified if db_verified is not None else entry.get('is_verified', True)
+
             subaccounts.append({
                 'subaccount_code':   d.get('subaccount_code', code),
                 'id':                d.get('id'),
@@ -407,7 +414,7 @@ def subaccount_status():
                 'account_number':    d.get('account_number') or entry.get('account_number'),
                 'percentage_charge': d.get('percentage_charge'),
                 'currency':          d.get('currency', 'NGN'),
-                'is_verified':       bool(d.get('is_verified', False)),
+                'is_verified':       resolved_verified,
                 'active':            bool(d.get('active', False)),
                 'created_at':        d.get('createdAt') or entry.get('created_at'),
                 'updated_at':        d.get('updatedAt'),
@@ -502,7 +509,6 @@ def initialize_payment():
     invoice_number = invoice_data.get('invoice_number', str(invoice_id)[:8])
     business_name  = invoice_data.get('from', '').split('\n')[0] or 'Business'
 
-    # FIX: No ?status=success — Paystack appends its own params after payment
     callback_url = f"{FRONTEND_URL}/pay/{invoice_id}"
 
     payload = {
@@ -521,9 +527,6 @@ def initialize_payment():
 
     if subaccount_code:
         payload['subaccount'] = subaccount_code
-        # FIX: 'account' means the platform (envoyce) absorbs the Paystack
-        # transaction fee. 'subaccount' would charge it to the seller on
-        # top of the 2% split, which is not the intended behaviour.
         payload['bearer'] = 'account'
 
     res    = requests.post(
@@ -552,28 +555,34 @@ def verify_payment(reference):
     from models import Invoice
 
     current_app.logger.info(f"[verify] Called with reference={reference}")
-    
-    res    = requests.get(
+
+    res = requests.get(
         f'{PAYSTACK_BASE}/transaction/verify/{reference}',
         headers=paystack_headers(),
     )
     result = res.json()
-    
+
     current_app.logger.info(f"[verify] Paystack response status={result.get('status')}")
-    
+
     if not result.get('status'):
         return jsonify({'success': False, 'error': 'Could not verify payment'}), 400
 
     tx = result['data']
+
     current_app.logger.info(f"[verify] TX status={tx['status']}, invoice_id={tx.get('metadata', {}).get('invoice_id')}")
-    
+
     if tx['status'] != 'success':
         return jsonify({'success': False, 'error': f"Payment status: {tx['status']}"}), 400
 
     invoice_id = tx.get('metadata', {}).get('invoice_id')
     invoice = Invoice.query.filter_by(id=invoice_id).first()
-    
+
     current_app.logger.info(f"[verify] Invoice found={invoice is not None}, current_status={invoice.status if invoice else 'N/A'}")
+
+    if not invoice:
+        return jsonify({'success': False, 'error': 'Invoice not found'}), 404
+
+    payer_email = tx.get('customer', {}).get('email', '')
 
     already_paid = invoice.status == 'paid'
 
@@ -583,7 +592,7 @@ def verify_payment(reference):
         inv_data['paid_at']            = datetime.utcnow().isoformat()
         inv_data['paystack_reference'] = reference
         inv_data['paystack_amount']    = tx['amount'] / 100
-        inv_data['payer_email']        = tx.get('customer', {}).get('email', '')
+        inv_data['payer_email']        = payer_email
         invoice.data = inv_data
         flag_modified(invoice, 'data')
         db.session.commit()
@@ -591,7 +600,6 @@ def verify_payment(reference):
     else:
         current_app.logger.info(f"[verify] Invoice already paid, skipping write")
 
-    # Send notification regardless — Brevo deduplication is fine
     _notify_from_invoice(invoice, tx['amount'], payer_email)
 
     return jsonify({
@@ -607,7 +615,7 @@ def verify_payment(reference):
 
 @paystack_bp.route('/api/paystack/webhook', methods=['POST'])
 def webhook():
-    from models import Invoice
+    from models import Invoice, User, Business
 
     signature = request.headers.get('x-paystack-signature', '')
     body      = request.get_data()
@@ -641,11 +649,55 @@ def webhook():
                 flag_modified(invoice, 'data')
                 db.session.commit()
 
-                # Notify the business owner via Brevo
                 _notify_from_invoice(
                     invoice,
                     tx.get('amount', 0),
                     tx.get('customer', {}).get('email', ''),
+                )
+
+    elif event_type == 'subaccount.approved':
+        subaccount_code = event['data'].get('subaccount_code')
+        current_app.logger.info(f"[webhook] subaccount.approved → {subaccount_code}")
+
+        if subaccount_code:
+            # Update User data (idempotent, won't break if already true)
+            users = User.query.all()
+            for user in users:
+                user_data   = user.data or {}
+                subaccounts = user_data.get('paystack_subaccounts', [])
+                matched     = False
+
+                for entry in subaccounts:
+                    if entry.get('subaccount_code') == subaccount_code:
+                        entry['is_verified'] = True
+                        matched = True
+                        break
+
+                if matched:
+                    user.data = user_data
+                    flag_modified(user, 'data')
+                    if hasattr(user, 'updated_at'):
+                        user.updated_at = datetime.utcnow()
+                    db.session.commit()
+                    current_app.logger.info(
+                        f"[webhook] Updated is_verified on user {user.id}"
+                    )
+                    break
+
+            # Update Business record (idempotent)
+            biz = Business.query.filter_by(
+                paystack_subaccount_code=subaccount_code
+            ).first()
+            if biz:
+                biz.is_verified = True
+                biz.updated_at  = datetime.utcnow()
+                db.session.commit()
+                current_app.logger.info(
+                    f"[webhook] Updated is_verified on business {biz.id}"
+                )
+            else:
+                current_app.logger.warning(
+                    f"[webhook] No Business found for subaccount_code={subaccount_code}"
                 )
 
     return jsonify({'status': 'ok'}), 200
@@ -655,7 +707,7 @@ def webhook():
 
 @paystack_bp.route('/api/paystack/remove-subaccount', methods=['POST'])
 def remove_subaccount():
-    from models import User
+    from models import User, Business
     data            = request.get_json()
     user_id         = data.get('user_id')
     subaccount_code = data.get('subaccount_code')
@@ -672,7 +724,6 @@ def remove_subaccount():
     updated     = [s for s in subaccounts if s.get('subaccount_code') != subaccount_code]
     user_data['paystack_subaccounts'] = updated
 
-    # Best-effort deactivation — Paystack has no DELETE endpoint
     try:
         requests.put(
             f'{PAYSTACK_BASE}/subaccount/{subaccount_code}',
@@ -701,6 +752,16 @@ def remove_subaccount():
     if hasattr(user, 'updated_at'):
         user.updated_at = datetime.utcnow()
     db.session.commit()
+
+    biz = Business.query.filter_by(
+        user_id=user_id,
+        paystack_subaccount_code=subaccount_code
+    ).first()
+    if biz:
+        biz.paystack_subaccount_code = None
+        biz.is_verified = False
+        biz.updated_at = datetime.utcnow()
+        db.session.commit()
 
     return jsonify({'success': True, 'message': 'Subaccount removed'})
 

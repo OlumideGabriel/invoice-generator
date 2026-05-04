@@ -51,7 +51,7 @@ export interface PaymentInitResult {
   error?: string;
 }
 
-const base = API_BASE_URL || 'http://127.0.0.1:5000';
+const base = (API_BASE_URL || 'http://127.0.0.1:5000').replace(/\/$/, '');
 
 // ─── Fetch banks ──────────────────────────────────────────────────────────────
 export const useBanks = () => {
@@ -83,6 +83,7 @@ export const verifyAccount = async (account_number: string, bank_code: string) =
 export const createSubaccount = async (payload: {
   user_id: string;
   business_name: string;
+  business_id?: string;
   account_number: string;
   bank_code: string;
   account_name: string;

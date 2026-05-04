@@ -65,7 +65,15 @@ const SettingsPage = () => {
   };
 
   const BusinessSectionWrapper = () => (
-    <BusinessSection user={user} showNotification={showNotification} />
+    <BusinessSection
+      user={{
+        id: user!.id,
+        first_name: user!.first_name ?? undefined,
+        last_name: user!.last_name ?? undefined,
+        email: user!.email,
+      }}
+      showNotification={showNotification}
+    />
   );
 
   const BillingSection = () => (

@@ -48,6 +48,8 @@ class Business(db.Model):
     address = db.Column(db.Text)
     phone = db.Column(db.String(50))
     tax_id = db.Column(db.String(100))
+    paystack_subaccount_code = db.Column(db.String(100), nullable=True) 
+    is_verified = db.Column(db.Boolean, default=False, nullable=True)
     data = db.Column(db.JSON, nullable=True)  # <-- Added JSON field
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)

@@ -1,6 +1,6 @@
-import React, { useRef, useState } from 'react';
-import { ImagePlus, X } from 'lucide-react';
-import { API_BASE_URL } from '../config/api';
+import React, { useRef, useState } from "react";
+import { ImagePlus, X } from "lucide-react";
+import { API_BASE_URL } from "../config/api";
 
 interface LogoUploadProps {
   logoFile: File | null;
@@ -9,7 +9,12 @@ interface LogoUploadProps {
   handleLogoChange: (file: File | null, url: string | null) => void;
 }
 
-const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, handleLogoChange }) => {
+const LogoUpload: React.FC<LogoUploadProps> = ({
+  logoFile,
+  logoUrl,
+  logoStatus,
+  handleLogoChange,
+}) => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -26,9 +31,9 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
       try {
         // Upload to backend
         const formData = new FormData();
-        formData.append('logo', file);
-        const response = await fetch(`${API_BASE_URL}upload-logo`, {
-          method: 'POST',
+        formData.append("logo", file);
+        const response = await fetch(`${API_BASE_URL}/upload-logo`, {
+          method: "POST",
           body: formData,
         });
         if (response.ok) {
@@ -37,11 +42,11 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
           handleLogoChange(file, result.logo_url);
         } else {
           const error = await response.json();
-          console.error('Upload failed:', error);
+          console.error("Upload failed:", error);
           handleLogoChange(file, null);
         }
       } catch (error) {
-        console.error('Upload error:', error);
+        console.error("Upload error:", error);
         handleLogoChange(file, null);
       } finally {
         setIsUploading(false);
@@ -72,22 +77,38 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
               className="text-green-500"
             >
               <defs>
-                <linearGradient x1="8.042%" y1="0%" x2="65.682%" y2="23.865%" id="a">
+                <linearGradient
+                  x1="8.042%"
+                  y1="0%"
+                  x2="65.682%"
+                  y2="23.865%"
+                  id="a"
+                >
                   <stop stopColor="currentColor" stopOpacity="0" offset="0%" />
-                  <stop stopColor="currentColor" stopOpacity=".631" offset="63.146%" />
+                  <stop
+                    stopColor="currentColor"
+                    stopOpacity=".631"
+                    offset="63.146%"
+                  />
                   <stop stopColor="currentColor" offset="100%" />
                 </linearGradient>
               </defs>
               <g fill="none" fillRule="evenodd">
                 <g transform="translate(1 1)">
-                  <path d="M36 18c0-9.94-8.06-18-18-18" id="Oval-2" stroke="url(#a)" strokeWidth="2">
+                  <path
+                    d="M36 18c0-9.94-8.06-18-18-18"
+                    id="Oval-2"
+                    stroke="url(#a)"
+                    strokeWidth="2"
+                  >
                     <animateTransform
                       attributeName="transform"
                       type="rotate"
                       from="0 18 18"
                       to="360 18 18"
                       dur="0.9s"
-                      repeatCount="indefinite" />
+                      repeatCount="indefinite"
+                    />
                   </path>
                   <circle fill="currentColor" cx="36" cy="18" r="1">
                     <animateTransform
@@ -96,7 +117,8 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
                       from="0 18 18"
                       to="360 18 18"
                       dur="0.9s"
-                      repeatCount="indefinite" />
+                      repeatCount="indefinite"
+                    />
                   </circle>
                 </g>
               </g>
@@ -105,7 +127,11 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
           </div>
         ) : logoUrl ? (
           <>
-            <img src={logoUrl} alt="Logo Preview" className="max-w-full max-h-full object-contain p-4" />
+            <img
+              src={logoUrl}
+              alt="Logo Preview"
+              className="max-w-full max-h-full object-contain p-4"
+            />
             <button
               type="button"
               onClick={handleRemoveLogo}
@@ -113,7 +139,10 @@ const LogoUpload: React.FC<LogoUploadProps> = ({ logoFile, logoUrl, logoStatus, 
               group-hover:bg-red-200 bg-red-200 opacity-100 md:opacity-0 group-hover:opacity-100 group-hover:border-red-400"
               aria-label="Remove logo"
             >
-              <X className="text-red-700 hover:bg-red-300 rounded-md p-0.5" size={22} />
+              <X
+                className="text-red-700 hover:bg-red-300 rounded-md p-0.5"
+                size={22}
+              />
             </button>
           </>
         ) : (

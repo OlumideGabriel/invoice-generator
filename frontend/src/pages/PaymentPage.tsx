@@ -485,20 +485,20 @@ export default function PaymentPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [screen, setScreen] = useState<Screen>("summary");
-  const [justPaid, setJustPaid] = useState(false); // true = came from payment, false = was already paid
+  const [justPaid, setJustPaid] = useState(false);
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [verifying, setVerifying] = useState(false);
 
   // ── Step 1: Fetch invoice ─────────────────────────────────────────────────
+  // FIX: isRedirect now only checks for trxref/reference — Paystack does NOT
+  // send ?status=success in the callback URL, only trxref and reference.
   useEffect(() => {
     if (!id) return;
 
-    // If this is a Paystack redirect, Step 2 will handle everything.
-    // Don't change the screen here — let Step 2 set it after verification.
-    const isRedirect =
-      searchParams.get("status") === "success" &&
-      !!(searchParams.get("trxref") || searchParams.get("reference"));
+    const isRedirect = !!(
+      searchParams.get("trxref") || searchParams.get("reference")
+    );
 
     fetch(
       `${base}/api/invoices/${id}?include_client=true&include_business=true`,
@@ -507,7 +507,8 @@ export default function PaymentPage() {
       .then((d) => {
         if (d.success && d.invoice) {
           setInvoice(d.invoice);
-          // Only act on status if this is NOT a redirect — Step 2 owns that case
+          // Only set already-paid screen if this is NOT a redirect.
+          // If it IS a redirect, Step 2 will handle the screen after verifying.
           if (!isRedirect && d.invoice.status === "paid") {
             setJustPaid(false);
             setScreen("already-paid");
@@ -519,25 +520,28 @@ export default function PaymentPage() {
       })
       .catch(() => setError("Failed to load invoice"))
       .finally(() => {
+        // If this is a redirect, keep showing the processing spinner until
+        // Step 2 completes verification and sets the screen itself.
         if (!isRedirect) setLoading(false);
-        // If it IS a redirect, Step 2 will clear the processing screen itself
       });
   }, [id]); // intentionally omit searchParams — Step 2 owns the redirect case
 
   // ── Step 2: Handle Paystack redirect ─────────────────────────────────────
+  // FIX: Paystack does NOT append ?status=success to the callback URL.
+  // It only appends ?trxref=...&reference=...
+  // The old check `status !== "success"` was blocking verify every time.
   useEffect(() => {
-    const status = searchParams.get("status");
     const reference =
       searchParams.get("trxref") || searchParams.get("reference");
-    if (status !== "success" || !reference || !id) return;
+
+    if (!reference || !id) return;
 
     setScreen("processing");
 
     verifyPayment(reference).then(async (result) => {
       if (result.success) {
-        // ── Fetch updated invoice — backend already set status to 'paid' ──
-        // No manual PUT needed. verifyPayment backend is the single source
-        // of truth. Just re-fetch the invoice to get the current state.
+        // Re-fetch the invoice — backend verify_payment already set status=paid.
+        // This gives us the real DB state including paid_at, payer_email, etc.
         try {
           const res = await fetch(
             `${base}/api/invoices/${id}?include_client=true&include_business=true`,
@@ -547,7 +551,7 @@ export default function PaymentPage() {
             setInvoice(d.invoice);
           }
         } catch {
-          // Non-fatal — merge locally as fallback
+          // Non-fatal fallback — merge payment data locally
           setInvoice((prev) =>
             prev
               ? {
@@ -564,10 +568,12 @@ export default function PaymentPage() {
           );
         }
 
+        setLoading(false);
         setJustPaid(true);
         setScreen("already-paid");
       } else {
         setError(result.error || "Payment verification failed");
+        setLoading(false);
         setScreen("summary");
       }
     });
@@ -669,7 +675,7 @@ export default function PaymentPage() {
   const sym = data.currency_symbol || "₦";
   const businessName = data.from?.split("\n")[0] || "Business";
 
-  // ── Already paid (covers both fresh payment and returning visitor) ────────
+  // ── Already paid ──────────────────────────────────────────────────────────
   if (screen === "already-paid")
     return (
       <div style={wrap}>

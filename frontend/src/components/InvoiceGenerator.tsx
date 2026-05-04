@@ -5,8 +5,8 @@ import {
   DragDropContext,
   Droppable,
   Draggable,
-  DropResult,
-} from "react-beautiful-dnd";
+  type DropResult,
+} from "@hello-pangea/dnd";
 import LogoUpload from "./LogoUpload";
 import PartyField from "./PartyField";
 import InvoiceLine from "./InvoiceLine";
@@ -433,6 +433,10 @@ const InvoiceGenerator: React.FC = () => {
       showShipping,
       logoUrl,
       currency: typeof currency === "string" ? currency : currency.code,
+      clientId,
+      businessId,
+      client_id: clientId,
+      business_id: businessId,
     };
 
     const timeoutId = setTimeout(() => {
@@ -462,6 +466,8 @@ const InvoiceGenerator: React.FC = () => {
     currency,
     isEditing,
     fetchingEditData,
+    clientId,
+    businessId,
   ]);
 
   const loadInvoiceFromLocalData = (data: any) => {
@@ -503,13 +509,17 @@ const InvoiceGenerator: React.FC = () => {
     setShowShipping(data.showShipping ?? true);
     setLogoUrl(data.logoUrl || null);
 
+    // ✅ FIX: Restore business and client IDs from all possible key names
+    const restoredClientId = data.clientId || data.client_id || null;
+    const restoredBusinessId = data.businessId || data.business_id || null;
+    setClientId(restoredClientId);
+    setBusinessId(restoredBusinessId);
+
     if (data.currency) {
       const currencyOption = currencyOptions.find(
         (opt: any) => opt.code === data.currency || opt === data.currency,
       );
-      if (currencyOption) {
-        setCurrency(currencyOption);
-      }
+      if (currencyOption) setCurrency(currencyOption);
     }
   };
 
@@ -533,6 +543,11 @@ const InvoiceGenerator: React.FC = () => {
       showShipping,
       logoUrl,
       currency: typeof currency === "string" ? currency : currency.code,
+      // ✅ Store under both key names for resilience
+      clientId,
+      client_id: clientId,
+      businessId,
+      business_id: businessId,
     };
     saveInvoiceToLocalStorage(invoiceData);
     setLastSavedTime(new Date().toLocaleString());
@@ -628,6 +643,8 @@ const InvoiceGenerator: React.FC = () => {
             typeof currency === "string" ? currency : currency.symbol,
           currency_label:
             typeof currency === "string" ? currency : currency.label,
+          client_id: clientId,
+          business_id: businessId,
         },
         issued_date: issuedDate,
         due_date: dueDate,
@@ -964,10 +981,13 @@ const InvoiceGenerator: React.FC = () => {
                           draggableId={item.id}
                           index={index}
                         >
-                          {(provided) => (
+                          {(
+                            provided,
+                            snapshot, // ✅ destructure snapshot properly
+                          ) => (
                             <InvoiceLine
                               provided={provided}
-                              snapshot={provided.draggableProps}
+                              snapshot={snapshot} // ✅ pass real snapshot, not provided.draggableProps
                               item={item}
                               index={index}
                               draggableId={item.id}

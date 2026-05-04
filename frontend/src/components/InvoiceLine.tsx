@@ -1,25 +1,9 @@
-import React from 'react';
-import { ChevronDown, ChevronUp, X, GripVertical, Trash2 } from 'lucide-react';
-import { useCurrency } from '../context/CurrencyContext';
+import React from "react";
+import { ChevronDown, ChevronUp, X, GripVertical } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 type DraggableProvided = any;
 type DraggableStateSnapshot = any;
-
-// Drag styles for react-beautiful-dnd
-const dragStyles = {
-  base: {
-    transition: 'box-shadow 0.2s cubic-bezier(.08,.52,.52,1)',
-    boxShadow: 'none',
-  },
-  dragging: {
-    boxShadow: '0 8px 24px rgba(0,0,0,0.13)',
-    zIndex: 2,
-  },
-  static: {
-    boxShadow: 'none',
-    zIndex: 1,
-  },
-};
 
 export interface InvoiceItem {
   id: string;
@@ -43,24 +27,6 @@ export interface InvoiceLineProps {
   itemsLength: number;
 }
 
-// Hook to detect mobile devices
-const useIsMobile = () => {
-  const [isMobile, setIsMobile] = React.useState(false);
-
-  React.useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768); // md breakpoint
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  return isMobile;
-};
-
 const InvoiceLine: React.FC<InvoiceLineProps> = ({
   item,
   index,
@@ -70,45 +36,47 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
   itemsLength,
   provided,
   snapshot,
-  draggableId
 }) => {
   const { currency } = useCurrency();
-  const isMobile = useIsMobile();
-
-  // Create conditional drag props - disable on mobile
-  const dragProps = isMobile ? {} : provided.draggableProps;
-  const dragHandleProps = isMobile ? {} : provided?.dragHandleProps;
 
   return (
     <div
       ref={provided.innerRef}
-      {...dragProps}
+      {...provided.draggableProps}
       style={{
+        // Only keep rbd's style — no extra transitions here.
+        // Adding any CSS transition/animation here causes the "pop" on drop.
         ...provided.draggableProps.style,
-        marginBottom: '5px',
+        marginBottom: "5px",
       }}
-      className={`flex group rounded-xl transition-all duration-200 items-start border-none ${
-        snapshot?.isDragging ? 'border-emerald-300 shadow-lg bg-gray-50' : 'border-gray-200 bg-transparent'
+      className={`flex group rounded-xl items-start border-none ${
+        snapshot?.isDragging
+          ? "border-emerald-300 shadow-lg bg-gray-50"
+          : "border-gray-200 bg-transparent"
       }`}
     >
-      {/* Drag handle icon */}
-
+      {/* Drag handle */}
       <div
-        className="flex items-center justify-center self-center rounded-xs cursor-grab
-        active:cursor-grabbing border-gray-200"
-        {...dragHandleProps}
-        style={{ touchAction: isMobile ? 'auto' : 'none' }}
+        className="flex items-center justify-center self-center rounded-xs cursor-grab active:cursor-grabbing"
+        {...provided.dragHandleProps}
+        style={{ touchAction: "none" }}
       >
         <GripVertical
           size={25}
-          className={`transition-colors ${
-            snapshot?.isDragging ? 'text-emerald-600' : 'hidden md:block text-neutral-400 hover:text-emerald-500'
+          className={`${
+            snapshot?.isDragging
+              ? "text-emerald-600"
+              : "hidden md:block text-neutral-400 hover:text-emerald-500"
           }`}
         />
       </div>
 
       {/* Main content area */}
-      <div className="flex-1 p-1.5 bg-gray-50 hover:bg-gray-100 transition-colors duration-200 rounded-xl md:rounded-r-xl">
+      {/* 
+        transition-colors is fine here because it only animates color, not
+        transform/position — so it won't interfere with rbd's drag transforms.
+      */}
+      <div className="flex-1 p-1.5 bg-gray-50 hover:bg-gray-100 transition-colors rounded-xl md:rounded-r-xl">
         <div className="flex w-full flex-wrap lg:flex-nowrap gap-1.5">
           {/* Item name and description section */}
           <div className="relative flex-2 w-full">
@@ -117,7 +85,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                 type="text"
                 placeholder="Enter item name"
                 value={item.name}
-                onChange={(e) => onChange(index, 'name', e.target.value)}
+                onChange={(e) => onChange(index, "name", e.target.value)}
                 className="w-full px-4 py-2.5 bg-gray-50 border !border-gray-300 rounded-lg
                   text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500
                   focus:border-transparent transition-all duration-200 text-md font-medium"
@@ -127,10 +95,16 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                 onClick={() => onToggleDescription(index)}
                 className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-60 hover:opacity-100 transition-all
                   duration-200 bg-green-50 hover:text-green-800 hover:bg-green-100 text-green-600 rounded-full p-0.5"
-                aria-label={item.showDesc ? 'Hide description' : 'Show description'}
+                aria-label={
+                  item.showDesc ? "Hide description" : "Show description"
+                }
                 aria-expanded={item.showDesc}
               >
-                {item.showDesc ? <ChevronUp size={22} /> : <ChevronDown size={22} />}
+                {item.showDesc ? (
+                  <ChevronUp size={22} />
+                ) : (
+                  <ChevronDown size={22} />
+                )}
               </button>
             </div>
 
@@ -139,8 +113,10 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               <div className="mt-1.5 animate-in slide-in-from-top-2 duration-200">
                 <textarea
                   placeholder="Add item description or notes..."
-                  value={item.description || ''}
-                  onChange={(e) => onChange(index, 'description', e.target.value)}
+                  value={item.description || ""}
+                  onChange={(e) =>
+                    onChange(index, "description", e.target.value)
+                  }
                   className="w-full px-4 py-3 bg-gray-50 border !border-gray-300 rounded-lg text-gray-700
                   placeholder-gray-400 text-md focus:outline-none focus:ring-2 focus:ring-emerald-500
                   focus:border-transparent transition-all duration-200 resize-none"
@@ -149,6 +125,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               </div>
             )}
           </div>
+
           {/* Quantity input */}
           <div className="flex flex-col">
             <input
@@ -156,8 +133,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               value={item.quantity ?? "1"}
               onChange={(e) => {
                 const val = e.target.value;
-
-                // Allow empty string, but only digits (no decimals for qty)
                 if (val === "" || /^[0-9]+$/.test(val)) {
                   onChange(index, "quantity", val);
                 }
@@ -166,6 +141,7 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
               focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
             />
           </div>
+
           {/* Unit cost and amount section */}
           <div className="md:flex flex-1 flex-col md:flex-row items-start gap-4">
             {/* Unit cost input */}
@@ -180,8 +156,6 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                   value={item.unit_cost}
                   onChange={(e) => {
                     const val = e.target.value;
-
-                    // Allow empty string, but validate number
                     if (val === "" || /^[0-9]*\.?[0-9]*$/.test(val)) {
                       onChange(index, "unit_cost", val);
                     }
@@ -191,15 +165,16 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
                 />
               </div>
             </div>
+
             {/* Amount display */}
             <div className="flex flex-col w-full">
               <div className="flex md:items-center justify-end md:justify-start min-w-40 mt-1 md:mt-0 py-2.5 rounded-lg">
-                  <div className="text-md font-semibold text-neutral-900">
-                    <span className="text-sm mr-2 text-gray-600 font-medium">
-                      {currency.code}
-                    </span>
-                    {(item.quantity * item.unit_cost).toFixed(2)}
-                  </div>
+                <div className="text-md font-semibold text-neutral-900">
+                  <span className="text-sm mr-2 text-gray-600 font-medium">
+                    {currency.code}
+                  </span>
+                  {(item.quantity * item.unit_cost).toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
@@ -207,15 +182,15 @@ const InvoiceLine: React.FC<InvoiceLineProps> = ({
       </div>
 
       {/* Remove button */}
-        <div
-         className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
-         ml-2 p-1 rounded-lg cursor-pointer transition-all duration-200
-         ${itemsLength > 1 ? 'md:opacity-0 group-hover:opacity-90 hover:opacity-100 md:flex' : 'hidden'}`}
-         onClick={() => onRemove(index)}
-         aria-label="Remove item"
-        >
-         <X size={18} />
-        </div>
+      <div
+        className={`flex flex-col justify-center self-center bg-red-50 hover:bg-red-100 text-red-400 hover:text-red-500
+         ml-2 p-1 rounded-lg cursor-pointer transition-colors
+         ${itemsLength > 1 ? "md:opacity-0 group-hover:opacity-90 hover:opacity-100 md:flex" : "hidden"}`}
+        onClick={() => onRemove(index)}
+        aria-label="Remove item"
+      >
+        <X size={18} />
+      </div>
     </div>
   );
 };

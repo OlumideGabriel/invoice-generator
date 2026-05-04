@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   CheckCircle2,
   AlertCircle,
@@ -56,6 +56,7 @@ interface PaymentSetupProps {
 
 interface FormState {
   business_name: string;
+  business_id: string;
   account_number: string;
   bank_code: string;
   bank_name: string;
@@ -415,11 +416,10 @@ function StatusBadge({
   if (isVerified === false) {
     return (
       <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
-        <Clock className="h-3.5 w-3.5" /> Unverified
+        <Clock className="h-3.5 w-3.5" /> Pending
       </span>
     );
   }
-  // null = API was unreachable
   return (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-50 text-gray-500 border border-gray-200">
       <AlertCircle className="h-3.5 w-3.5" /> Unknown
@@ -602,7 +602,11 @@ function ConnectModal({
                 type="text"
                 value={form.business_name}
                 onChange={(e) => {
-                  setForm((f) => ({ ...f, business_name: e.target.value }));
+                  setForm((f) => ({
+                    ...f,
+                    business_name: e.target.value,
+                    business_id: "",
+                  }));
                   setShowBusinessList(true);
                 }}
                 onFocus={() => setShowBusinessList(true)}
@@ -617,6 +621,15 @@ function ConnectModal({
                 )}
               </div>
             </div>
+
+            {/* Linked badge — shows when a DB business is selected */}
+            {form.business_id && (
+              <p className="mt-1.5 text-xs text-teal-600 flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Linked to your business profile
+              </p>
+            )}
+
             {showBusinessList && businesses.length > 0 && (
               <div className="absolute z-20 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg overflow-hidden">
                 {businesses
@@ -630,7 +643,11 @@ function ConnectModal({
                       key={b.id}
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={() => {
-                        setForm((f) => ({ ...f, business_name: b.name }));
+                        setForm((f) => ({
+                          ...f,
+                          business_name: b.name,
+                          business_id: b.id,
+                        }));
                         setShowBusinessList(false);
                       }}
                       className="w-full px-4 py-2.5 text-sm text-left flex items-center gap-3 hover:bg-gray-50 transition-colors"
@@ -756,7 +773,7 @@ function ConnectModal({
             />
           </div>
 
-          {/* Verified confirmation — fixed: was "p3" (no padding), now "p-3" */}
+          {/* Verified confirmation */}
           {verified && (
             <div className="flex items-center gap-2.5 p-3 bg-green-50 border border-green-200 rounded-lg">
               <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
@@ -831,6 +848,18 @@ function ConnectModal({
   );
 }
 
+// ── Sync subaccount code to Business record ───────────────────────────────────
+async function syncBusinessSubaccount(
+  businessId: string,
+  subaccountCode: string,
+): Promise<void> {
+  await fetch(`${API_BASE_URL}/api/businesses/${businessId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ paystack_subaccount_code: subaccountCode }),
+  });
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 export default function PaymentSetup({
   userId,
@@ -845,6 +874,7 @@ export default function PaymentSetup({
   const [accounts, setAccounts] = useState<SubaccountRecord[]>([]);
   const [accountsReady, setAccountsReady] = useState(false);
 
+  // ── Populate accounts from API status ────────────────────────────────────
   useEffect(() => {
     if (statusLoading) return;
     if (status?.has_subaccount && status.subaccounts.length > 0) {
@@ -856,8 +886,6 @@ export default function PaymentSetup({
           account_number: s.account_number ?? "",
           bank_name: s.bank_name ?? "",
           bank_code: s.bank_code ?? "",
-          // FIX: Paystack returns active as 1/0 (integer) or true/false.
-          // Only use `active` — is_verified stays false even on working accounts.
           status: s.active ? "approved" : "pending",
           is_verified: s.is_verified ?? null,
           created_at: s.created_at ?? new Date().toISOString(),
@@ -869,12 +897,14 @@ export default function PaymentSetup({
     setAccountsReady(true);
   }, [statusLoading, status]);
 
+  // ── Modal & form state ────────────────────────────────────────────────────
   const [showModal, setShowModal] = useState(false);
   const [step, setStep] = useState<
     "form" | "verifying" | "confirmed" | "saving"
   >("form");
   const [form, setForm] = useState<FormState>({
     business_name: "",
+    business_id: "",
     account_number: "",
     bank_code: "",
     bank_name: "",
@@ -896,8 +926,17 @@ export default function PaymentSetup({
     ? NIGERIAN_BANKS.find((b) => b.code === form.bank_code)
     : undefined;
 
+  // ── Fetch businesses with sessionStorage cache ────────────────────────────
   const fetchBusinesses = useCallback(async () => {
-    if (businesses.length > 0) return;
+    const cached = sessionStorage.getItem("envoyce_businesses");
+    if (cached) {
+      try {
+        setBusinesses(JSON.parse(cached));
+        return;
+      } catch {
+        /* ignore bad cache */
+      }
+    }
     setBusinessesLoading(true);
     try {
       const params = new URLSearchParams({
@@ -907,28 +946,62 @@ export default function PaymentSetup({
       });
       const res = await fetch(`${API_BASE_URL}/api/businesses?${params}`);
       const data = await res.json();
-      if (data.success) setBusinesses(data.businesses || []);
+      if (data.success) {
+        setBusinesses(data.businesses || []);
+        sessionStorage.setItem(
+          "envoyce_businesses",
+          JSON.stringify(data.businesses || []),
+        );
+      }
     } catch {
       /* silently fail */
     } finally {
       setBusinessesLoading(false);
     }
-  }, [userId, businesses.length]);
+  }, [userId]);
 
-  const openModal = () => {
-    setStep("form");
-    setVerified(null);
-    setError(null);
-    setForm({
-      business_name: "",
-      account_number: "",
-      bank_code: "",
-      bank_name: "",
-    });
-    setShowModal(true);
-    fetchBusinesses();
-  };
+  // ── openModal: resets form, optionally pre-fills business ────────────────
+  const openModal = useCallback(
+    (prefill?: Partial<FormState>) => {
+      setStep("form");
+      setVerified(null);
+      setError(null);
+      setForm({
+        business_name: prefill?.business_name ?? "",
+        business_id: prefill?.business_id ?? "",
+        account_number: "",
+        bank_code: "",
+        bank_name: "",
+      });
+      setShowModal(true);
+      fetchBusinesses();
+    },
+    [fetchBusinesses],
+  );
 
+  // ── Auto-open from sessionStorage set by InvoicePage ─────────────────────
+  const connectHandled = useRef(false);
+
+  useEffect(() => {
+    if (statusLoading || !accountsReady) return;
+    if (connectHandled.current) return;
+
+    const shouldConnect = sessionStorage.getItem("paystack_connect") === "true";
+    if (!shouldConnect) return;
+
+    connectHandled.current = true;
+
+    const businessName = sessionStorage.getItem("paystack_business") || "";
+    const businessId = sessionStorage.getItem("paystack_business_id") || "";
+
+    sessionStorage.removeItem("paystack_connect");
+    sessionStorage.removeItem("paystack_business");
+    sessionStorage.removeItem("paystack_business_id");
+
+    openModal({ business_name: businessName, business_id: businessId });
+  }, [statusLoading, accountsReady, openModal]);
+
+  // ── Handlers ──────────────────────────────────────────────────────────────
   const closeModal = () => {
     setShowModal(false);
     setBankSearch("");
@@ -967,14 +1040,32 @@ export default function PaymentSetup({
     }
     setStep("saving");
     setError(null);
+
     const result = await createSubaccount({
       user_id: userId,
       business_name: form.business_name,
+      business_id: form.business_id || undefined,
       account_number: form.account_number,
       bank_code: form.bank_code,
       account_name: verified.account_name,
     });
+
     if (result.success) {
+      // ── Sync subaccount code to the Business record ───────────────────────
+      // This lets BusinessSection show the "Paystack connected" badge
+      // immediately, without waiting for the Paystack verification webhook.
+      if (form.business_id && result.subaccount_code) {
+        try {
+          await syncBusinessSubaccount(
+            form.business_id,
+            result.subaccount_code,
+          );
+        } catch {
+          // Non-fatal: subaccount was created successfully; the badge will
+          // appear once the webhook fires and the user next loads the page.
+        }
+      }
+
       const newAccount: SubaccountRecord = {
         id: result.subaccount_code ?? `local-${Date.now()}`,
         business_name: form.business_name,
@@ -986,7 +1077,13 @@ export default function PaymentSetup({
         is_verified: null,
         created_at: new Date().toISOString(),
       };
+
       setAccounts((prev) => [...prev, newAccount]);
+
+      // Bust both caches so BusinessSection and the business dropdown
+      // reflect the newly linked subaccount on next load.
+      sessionStorage.removeItem("envoyce_businesses");
+
       closeModal();
       refetch();
       showNotification?.(
@@ -1000,17 +1097,17 @@ export default function PaymentSetup({
   };
 
   const handleRemove = async (id: string) => {
-    // Optimistic removal — works even if the subaccount was already deleted
-    // from the Paystack dashboard (backend handles the 404 gracefully)
     setAccounts((prev) => prev.filter((a) => a.id !== id));
+    sessionStorage.removeItem("envoyce_businesses");
     showNotification?.("Account removed", "success");
     try {
       await removeSubaccount(userId, id);
     } catch {
-      /* swallow — local state is already correct */
+      /* swallow */
     }
   };
 
+  // ── Render ────────────────────────────────────────────────────────────────
   if (statusLoading || !accountsReady) return <PaymentSetupSkeleton />;
 
   return (
@@ -1050,7 +1147,7 @@ export default function PaymentSetup({
       )}
 
       <button
-        onClick={openModal}
+        onClick={() => openModal()}
         className="flex items-center gap-2 px-4 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors"
       >
         <Plus className="h-4 w-4" />

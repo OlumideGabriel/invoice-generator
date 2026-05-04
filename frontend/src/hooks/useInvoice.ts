@@ -174,7 +174,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)'
       };
 
-      const res = await fetch(`${API_BASE_URL}generate-invoice`, {
+      const res = await fetch(`${API_BASE_URL}/generate-invoice`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -241,7 +241,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
 
 
     // ✅ Fetch preview PDF
-    const response = await fetch(`${API_BASE_URL}preview-invoice`, {
+    const response = await fetch(`${API_BASE_URL}/preview-invoice`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
