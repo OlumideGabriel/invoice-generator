@@ -267,8 +267,8 @@ function PaystackIntegrationCard({
               }
               navigate("/settings?section=payments");
             }}
-            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-900 text-white
-             rounded-lg text-sm font-medium hover:bg-gray-700 transition-colors"
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-50 text-gray-700
+             rounded-lg text-sm font-medium hover:bg-gray-100 transition-colors"
           >
             Set up payment collection
             <ExternalLink className="h-3.5 w-3.5" />

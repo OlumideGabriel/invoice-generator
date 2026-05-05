@@ -290,7 +290,7 @@ const RevenueCard = ({
             </button>
           )}
         </div>
-        <p className="text-4xl font-bold text-white mb-3">
+        <p className="text-3xl font-bold text-white mb-3">
           {sym}
           {revenue.toLocaleString("en-US", {
             minimumFractionDigits: 2,
@@ -345,7 +345,7 @@ const MetricCard = ({
       </p>
     </div>
     <p
-      className={`text-3xl lg:text-4xl font-bold ${accent ? "text-white" : "text-gray-900"}`}
+      className={`text-3xl font-bold ${accent ? "text-white" : "text-gray-900"}`}
     >
       {value}
     </p>
@@ -705,7 +705,7 @@ const Dashboard = () => {
         {/* Main */}
         <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-8 py-5 sm:py-6 lg:py-8 mb-32 sm:mb-40">
           {/* Welcome */}
-          <p className="text-base text-gray-500 mb-5">
+          <p className="text-lg text-gray-500 mb-5">
             Welcome back,{" "}
             <span className="font-medium text-gray-800">
               {user?.first_name || "there"}
