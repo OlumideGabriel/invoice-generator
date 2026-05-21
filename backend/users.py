@@ -12,8 +12,25 @@ class Users:
     """CRUD operations for User model"""
 
     @staticmethod
+    def format_user_response(user):
+        """Format user response consistently across all methods"""
+        return {
+            'id': str(user.id),
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'google_id': user.google_id,
+            'auth_method': 'google' if user.google_id else 'native',
+            'is_guest': user.is_guest,
+            'profile_picture_url': user.profile_picture_url,
+            'email_verified': user.email_verified,
+            'plan': user.plan or 'free',  # always present, never null
+            'created_at': user.created_at.isoformat() if user.created_at else None,
+            'updated_at': user.updated_at.isoformat() if user.updated_at else None,
+        }
+
+    @staticmethod
     def validate_uuid(uuid_string):
-        """Validate UUID format"""
         try:
             uuid.UUID(uuid_string)
             return True
@@ -22,7 +39,6 @@ class Users:
 
     @staticmethod
     def validate_user_data(data, is_update=False):
-        """Validate user data"""
         errors = []
 
         if not is_update and not data.get('email'):
@@ -35,7 +51,6 @@ class Users:
         elif not is_update and len(data.get('password', '')) < 6:
             errors.append('Password must be at least 6 characters')
 
-        # Validate email format if provided
         if data.get('email'):
             import re
             email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -46,7 +61,6 @@ class Users:
 
     @staticmethod
     def delete_user():
-        """Delete user account"""
         try:
             data = request.get_json()
             user_id = data.get('user_id')
@@ -61,7 +75,6 @@ class Users:
             if not user:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
 
-            # Optional: Add confirmation password check
             password = data.get('password')
             if password and not check_password_hash(user.password_hash, password):
                 return jsonify({'success': False, 'error': 'Password incorrect'}), 401
@@ -76,10 +89,8 @@ class Users:
             logging.error(f"Error deleting user: {str(e)}", exc_info=True)
             return jsonify({'success': False, 'error': 'Failed to delete user'}), 500
 
-
     @staticmethod
     def update_profile():
-        """Update user profile information"""
         try:
             data = request.get_json()
             user_id = data.get('user_id')
@@ -94,7 +105,6 @@ class Users:
             if not user:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
 
-            # Update allowed fields (name only, no phone)
             if 'first_name' in data:
                 user.first_name = data['first_name']
             if 'last_name' in data:
@@ -105,28 +115,16 @@ class Users:
 
             return jsonify({
                 'success': True,
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                    'google_id': user.google_id,
-                    'auth_method': 'google' if user.google_id else 'native',
-                    'updated_at': user.updated_at.isoformat()
-                }
+                'user': Users.format_user_response(user)
             })
 
         except Exception as e:
             db.session.rollback()
             logging.error(f"Profile update error: {str(e)}", exc_info=True)
-            return jsonify({
-                'success': False,
-                'error': 'Failed to update profile'
-            }), 500
+            return jsonify({'success': False, 'error': 'Failed to update profile'}), 500
 
     @staticmethod
     def update_password():
-        """Update user password"""
         try:
             data = request.get_json()
             user_id = data.get('user_id')
@@ -143,7 +141,6 @@ class Users:
             if not user:
                 return jsonify({'success': False, 'error': 'User not found'}), 404
 
-            # Check if user has password (OAuth users might not)
             if not user.password_hash:
                 return jsonify({'success': False, 'error': 'Password cannot be changed for OAuth users'}), 400
 
@@ -166,7 +163,6 @@ class Users:
 
     @staticmethod
     def get_user_profile():
-        """Get user profile (alternative to your existing route)"""
         try:
             user_id = request.args.get('user_id')
 
@@ -182,19 +178,7 @@ class Users:
 
             return jsonify({
                 'success': True,
-                'user': {
-                    'id': str(user.id),
-                    'email': user.email,
-                    'first_name': user.first_name,
-                    'last_name': user.last_name,
-                    'google_id': user.google_id,
-                    'auth_method': 'google' if user.google_id else 'native',
-                    'is_guest': user.is_guest,
-                    'profile_picture_url': user.profile_picture_url,
-                    'email_verified': user.email_verified,
-                    'created_at': user.created_at.isoformat() if user.created_at else None,
-                    'updated_at': user.updated_at.isoformat() if user.updated_at else None
-                }
+                'user': Users.format_user_response(user)
             })
 
         except Exception as e:

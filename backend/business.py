@@ -1,9 +1,11 @@
 from flask import request, jsonify
 from db import db
-from models import Business
+from models import Business, User
 from datetime import datetime
 import uuid
 import logging
+
+FREE_PLAN_BUSINESS_LIMIT = 1
 
 
 class Businesses:
@@ -11,7 +13,6 @@ class Businesses:
 
     @staticmethod
     def format_business_response(business, include_invoice_count=False):
-        """Format business response consistently across all methods"""
         response_data = {
             'id': str(business.id),
             'user_id': str(business.user_id),
@@ -21,7 +22,7 @@ class Businesses:
             'phone': business.phone,
             'tax_id': business.tax_id,
             'paystack_subaccount_code': business.paystack_subaccount_code,
-            'is_verified': business.is_verified, 
+            'is_verified': business.is_verified,
             'data': business.data,
             'created_at': business.created_at.isoformat() if business.created_at else None,
             'updated_at': business.updated_at.isoformat() if business.updated_at else None
@@ -35,7 +36,6 @@ class Businesses:
 
     @staticmethod
     def validate_uuid(uuid_string):
-        """Validate UUID format"""
         try:
             uuid.UUID(uuid_string)
             return True
@@ -44,7 +44,6 @@ class Businesses:
 
     @staticmethod
     def validate_business_data(data, is_update=False):
-        """Validate business data"""
         errors = []
 
         if not is_update and not data.get('name'):
@@ -57,7 +56,6 @@ class Businesses:
         elif not is_update and not Businesses.validate_uuid(data.get('user_id')):
             errors.append('Invalid user ID format')
 
-        # Validate email format if provided
         if data.get('email'):
             import re
             email_pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
@@ -68,21 +66,36 @@ class Businesses:
 
     @staticmethod
     def create_business():
-        """Create a new business"""
+        """Create a new business — enforces plan limit server-side"""
         try:
             data = request.get_json()
             if not data:
                 return jsonify({'success': False, 'error': 'No data provided'}), 400
 
-            # Validate data
             errors = Businesses.validate_business_data(data)
             if errors:
                 return jsonify({'success': False, 'errors': errors}), 400
 
-            # Check if business with same email already exists for this user
+            user_id = data['user_id']
+
+            # ── Plan enforcement ──────────────────────────────────────────────
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+
+            if user.plan != 'pro':
+                existing_count = Business.query.filter_by(user_id=user_id).count()
+                if existing_count >= FREE_PLAN_BUSINESS_LIMIT:
+                    return jsonify({
+                        'success': False,
+                        'error': 'Free plan supports only one business. Upgrade to Pro to add more.',
+                        'upgrade_required': True
+                    }), 403
+            # ─────────────────────────────────────────────────────────────────
+
             if data.get('email'):
                 existing_business = Business.query.filter_by(
-                    user_id=data['user_id'],
+                    user_id=user_id,
                     email=data['email']
                 ).first()
                 if existing_business:
@@ -91,9 +104,8 @@ class Businesses:
                         'error': 'Business with this email already exists'
                     }), 409
 
-            # Create new business
             business = Business(
-                user_id=data['user_id'],
+                user_id=user_id,
                 name=data['name'],
                 email=data.get('email'),
                 address=data.get('address'),
@@ -117,7 +129,7 @@ class Businesses:
 
     @staticmethod
     def get_businesses():
-        """Get all businesses for a user with optional filtering and pagination"""
+        """Get all businesses for a user — also returns plan info for the frontend"""
         try:
             user_id = request.args.get('user_id')
             if not user_id:
@@ -126,15 +138,16 @@ class Businesses:
             if not Businesses.validate_uuid(user_id):
                 return jsonify({'success': False, 'error': 'Invalid user_id format'}), 400
 
-            # Pagination parameters
+            user = User.query.get(user_id)
+            if not user:
+                return jsonify({'success': False, 'error': 'User not found'}), 404
+
             page = int(request.args.get('page', 1))
             per_page = int(request.args.get('per_page', 10))
             search = request.args.get('search', '')
 
-            # Build query
             query = Business.query.filter_by(user_id=user_id)
 
-            # Apply search filter if provided
             if search:
                 search_term = f"%{search}%"
                 query = query.filter(
@@ -146,24 +159,22 @@ class Businesses:
                     )
                 )
 
-            # Order by created_at descending
             query = query.order_by(Business.created_at.desc())
 
-            # Paginate
-            paginated = query.paginate(
-                page=page,
-                per_page=per_page,
-                error_out=False
-            )
+            paginated = query.paginate(page=page, per_page=per_page, error_out=False)
 
-            businesses = []
-            for business in paginated.items:
-                business_data = Businesses.format_business_response(business, include_invoice_count=True)
-                businesses.append(business_data)
+            businesses = [
+                Businesses.format_business_response(b, include_invoice_count=True)
+                for b in paginated.items
+            ]
 
             return jsonify({
                 'success': True,
                 'businesses': businesses,
+                # ── Expose plan info so the frontend knows the limit ──────────
+                'plan': user.plan,
+                'can_add_business': user.plan == 'pro' or paginated.total < FREE_PLAN_BUSINESS_LIMIT,
+                # ─────────────────────────────────────────────────────────────
                 'pagination': {
                     'page': page,
                     'per_page': per_page,
@@ -180,7 +191,6 @@ class Businesses:
 
     @staticmethod
     def get_business(business_id):
-        """Get a specific business by ID"""
         try:
             if not Businesses.validate_uuid(business_id):
                 return jsonify({'success': False, 'error': 'Invalid business ID format'}), 400
@@ -200,7 +210,6 @@ class Businesses:
 
     @staticmethod
     def update_business(business_id):
-        """Update a business"""
         try:
             if not Businesses.validate_uuid(business_id):
                 return jsonify({'success': False, 'error': 'Invalid business ID format'}), 400
@@ -209,7 +218,6 @@ class Businesses:
             if not data:
                 return jsonify({'success': False, 'error': 'No data provided'}), 400
 
-            # Validate data for update
             errors = Businesses.validate_business_data(data, is_update=True)
             if errors:
                 return jsonify({'success': False, 'errors': errors}), 400
@@ -218,7 +226,6 @@ class Businesses:
             if not business:
                 return jsonify({'success': False, 'error': 'Business not found'}), 404
 
-            # Check if email is being changed and if it conflicts with another business
             if data.get('email') and data['email'] != business.email:
                 existing_business = Business.query.filter_by(
                     user_id=business.user_id,
@@ -231,7 +238,6 @@ class Businesses:
                         'error': 'Another business with this email already exists'
                     }), 409
 
-            # Update fields
             if 'name' in data:
                 business.name = data['name']
             if 'email' in data:
@@ -244,9 +250,9 @@ class Businesses:
                 business.tax_id = data['tax_id']
             if 'data' in data:
                 business.data = data['data']
-            if 'paystack_subaccount_code' in data:            
+            if 'paystack_subaccount_code' in data:
                 business.paystack_subaccount_code = data['paystack_subaccount_code']
-            if 'is_verified' in data:                         
+            if 'is_verified' in data:
                 business.is_verified = data['is_verified']
 
             business.updated_at = datetime.utcnow()
@@ -264,7 +270,6 @@ class Businesses:
 
     @staticmethod
     def delete_business(business_id):
-        """Delete a business"""
         try:
             if not Businesses.validate_uuid(business_id):
                 return jsonify({'success': False, 'error': 'Invalid business ID format'}), 400
@@ -273,7 +278,6 @@ class Businesses:
             if not business:
                 return jsonify({'success': False, 'error': 'Business not found'}), 404
 
-            # Check if business has invoices
             if business.invoices:
                 return jsonify({
                     'success': False,
@@ -283,10 +287,7 @@ class Businesses:
             db.session.delete(business)
             db.session.commit()
 
-            return jsonify({
-                'success': True,
-                'message': 'Business deleted successfully'
-            })
+            return jsonify({'success': True, 'message': 'Business deleted successfully'})
 
         except Exception as e:
             db.session.rollback()
@@ -295,7 +296,6 @@ class Businesses:
 
     @staticmethod
     def get_business_invoices(business_id):
-        """Get all invoices for a specific business"""
         try:
             if not Businesses.validate_uuid(business_id):
                 return jsonify({'success': False, 'error': 'Invalid business ID format'}), 400
@@ -341,7 +341,6 @@ class Businesses:
 
     @staticmethod
     def bulk_delete_businesses():
-        """Delete multiple businesses at once"""
         try:
             data = request.get_json()
             if not data or 'business_ids' not in data:
@@ -351,15 +350,12 @@ class Businesses:
             if not isinstance(business_ids, list) or not business_ids:
                 return jsonify({'success': False, 'error': 'business_ids must be a non-empty list'}), 400
 
-            # Validate all business IDs
             for business_id in business_ids:
                 if not Businesses.validate_uuid(business_id):
                     return jsonify({'success': False, 'error': f'Invalid business ID format: {business_id}'}), 400
 
-            # Get all businesses
             businesses = Business.query.filter(Business.id.in_(business_ids)).all()
 
-            # Check for businesses with invoices
             businesses_with_invoices = []
             businesses_to_delete = []
 
@@ -380,7 +376,6 @@ class Businesses:
                     'businesses_with_invoices': businesses_with_invoices
                 }), 400
 
-            # Delete all businesses without invoices
             deleted_count = 0
             for business in businesses_to_delete:
                 db.session.delete(business)

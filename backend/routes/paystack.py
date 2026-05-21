@@ -2,10 +2,13 @@ import os
 import hmac
 import hashlib
 import requests
+import uuid
 from flask import Blueprint, request, jsonify, current_app
+from functools import wraps
 from sqlalchemy.orm.attributes import flag_modified
 from db import db
-from datetime import datetime
+from datetime import datetime, timedelta
+from models import User, Invoice, Business, SubscriptionPlan, UserSubscription, BillingTransaction
 
 
 paystack_bp = Blueprint('paystack', __name__)
@@ -15,6 +18,36 @@ PAYSTACK_BASE = 'https://api.paystack.co'
 ENVOYCE_SPLIT_PERCENT = 2
 BREVO_API_KEY = os.getenv('BREVO_API_KEY')
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'https://envoyce.xyz')
+SUPABASE_URL = os.getenv('SUPABASE_URL')
+SUPABASE_ANON_KEY = os.getenv('SUPABASE_ANON_KEY')
+
+
+def supabase_jwt_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth_header = request.headers.get('Authorization', '')
+        if not auth_header.startswith('Bearer '):
+            return jsonify({'error': 'Missing token'}), 401
+
+        token = auth_header.split(' ')[1]
+
+        # Verify with Supabase
+        res = requests.get(
+            f'{SUPABASE_URL}/auth/v1/user',
+            headers={
+                'Authorization': f'Bearer {token}',
+                'apikey': SUPABASE_ANON_KEY
+            },
+            timeout=10
+        )
+
+        if res.status_code != 200:
+            return jsonify({'error': 'Invalid or expired token'}), 401
+
+        request.supabase_user_id = res.json().get('id')
+        return f(*args, **kwargs)
+
+    return decorated
 
 
 def paystack_headers():
@@ -22,8 +55,6 @@ def paystack_headers():
         'Authorization': f'Bearer {PAYSTACK_SECRET_KEY}',
         'Content-Type': 'application/json',
     }
-
-
 # ─── Email notification helper ────────────────────────────────────────────────
 
 def _send_payment_notification(
@@ -455,7 +486,7 @@ def subaccount_status():
 
 # ─── 5. Initialize payment ────────────────────────────────────────────────────
 
-@paystack_bp.route('/api/paystack/initialize', methods=['POST'])
+@paystack_bp.route('/api/paystack/initialize', methods=['POST']) 
 def initialize_payment():
     from models import Invoice, User
     data = request.get_json()
@@ -632,28 +663,79 @@ def webhook():
     event_type = event.get('event')
 
     if event_type == 'charge.success':
-        tx         = event['data']
-        invoice_id = tx.get('metadata', {}).get('invoice_id')
-
-        if invoice_id:
-            invoice = Invoice.query.filter_by(id=invoice_id).first()
-
-            if invoice and invoice.status != 'paid':
-                invoice.status                 = 'paid'
-                inv_data                       = invoice.data or {}
-                inv_data['paid_at']            = datetime.utcnow().isoformat()
-                inv_data['paystack_reference'] = tx.get('reference')
-                inv_data['paystack_amount']    = tx.get('amount', 0) / 100
-                inv_data['payer_email']        = tx.get('customer', {}).get('email', '')
-                invoice.data = inv_data
-                flag_modified(invoice, 'data')
-                db.session.commit()
-
-                _notify_from_invoice(
-                    invoice,
-                    tx.get('amount', 0),
-                    tx.get('customer', {}).get('email', ''),
+        tx = event['data']
+        metadata = tx.get('metadata', {})
+        
+        # Check if this is a subscription payment
+        if metadata.get('type') == 'subscription':
+            user_id = metadata.get('user_id')
+            user = User.query.get(user_id)
+            
+            if user and user.plan != 'pro':
+                # Activate pro plan if not already active
+                user.plan = 'pro'
+                user.updated_at = datetime.utcnow()
+                
+                # Get pro plan
+                pro_plan = SubscriptionPlan.query.filter_by(name='pro').first()
+                
+                # Create or update subscription record
+                subscription = UserSubscription.query.filter_by(user_id=user_id).first()
+                if not subscription and pro_plan:
+                    subscription = UserSubscription(
+                        id=uuid.uuid4(),
+                        user_id=user.id,
+                        plan_id=pro_plan.id,
+                        status='active',
+                        current_period_start=datetime.utcnow(),
+                        current_period_end=datetime.utcnow() + timedelta(days=30),
+                        cancel_at_period_end=False
+                    )
+                    db.session.add(subscription)
+                elif subscription:
+                    # Renew existing subscription
+                    subscription.current_period_start = datetime.utcnow()
+                    subscription.current_period_end = datetime.utcnow() + timedelta(days=30)
+                    subscription.status = 'active'
+                    subscription.updated_at = datetime.utcnow()
+                
+                # Create transaction record
+                transaction = BillingTransaction(
+                    id=uuid.uuid4(),
+                    user_id=user.id,
+                    subscription_id=subscription.id if subscription else None,
+                    amount=float(tx['amount']) / 100,
+                    currency=tx['currency'],
+                    status='success',
+                    description='Pro Plan - Monthly Subscription',
+                    paystack_reference=tx.get('reference'),
+                    paystack_transaction_id=str(tx.get('id'))
                 )
+                db.session.add(transaction)
+                db.session.commit()
+                current_app.logger.info(f"Subscription activated for user {user_id}")
+        
+        else:
+            # Regular invoice payment
+            invoice_id = metadata.get('invoice_id')
+            if invoice_id:
+                invoice = Invoice.query.filter_by(id=invoice_id).first()
+                if invoice and invoice.status != 'paid':
+                    invoice.status = 'paid'
+                    inv_data = invoice.data or {}
+                    inv_data['paid_at'] = datetime.utcnow().isoformat()
+                    inv_data['paystack_reference'] = tx.get('reference')
+                    inv_data['paystack_amount'] = tx.get('amount', 0) / 100
+                    inv_data['payer_email'] = tx.get('customer', {}).get('email', '')
+                    invoice.data = inv_data
+                    flag_modified(invoice, 'data')
+                    db.session.commit()
+                    
+                    _notify_from_invoice(
+                        invoice,
+                        tx.get('amount', 0),
+                        tx.get('customer', {}).get('email', ''),
+                    )
 
     elif event_type == 'subaccount.approved':
         subaccount_code = event['data'].get('subaccount_code')
@@ -663,9 +745,9 @@ def webhook():
             # Update User data (idempotent, won't break if already true)
             users = User.query.all()
             for user in users:
-                user_data   = user.data or {}
+                user_data = user.data or {}
                 subaccounts = user_data.get('paystack_subaccounts', [])
-                matched     = False
+                matched = False
 
                 for entry in subaccounts:
                     if entry.get('subaccount_code') == subaccount_code:
@@ -679,26 +761,18 @@ def webhook():
                     if hasattr(user, 'updated_at'):
                         user.updated_at = datetime.utcnow()
                     db.session.commit()
-                    current_app.logger.info(
-                        f"[webhook] Updated is_verified on user {user.id}"
-                    )
+                    current_app.logger.info(f"[webhook] Updated is_verified on user {user.id}")
                     break
 
             # Update Business record (idempotent)
-            biz = Business.query.filter_by(
-                paystack_subaccount_code=subaccount_code
-            ).first()
+            biz = Business.query.filter_by(paystack_subaccount_code=subaccount_code).first()
             if biz:
                 biz.is_verified = True
-                biz.updated_at  = datetime.utcnow()
+                biz.updated_at = datetime.utcnow()
                 db.session.commit()
-                current_app.logger.info(
-                    f"[webhook] Updated is_verified on business {biz.id}"
-                )
+                current_app.logger.info(f"[webhook] Updated is_verified on business {biz.id}")
             else:
-                current_app.logger.warning(
-                    f"[webhook] No Business found for subaccount_code={subaccount_code}"
-                )
+                current_app.logger.warning(f"[webhook] No Business found for subaccount_code={subaccount_code}")
 
     return jsonify({'status': 'ok'}), 200
 
@@ -780,3 +854,259 @@ def debug_user():
         'data_keys': list((user.data or {}).keys()),
         'raw_data':  user.data,
     })
+
+# ─── 10. Initialize subscription (Pro plan signup) ───────────────────────────
+@paystack_bp.route('/api/paystack/subscription/initialize', methods=['POST'])
+@supabase_jwt_required 
+def initialize_subscription():
+    """Initialize Paystack subscription for Pro plan"""
+    try:
+        current_user_id = request.supabase_user_id  # ← was get_jwt_identity()
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if str(current_user_id) != str(user_id):
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        if user.plan == 'pro':
+            return jsonify({'error': 'Already on Pro plan'}), 400
+        
+        # Get Pro plan details
+        pro_plan = SubscriptionPlan.query.filter_by(name='pro', is_active=True).first()
+        if not pro_plan:
+            # Create default pro plan if not exists
+            pro_plan = SubscriptionPlan(
+                id=uuid.uuid4(),
+                name='pro',
+                price=2999,  # 29.99 in kobo
+                currency='NGN',
+                features={
+                    'businesses': 'unlimited',
+                    'invoices': 'unlimited',
+                    'support': 'priority'
+                },
+                is_active=True
+            )
+            db.session.add(pro_plan)
+            db.session.commit()
+        
+        # Initialize Paystack transaction
+        amount_kobo = int(float(pro_plan.price) * 100)
+        callback_url = f"{FRONTEND_URL}/settings?section=billing"
+        
+        payload = {
+            'email': user.email,
+            'amount': amount_kobo,
+            'currency': 'NGN',
+            'reference': f'subscription-{user_id}-{int(datetime.utcnow().timestamp())}',
+            'callback_url': callback_url,
+            'metadata': {
+                'type': 'subscription',
+                'user_id': str(user_id),
+                'plan': 'pro'
+            }
+        }
+        
+        res = requests.post(
+            f'{PAYSTACK_BASE}/transaction/initialize',
+            headers=paystack_headers(),
+            json=payload,
+            timeout=10
+        )
+        result = res.json()
+        
+        if not result.get('status'):
+            return jsonify({'error': result.get('message', 'Failed to initialize')}), 400
+        
+        return jsonify({
+            'success': True,
+            'authorization_url': result['data']['authorization_url'],
+            'reference': result['data']['reference']
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Subscription init error: {str(e)}")
+        return jsonify({'error': 'Failed to initialize subscription'}), 500
+
+
+# ─── 11. Verify subscription payment ──────────────────────────────────────────
+@paystack_bp.route('/api/paystack/subscription/verify/<reference>', methods=['GET'])
+def verify_subscription(reference):
+    """Verify subscription payment and activate Pro plan"""
+    try:
+        # Verify transaction
+        res = requests.get(
+            f'{PAYSTACK_BASE}/transaction/verify/{reference}',
+            headers=paystack_headers(),
+            timeout=10
+        )
+        result = res.json()
+        
+        if not result.get('status') or result['data']['status'] != 'success':
+            return jsonify({'error': 'Payment verification failed'}), 400
+        
+        tx = result['data']
+        metadata = tx.get('metadata', {})
+        
+        if metadata.get('type') != 'subscription':
+            return jsonify({'error': 'Invalid transaction type'}), 400
+        
+        user_id = metadata.get('user_id')
+        user = User.query.get(user_id)
+        
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Check if already pro
+        if user.plan == 'pro':
+            return jsonify({'message': 'Already on Pro plan', 'plan': 'pro'}), 200
+        
+        # Get pro plan
+        pro_plan = SubscriptionPlan.query.filter_by(name='pro').first()
+        if not pro_plan:
+            return jsonify({'error': 'Plan not found'}), 404
+        
+        # Create subscription record
+        subscription = UserSubscription(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            plan_id=pro_plan.id,
+            paystack_subscription_code=reference,
+            status='active',
+            current_period_start=datetime.utcnow(),
+            current_period_end=datetime.utcnow() + timedelta(days=30),
+            cancel_at_period_end=False
+        )
+        
+        # Create billing transaction record
+        transaction = BillingTransaction(
+            id=uuid.uuid4(),
+            user_id=user.id,
+            subscription_id=subscription.id,
+            amount=float(tx['amount']) / 100,
+            currency=tx['currency'],
+            status='success',
+            description='Pro Plan - Monthly Subscription',
+            paystack_reference=reference,
+            paystack_transaction_id=str(tx['id'])
+        )
+        
+        # Update user plan
+        user.plan = 'pro'
+        user.updated_at = datetime.utcnow()
+        
+        db.session.add(subscription)
+        db.session.add(transaction)
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Successfully upgraded to Pro plan',
+            'plan': 'pro'
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Subscription verify error: {str(e)}")
+        db.session.rollback()
+        return jsonify({'error': 'Failed to verify subscription'}), 500
+
+
+# ─── 12. Cancel subscription ──────────────────────────────────────────────────
+@paystack_bp.route('/api/paystack/subscription/cancel', methods=['POST'])
+@supabase_jwt_required 
+def cancel_subscription():
+    """Cancel user's subscription (will expire at period end)"""
+    try:
+        current_user_id = request.supabase_user_id  # ← was get_jwt_identity()
+        data = request.get_json()
+        user_id = data.get('user_id')
+        
+        if str(current_user_id) != str(user_id):
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        if user.plan != 'pro':
+            return jsonify({'error': 'Not on Pro plan'}), 400
+        
+        subscription = UserSubscription.query.filter_by(
+            user_id=user_id, 
+            status='active'
+        ).first()
+        
+        if subscription:
+            subscription.cancel_at_period_end = True
+            subscription.updated_at = datetime.utcnow()
+            db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': 'Subscription will be cancelled at period end',
+            'cancel_at_period_end': True
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Cancel subscription error: {str(e)}")
+        return jsonify({'error': 'Failed to cancel subscription'}), 500
+
+
+# ─── 13. Get subscription details ─────────────────────────────────────────────
+@paystack_bp.route('/api/paystack/subscription/status', methods=['GET'])
+@supabase_jwt_required 
+def get_subscription_status():
+    """Get user's current subscription details"""
+    try:
+        current_user_id = request.supabase_user_id  # ← was get_jwt_identity()
+        user_id = request.args.get('user_id')
+        
+        if str(current_user_id) != str(user_id):
+            return jsonify({'error': 'Unauthorized'}), 403
+        
+        user = User.query.get(user_id)
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        subscription = UserSubscription.query.filter_by(
+            user_id=user_id,
+            status='active'
+        ).first()
+        
+        billing_transactions = BillingTransaction.query.filter_by(
+            user_id=user_id,
+            status='success'
+        ).order_by(BillingTransaction.created_at.desc()).limit(10).all()
+        
+        transactions_data = []
+        for tx in billing_transactions:
+            transactions_data.append({
+                'id': str(tx.id),
+                'date': tx.created_at.isoformat(),
+                'amount': float(tx.amount),
+                'currency': tx.currency,
+                'description': tx.description,
+                'status': tx.status
+            })
+        
+        subscription_data = {
+            'plan': user.plan,
+            'status': 'active' if user.plan == 'pro' else 'free',
+            'current_period_start': subscription.current_period_start.isoformat() if subscription else None,
+            'current_period_end': subscription.current_period_end.isoformat() if subscription else None,
+            'cancel_at_period_end': subscription.cancel_at_period_end if subscription else False
+        }
+        
+        return jsonify({
+            'success': True,
+            'subscription': subscription_data,
+            'transactions': transactions_data
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Get subscription error: {str(e)}")
+        return jsonify({'error': 'Failed to get subscription details'}), 500

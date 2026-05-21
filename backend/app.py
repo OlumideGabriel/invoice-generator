@@ -2,6 +2,8 @@ from dotenv import load_dotenv
 import os
 from pathlib import Path
 
+from flask_jwt_extended import JWTManager
+
 load_dotenv(Path(__file__).parent / '.env')  # explicit path
 
 from flask import Flask, render_template, request, jsonify, make_response, send_file
@@ -19,6 +21,7 @@ from users import Users
 from business import Businesses
 from invoices import InvoiceOperations
 from notifications import Notifications
+from notification_utils import create_user_notification
 from io import BytesIO
 import tempfile
 from pdf2image import convert_from_bytes
@@ -32,6 +35,7 @@ from sib_api_v3_sdk.rest import ApiException
 # Register the blueprint in your main app
 from routes.dashboard import dashboard_bp
 from routes.paystack import paystack_bp
+from routes.billing import billing_bp
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -77,13 +81,30 @@ CORS(app, resources={
     }
 })
 
+# JWT Configuration
+app.config['JWT_SECRET_KEY'] = os.getenv('JWT_SECRET', 'your-secret-key')
+jwt = JWTManager(app)
+
+@jwt.invalid_token_loader
+def invalid_token_callback(error):
+    print(f"Invalid token: {error}")
+    return jsonify({"error": "Invalid token", "details": str(error)}), 422
+
+@jwt.unauthorized_loader
+def missing_token_callback(error):
+    print(f"Missing token: {error}")
+    return jsonify({"error": "Missing token", "details": str(error)}), 401
+
+@jwt.expired_token_loader
+def expired_token_callback(jwt_header, jwt_payload):
+    return jsonify({"error": "Token has expired"}), 401
 
 UPLOAD_FOLDER = os.path.abspath('uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(paystack_bp)
-
+app.register_blueprint(billing_bp)
 
 @app.after_request
 def after_request(response):
@@ -352,54 +373,63 @@ def preview_invoice():
 
 @app.route('/generate-invoice', methods=['POST'])
 def generate_invoice():
-    temp_files = []  # Store temporary files to clean up later
-
+    temp_files = []
+    
     try:
         data = request.get_json()
         app.logger.debug(f"[GENERATE] Received data: {data}")
-
+        
         template_data = parse_invoice_data(data)
-
+        
         # Download and replace external image URLs with local file paths
         if 'logo_url' in template_data and template_data['logo_url']:
             try:
                 logo_path = download_image_for_weasyprint(template_data['logo_url'])
                 temp_files.append(logo_path)
                 template_data['logo_url'] = logo_path
-                app.logger.debug(f"Downloaded logo to: {logo_path}")
             except Exception as e:
                 app.logger.warning(f"Failed to download logo: {e}")
-                # Keep original URL as fallback
-
+        
         # Render the HTML template with invoice data
         html = render_template('invoice_template4.html', **template_data)
-
+        
         # Create SSL context for WeasyPrint
         ssl_context = ssl.create_default_context(cafile=certifi.where())
-
-        # Generate PDF with WeasyPrint using SSL context
+        
+        # Generate PDF with WeasyPrint
         pdf = HTML(
             string=html,
             base_url=os.path.dirname(os.path.abspath(__file__))
         ).write_pdf(ssl_context=ssl_context)
-
+        
         # Clean up temporary files
         for temp_file in temp_files:
             try:
                 os.unlink(temp_file)
             except:
                 pass
-
-        # Send PDF as response
+        
+        # Create response with Safari-compatible headers
         response = make_response(pdf)
         response.headers['Content-Type'] = 'application/pdf'
-        response.headers['Content-Disposition'] = (
-            f'attachment; filename=invoice_{template_data["invoice_number"]}.pdf'
-        )
+        
+        # Safari requires specific content-disposition formatting
+        filename = f"invoice_{template_data['invoice_number']}.pdf"
+        
+        # RFC 5987 encoding for UTF-8 filenames (Safari compatible)
+        from urllib.parse import quote
+        encoded_filename = quote(filename, safe='')
+        response.headers['Content-Disposition'] = f"attachment; filename=\"{filename}\"; filename*=UTF-8''{encoded_filename}"
+        
+        # Safari-specific headers
+        response.headers['Cache-Control'] = 'no-cache, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Content-Length'] = len(pdf)
+        response.headers['Content-Transfer-Encoding'] = 'binary'
+        
         return response
-
+        
     except Exception as e:
-        # Clean up temporary files even if error occurs
         for temp_file in temp_files:
             try:
                 os.unlink(temp_file)
@@ -1697,6 +1727,7 @@ def get_user(user_id):
                 'email': user.email,
                 'first_name': user.first_name,
                 'last_name': user.last_name,
+                'plan': user.plan,
                 'google_id': user.google_id,
                 'auth_provider': user.auth_provider,
                 'auth_method': 'google' if user.google_id else 'native',
