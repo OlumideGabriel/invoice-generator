@@ -36,9 +36,14 @@ const useSafeCurrency = () => {
   }
 };
 
-// Safari detection helper
+// Safari detection helpers
 const isSafari = () => {
   return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+};
+
+const isMobileSafari = () => {
+  const ua = navigator.userAgent;
+  return /iP(ad|od|hone)/.test(ua) && /AppleWebKit/.test(ua) && !/CriOS/.test(ua);
 };
 
 function useInvoice(options: UseInvoiceOptions = {}) {
@@ -144,25 +149,55 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     setLogoStatus(url ? 'Logo uploaded successfully!' : 'Logo preview only (upload failed)');
   };
 
-  // Safari-compatible download function
-  const downloadFileSafari = (blob: Blob, filename: string) => {
-    const blobUrl = URL.createObjectURL(blob);
-    
-    if (isSafari()) {
-      // Safari requires special handling
+  // Mobile Safari - open PDF in new tab with instructions
+  const handleMobileSafariDownload = (blobUrl: string, filename: string) => {
+    // Open in new tab
+    const newWindow = window.open();
+    if (newWindow) {
+      newWindow.location.href = blobUrl;
+      // Show user instructions
+      setTimeout(() => {
+        alert("The invoice will open in a new tab.\n\nTap the share button (📤) then select 'Save to Files' to download the PDF.");
+      }, 500);
+    } else {
+      // Popup blocked - show fallback
+      alert("Please allow popups for this site to download invoices.\n\nAlternatively, tap and hold the link to save the file.");
+      // Fallback: create a link
       const link = document.createElement('a');
       link.href = blobUrl;
       link.download = filename;
       document.body.appendChild(link);
-      
-      // Use setTimeout to ensure Safari processes the click
+      link.click();
+      document.body.removeChild(link);
+    }
+  };
+
+  // Desktop Safari download
+  const handleDesktopSafariDownload = (blobUrl: string, filename: string) => {
+    const link = document.createElement('a');
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    
+    setTimeout(() => {
+      link.click();
       setTimeout(() => {
-        link.click();
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(blobUrl);
-        }, 100);
-      }, 0);
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 100);
+    }, 0);
+  };
+
+  // Safari-compatible download function
+  const downloadFileSafari = (blob: Blob, filename: string) => {
+    const blobUrl = URL.createObjectURL(blob);
+    
+    if (isMobileSafari()) {
+      // Mobile Safari: open in new tab
+      handleMobileSafariDownload(blobUrl, filename);
+    } else if (isSafari()) {
+      // Desktop Safari
+      handleDesktopSafariDownload(blobUrl, filename);
     } else {
       // Chrome/Firefox/Edge approach
       const link = document.createElement('a');
@@ -173,6 +208,25 @@ function useInvoice(options: UseInvoiceOptions = {}) {
       document.body.removeChild(link);
       URL.revokeObjectURL(blobUrl);
     }
+  };
+
+  // Try to use Web Share API on mobile devices
+  const tryWebShare = async (blob: Blob, filename: string): Promise<boolean> => {
+    if (navigator.share && isMobileSafari()) {
+      try {
+        const file = new File([blob], filename, { type: 'application/pdf' });
+        await navigator.share({
+          title: 'Invoice',
+          text: `Invoice ${invoiceNumber || 'Document'}`,
+          files: [file]
+        });
+        return true;
+      } catch (shareError) {
+        console.error('Share failed:', shareError);
+        return false;
+      }
+    }
+    return false;
   };
 
   const handleSubmit = async (): Promise<void> => {
@@ -235,8 +289,12 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         }
       }
       
-      // Use Safari-compatible download
-      downloadFileSafari(blob, finalFilename);
+      // Try Web Share API first on mobile Safari
+      const shared = await tryWebShare(blob, finalFilename);
+      if (!shared) {
+        // Fallback to regular download
+        downloadFileSafari(blob, finalFilename);
+      }
       
     } catch (err) {
       if (err instanceof Error) setError(err.message);
@@ -302,13 +360,14 @@ function useInvoice(options: UseInvoiceOptions = {}) {
       
       const url = URL.createObjectURL(blob);
       
-      // For Safari, we need to keep the URL alive longer
-      if (isSafari()) {
-        // Store the URL for later cleanup
-        setTimeout(() => {
-          // Don't revoke immediately for Safari
-          console.log('Safari preview URL created:', url);
-        }, 1000);
+      // For mobile Safari, handle preview differently
+      if (isMobileSafari()) {
+        // Open preview in new tab for mobile Safari
+        const previewWindow = window.open();
+        if (previewWindow) {
+          previewWindow.location.href = url;
+          return null; // Return null since we're opening in new tab
+        }
       }
       
       return url;
@@ -373,7 +432,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     getTotal,
     handleSubmit,
     previewInvoice,
-    cleanupPreviewUrl, // Export this for use in components
+    cleanupPreviewUrl,
     loading,
     setLoading,
     error,
