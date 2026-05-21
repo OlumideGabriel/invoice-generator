@@ -180,10 +180,10 @@ const MainMenu: React.FC<MainMenuProps> = ({
                 className="flex items-center justify-center mr-2"
               >
                 <span
-                  className=" absolute top-[0.3rem] hidden left-[1.2rem] bg-red-500 text-white text-sm font-bold border rounded-full
-                 h-3 w-3 flex items-center justify-center"
+                  className="absolute top-[0.3rem] hidden left-[1.2rem] bg-red-500 text-white text-sm font-bold border rounded-full
+                  h-3 w-3 flex items-center justify-center"
                 >
-                  {alert > 99 ? "99+" : setAlert}
+                  {alert > 99 ? "99+" : alert} {/* ← was setAlert */}
                 </span>
 
                 <Bell

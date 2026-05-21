@@ -8,6 +8,8 @@ import Navbar from "../components/Navbar";
 import TemplatesSection from "../components/TemplatesSection";
 import IntegrationsSection from "../components/IntegrationsSection";
 import PaymentSetup from "../components/PaymentSetup";
+import BillingSection from "../components/BillingSection";
+
 import {
   User,
   Mail,
@@ -51,16 +53,15 @@ const SettingsPage = () => {
     { id: "profile", label: "Profile Settings", icon: User },
     { id: "templates", label: "Invoice Templates", icon: FileText },
     { id: "business", label: "Businesses", icon: BriefcaseBusiness },
-    { id: "billing", label: "Billing", icon: Banknote },
-    { id: "payments", label: "Payment Collection", icon: CreditCard }, // ← add this
+    { id: "billing", label: "Billing", icon: CreditCard }, // Changed from Banknote to CreditCard
+    { id: "payments", label: "Payment Collection", icon: Banknote },
     { id: "integrations", label: "Manage Integrations", icon: Cog },
   ];
 
-  const showNotification = (
-    message: string,
-    type: "success" | "error" = "success",
-  ) => {
-    setNotification({ message, type });
+  const showNotification = (message: string, type: string = "success") => {
+    const validType: "success" | "error" =
+      type === "error" ? "error" : "success";
+    setNotification({ message, type: validType });
     setTimeout(() => setNotification(null), 3000);
   };
 
@@ -71,77 +72,21 @@ const SettingsPage = () => {
         first_name: user!.first_name ?? undefined,
         last_name: user!.last_name ?? undefined,
         email: user!.email,
+        plan: user!.plan ?? undefined, // ← pass plan so Pro gating works
       }}
       showNotification={showNotification}
     />
   );
 
-  const BillingSection = () => (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="bg-white rounded-xl p-6 md:p-8 border border-gray-300">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
-              Billing Information
-            </h2>
-            <p className="text-gray-500 text-sm mt-1">
-              Manage your subscription and billing details
-            </p>
-          </div>
-        </div>
-
-        <div className="space-y-6">
-          <div className="bg-gradient-to-r from-teal-50 to-teal-100 p-4 md:p-6 rounded-lg border border-teal-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="text-lg font-medium text-gray-900 mb-1">
-                  Current Plan
-                </h4>
-                <p className="text-xl md:text-2xl font-bold text-teal-600">
-                  Free Plan
-                </p>
-                <p className="text-sm hidden text-gray-600 mt-1">
-                  5 invoices per month included
-                </p>
-              </div>
-              <CreditCard className="h-8 w-8 md:h-12 md:w-12 text-teal-500" />
-            </div>
-            <div className="mt-4">
-              <button className="px-4 py-3 bg-teal-600 hidden text-white rounded-md hover:bg-teal-500 transition-colors font-medium">
-                Upgrade Plan
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-300 rounded-lg p-4 md:p-6">
-            <h4 className="text-lg font-medium text-gray-900 mb-4">
-              Billing History
-            </h4>
-            <div className="text-center py-6 md:py-8">
-              <FileText className="h-8 w-8 md:h-12 md:w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No billing history available</p>
-              <p className="text-sm text-gray-400">
-                Your transaction history will appear here once you make a
-                purchase
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-300 hidden rounded-lg p-6">
-            <h4 className="text-lg font-medium text-gray-900 mb-4">
-              Payment Method
-            </h4>
-            <div className="text-center py-8">
-              <CreditCard className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 mb-4">No payment method added</p>
-              <button className="px-4 py-3 border-2 border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-medium">
-                Add Payment Method
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+  const BillingSectionWrapper = () => (
+    <BillingSection
+      user={{
+        id: user!.id,
+        email: user!.email,
+        plan: user!.plan ?? "free",
+      }}
+      showNotification={showNotification}
+    />
   );
 
   const renderActiveSection = () => {
@@ -149,7 +94,7 @@ const SettingsPage = () => {
       profile: () => <ProfileSection showNotification={showNotification} />,
       templates: () => <TemplatesSection showNotification={showNotification} />,
       business: BusinessSectionWrapper,
-      billing: BillingSection,
+      billing: BillingSectionWrapper,
       payments: () => (
         <div className="max-w-7xl mx-auto space-y-6">
           <div className="bg-white rounded-xl p-6 md:p-8 border border-gray-300">
@@ -210,7 +155,7 @@ const SettingsPage = () => {
     </div>
   );
 
-  const getSectionTitle = (id) => {
+  const getSectionTitle = (id: string) => {
     const item = sidebarItems.find((i) => i.id === id);
     return item ? item.label : "Profile Settings";
   };

@@ -13,6 +13,7 @@ interface User {
   auth_provider: string | null;
   auth_method: string;
   is_guest: boolean;
+  plan?: string;
   email_verified: boolean;
   data: any;
   created_at: string | null;
@@ -26,8 +27,8 @@ interface AuthContextType {
   signinNative: (user: User) => void;
   updateProfile: (updates: Partial<User>) => void;
   authModalOpen: boolean;
-  authModalMode: 'login' | 'signup';
-  openAuthModal: (mode?: 'login' | 'signup') => void;
+  authModalMode: "login" | "signup";
+  openAuthModal: (mode?: "login" | "signup") => void;
   closeAuthModal: () => void;
   refreshUser: () => Promise<void>;
 }
@@ -39,7 +40,7 @@ const Ctx = createContext<AuthContextType>({
   signinNative: () => {},
   updateProfile: () => {},
   authModalOpen: false,
-  authModalMode: 'login',
+  authModalMode: "login",
   openAuthModal: () => {},
   closeAuthModal: () => {},
   refreshUser: async () => {},
@@ -49,7 +50,9 @@ export const AuthProvider = ({ children }: any) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authModalMode, setAuthModalMode] = useState<'login' | 'signup'>('login');
+  const [authModalMode, setAuthModalMode] = useState<"login" | "signup">(
+    "login",
+  );
 
   // Fetch full user profile from your Flask backend
   const fetchUserProfile = async (userId: string): Promise<User | null> => {
@@ -62,7 +65,7 @@ export const AuthProvider = ({ children }: any) => {
       }
       return null;
     } catch (error) {
-      console.error('Error fetching user profile:', error);
+      console.error("Error fetching user profile:", error);
       return null;
     }
   };
@@ -82,18 +85,18 @@ export const AuthProvider = ({ children }: any) => {
             setUser({
               id: data.session.user.id,
               user_id: data.session.user.id,
-              email: data.session.user.email || '',
+              email: data.session.user.email || "",
               first_name: null,
               last_name: null,
               google_id: null,
               profile_picture_url: null,
-              auth_provider: 'supabase',
-              auth_method: 'google',
+              auth_provider: "supabase",
+              auth_method: "google",
               is_guest: false,
               email_verified: data.session.user.email_confirmed_at !== null,
               data: {},
               created_at: null,
-              updated_at: null
+              updated_at: null,
             });
           }
           setLoading(false);
@@ -109,7 +112,7 @@ export const AuthProvider = ({ children }: any) => {
 
         setLoading(false);
       } catch (error) {
-        console.error('Auth initialization error:', error);
+        console.error("Auth initialization error:", error);
         setLoading(false);
       }
     };
@@ -117,40 +120,42 @@ export const AuthProvider = ({ children }: any) => {
     initAuth();
 
     // Supabase auth listener
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_e, session) => {
-      if (session?.user) {
-        // Fetch full user profile when auth state changes
-        const userProfile = await fetchUserProfile(session.user.id);
-        if (userProfile) {
-          setUser(userProfile);
+    const { data: sub } = supabase.auth.onAuthStateChange(
+      async (_e, session) => {
+        if (session?.user) {
+          // Fetch full user profile when auth state changes
+          const userProfile = await fetchUserProfile(session.user.id);
+          if (userProfile) {
+            setUser(userProfile);
+          } else {
+            setUser({
+              id: session.user.id,
+              user_id: session.user.id,
+              email: session.user.email || "",
+              first_name: null,
+              last_name: null,
+              google_id: null,
+              profile_picture_url: null,
+              auth_provider: "supabase",
+              auth_method: "google",
+              is_guest: false,
+              email_verified: session.user.email_confirmed_at !== null,
+              data: {},
+              created_at: null,
+              updated_at: null,
+            });
+          }
         } else {
-          setUser({
-            id: session.user.id,
-            user_id: session.user.id,
-            email: session.user.email || '',
-            first_name: null,
-            last_name: null,
-            google_id: null,
-            profile_picture_url: null,
-            auth_provider: 'supabase',
-            auth_method: 'google',
-            is_guest: false,
-            email_verified: session.user.email_confirmed_at !== null,
-            data: {},
-            created_at: null,
-            updated_at: null
-          });
+          const nativeUser = localStorage.getItem("nativeUser");
+          if (nativeUser) {
+            const parsed = JSON.parse(nativeUser);
+            setUser(parsed);
+          } else {
+            setUser(null);
+          }
         }
-      } else {
-        const nativeUser = localStorage.getItem("nativeUser");
-        if (nativeUser) {
-          const parsed = JSON.parse(nativeUser);
-          setUser(parsed);
-        } else {
-          setUser(null);
-        }
-      }
-    });
+      },
+    );
 
     return () => sub.subscription.unsubscribe();
   }, []);
@@ -164,12 +169,12 @@ export const AuthProvider = ({ children }: any) => {
       if (userProfile) {
         setUser(userProfile);
         // Also update localStorage for native users
-        if (user.auth_provider === 'email') {
+        if (user.auth_provider === "email") {
           localStorage.setItem("nativeUser", JSON.stringify(userProfile));
         }
       }
     } catch (error) {
-      console.error('Error refreshing user:', error);
+      console.error("Error refreshing user:", error);
     }
   };
 
@@ -188,7 +193,7 @@ export const AuthProvider = ({ children }: any) => {
     setUser(updatedUser);
 
     // Update localStorage for native users
-    if (user.auth_provider === 'email') {
+    if (user.auth_provider === "email") {
       localStorage.setItem("nativeUser", JSON.stringify(updatedUser));
     }
   };
@@ -204,17 +209,17 @@ export const AuthProvider = ({ children }: any) => {
       if (error) throw error;
 
       // Clear any remaining session data
-      window.localStorage.removeItem('sb-auth-token');
-      window.localStorage.removeItem('sb-user-data');
+      window.localStorage.removeItem("sb-auth-token");
+      window.localStorage.removeItem("sb-user-data");
 
       return true;
     } catch (error) {
-      console.error('Error during logout:', error);
+      console.error("Error during logout:", error);
       return false;
     }
   };
 
-  const openAuthModal = (mode: 'login' | 'signup' = 'login') => {
+  const openAuthModal = (mode: "login" | "signup" = "login") => {
     setAuthModalMode(mode);
     setAuthModalOpen(true);
   };
@@ -224,18 +229,20 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   return (
-    <Ctx.Provider value={{
-      user,
-      loading,
-      logout,
-      signinNative,
-      updateProfile,
-      authModalOpen,
-      authModalMode,
-      openAuthModal,
-      closeAuthModal,
-      refreshUser
-    }}>
+    <Ctx.Provider
+      value={{
+        user,
+        loading,
+        logout,
+        signinNative,
+        updateProfile,
+        authModalOpen,
+        authModalMode,
+        openAuthModal,
+        closeAuthModal,
+        refreshUser,
+      }}
+    >
       {children}
     </Ctx.Provider>
   );

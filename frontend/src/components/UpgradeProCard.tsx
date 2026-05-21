@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { X, Crown} from 'lucide-react';
+import { useState } from "react";
+import { X, Crown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function UpgradeProCard() {
@@ -33,10 +33,12 @@ export default function UpgradeProCard() {
         </p>
 
         {/* CTA Button */}
-        <button onClick={() => navigate("/settings?section=billing")} className="w-full hover:from-green-600 hover:to-emerald-700 border border-[#0e423e] hover:bg-[#8eda91] text-[#0e423e]
-         text-sm font-medium rounded-sm px-2 py-0.5 transition-all duration-200 hover:shadow-green-500/25 ring-1 ring-green-400/20">
+        <button
+          onClick={() => navigate("/settings?section=billing")}
+          className="w-full hover:from-green-600 hover:to-emerald-700 border border-[#0e423e] hover:bg-[#8eda91] text-[#0e423e]
+         text-sm font-medium rounded-sm px-2 py-0.5 transition-all duration-200 hover:shadow-green-500/25 ring-1 ring-green-400/20"
+        >
           Get Pro
-
         </button>
 
         {/* Price */}
@@ -47,17 +49,15 @@ export default function UpgradeProCard() {
 
       {/* Upgrade Mobile */}
       <div className="w-full flex xl:hidden justify-center items-center">
-          <button
-            onClick={() => navigate("/settings?section=billing")}
-            className="bg-[#d2fee1] shadow-xs py-2 w-full rounded-md hover:shadow-sm hover:bg-[#8eda91] transition-shadow
+        <button
+          onClick={() => navigate("/settings?section=billing")}
+          className="bg-[#d2fee1] shadow-xs py-2 w-full rounded-md hover:shadow-sm hover:bg-[#8eda91] transition-shadow
              relative flex flex-col items-center justify-center"
-          >
-            <Crown className="text-[#0e423e]" size={20} />
-            <span className="text-xs font-medium mt-0.5 text-[#0e423e]">Pro</span>
-          </button>
-        </div>
-
-
+        >
+          <Crown className="text-[#0e423e]" size={20} />
+          <span className="text-xs font-medium mt-0.5 text-[#0e423e]">Pro</span>
+        </button>
+      </div>
     </div>
   );
 }

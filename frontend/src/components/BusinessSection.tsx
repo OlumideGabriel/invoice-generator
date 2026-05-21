@@ -2,18 +2,21 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   BriefcaseBusiness,
   Plus,
-  Building,
-  Mail,
   MapPin,
   Phone,
   Trash2,
   Edit2,
   WifiOff,
   RefreshCw,
-  Lock,
+  Sparkles,
+  CheckCircle2,
+  Clock,
+  CircleDashed,
 } from "lucide-react";
 import BusinessModal from "./BusinessModal";
 import { API_BASE_URL } from "../config/api";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface Business {
   id: string;
@@ -25,7 +28,7 @@ interface Business {
   tax_id?: string;
   invoice_count?: number;
   paystack_subaccount_code?: string;
-  is_verified?: boolean | null; // ← added
+  is_verified?: boolean | null;
   created_at: string;
   updated_at?: string;
 }
@@ -41,113 +44,190 @@ interface BusinessSectionProps {
   showNotification: (message: string, type?: "success" | "error") => void;
 }
 
+// ─── Skeleton loader ──────────────────────────────────────────────────────────
+
+const SkeletonCard: React.FC = () => (
+  <div className="bg-white border border-gray-200 rounded-xl p-5 flex flex-col gap-4 animate-pulse">
+    <div className="flex items-start gap-3">
+      <div className="w-10 h-10 rounded-md bg-gray-100 flex-shrink-0" />
+      <div className="flex-1 space-y-2 pt-1">
+        <div className="h-3.5 bg-gray-100 rounded w-2/3" />
+        <div className="h-3 bg-gray-100 rounded w-1/2" />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <div className="h-3 bg-gray-100 rounded w-full" />
+      <div className="h-3 bg-gray-100 rounded w-3/4" />
+    </div>
+    <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="h-3 bg-gray-100 rounded w-16" />
+      <div className="h-5 bg-gray-100 rounded-full w-28" />
+    </div>
+  </div>
+);
+
+const BusinessSkeleton: React.FC = () => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    {[0, 1, 2].map((i) => (
+      <SkeletonCard key={i} />
+    ))}
+  </div>
+);
+
+// ─── Payment badge ────────────────────────────────────────────────────────────
+
+const PaymentBadge: React.FC<{ business: Business }> = ({ business }) => {
+  if (business.is_verified) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-green-700 bg-green-50 border border-green-200 px-2.5 py-1 rounded-full">
+        <CheckCircle2 className="w-3 h-3" />
+        Paystack verified
+      </span>
+    );
+  }
+  if (business.paystack_subaccount_code) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
+        <Clock className="w-3 h-3" />
+        Awaiting approval
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 bg-gray-100 border border-gray-200 px-2.5 py-1 rounded-full">
+      <CircleDashed className="w-3 h-3" />
+      No payment setup
+    </span>
+  );
+};
+
+// ─── Business card ────────────────────────────────────────────────────────────
+
 const BusinessCard: React.FC<{
   business: Business;
   onDelete: (id: string) => void;
   onEdit: (business: Business) => void;
-}> = ({ business, onDelete, onEdit }) => (
-  <div className="bg-teal-50 border-2 border-teal-500 rounded-lg p-4 sm:p-6 transition-all duration-200 h-full flex flex-col">
-    <div className="flex items-start justify-between mb-4 sm:mb-6">
-      <div className="flex items-center space-x-3 flex-1 min-w-0">
-        <div className="flex-shrink-0 w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center">
-          <Building className="w-5 h-5 text-white" />
+}> = ({ business, onDelete, onEdit }) => {
+  const initials = business.name
+    .split(" ")
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase();
+
+  return (
+    <div className="group bg-white border border-gray-300 rounded-xl p-5 flex flex-col gap-4 hover:border-gray-400 hover:shadow-sm transition-all duration-150">
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-10 h-10 rounded-md bg-gray-100 border border-gray-200 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-semibold text-gray-600 tracking-tight">
+              {initials}
+            </span>
+          </div>
+          <div className="min-w-0">
+            <h3 className="text-sm font-semibold text-gray-900 truncate leading-tight">
+              {business.name}
+            </h3>
+            {business.email && (
+              <p className="text-xs text-gray-500 truncate mt-0.5">
+                {business.email}
+              </p>
+            )}
+          </div>
         </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
-            {business.name}
-          </h3>
-          {business.email && (
-            <div className="text-sm text-gray-600 flex items-center min-w-0">
-              <Mail className="w-4 h-4 mr-2 flex-shrink-0" />
-              <span className="truncate">{business.email}</span>
+
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
+          <button
+            onClick={() => onEdit(business)}
+            className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
+            aria-label="Edit business"
+          >
+            <Edit2 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            onClick={() => onDelete(business.id)}
+            className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+            aria-label="Delete business"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {(business.address || business.phone) && (
+        <div className="space-y-1.5">
+          {business.address && (
+            <div className="flex items-start gap-2">
+              <MapPin className="w-3.5 h-3.5 text-gray-400 flex-shrink-0 mt-0.5" />
+              <span className="text-xs text-gray-600 leading-relaxed">
+                {business.address}
+              </span>
+            </div>
+          )}
+          {business.phone && (
+            <div className="flex items-center gap-2">
+              <Phone className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <span className="text-xs text-gray-600">{business.phone}</span>
             </div>
           )}
         </div>
-      </div>
+      )}
 
-      <div className="flex space-x-1 flex-shrink-0 ml-2">
-        <button
-          onClick={() => onEdit(business)}
-          className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-          aria-label="Edit business"
-        >
-          <Edit2 className="w-4 h-4" />
-        </button>
-        <button
-          onClick={() => onDelete(business.id)}
-          className="p-1.5 sm:p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-colors"
-          aria-label="Delete business"
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100 mt-auto">
+        <span className="text-xs text-gray-400">
+          {business.invoice_count || 0}{" "}
+          {business.invoice_count === 1 ? "invoice" : "invoices"}
+        </span>
+        <PaymentBadge business={business} />
       </div>
     </div>
+  );
+};
 
-    <div className="flex-1 space-y-2 sm:space-y-3 text-sm text-gray-700 mb-4 sm:mb-6">
-      {business.address && (
-        <div className="flex items-start">
-          <MapPin className="w-4 h-4 mr-2 flex-shrink-0 mt-0.5 text-gray-500" />
-          <span className="break-words leading-relaxed text-xs sm:text-sm">
-            {business.address}
-          </span>
-        </div>
-      )}
-      {business.phone && (
-        <div className="flex items-center">
-          <Phone className="w-4 h-4 mr-2 flex-shrink-0 text-gray-500" />
-          <span className="truncate text-xs sm:text-sm">{business.phone}</span>
-        </div>
-      )}
-    </div>
+// ─── Pro upgrade banner ───────────────────────────────────────────────────────
 
-    <div className="pt-3 sm:pt-4 border-t border-gray-200 flex items-center justify-between">
-      <span className="text-teal-600 font-medium text-xs sm:text-sm">
-        {business.invoice_count || 0} invoices
-      </span>
-
-      {/* ── Payment status badge — three states ── */}
-      {business.is_verified ? (
-        <span className="inline-flex items-center gap-1 text-xs text-green-700 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-green-500 inline-block" />
-          Paystack verified
-        </span>
-      ) : business.paystack_subaccount_code ? (
-        <span className="inline-flex items-center gap-1 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block" />
-          Awaiting approval
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1 text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-          No payment setup
-        </span>
-      )}
-    </div>
-  </div>
-);
-
-// ─── Free-plan limit banner ───────────────────────────────────────────────────
 const ProUpgradeBanner: React.FC = () => (
-  <div className="bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 rounded-xl p-5 flex items-start gap-4">
-    <div className="w-10 h-10 bg-teal-500 rounded-lg flex items-center justify-center flex-shrink-0">
-      <Lock className="w-5 h-5 text-white" />
+  <div className="bg-gradient-to-r from-teal-50 to-teal-100 border border-teal-200 rounded-lg p-4 md:p-6 flex items-center gap-4 mb-6">
+    <div className="w-10 h-10 bg-teal-600 rounded-lg flex items-center justify-center flex-shrink-0">
+      <Sparkles className="w-5 h-5 text-white" />
     </div>
     <div className="flex-1 min-w-0">
-      <h4 className="text-base font-semibold text-gray-900 mb-1">
+      <p className="text-sm font-semibold text-gray-900">
         Multiple businesses — Pro feature
-      </h4>
-      <p className="text-sm text-gray-600">
+      </p>
+      <p className="text-xs text-gray-600 mt-0.5">
         You're on the free plan, which supports one business. Upgrade to Pro to
         add unlimited businesses.
       </p>
     </div>
-    <button
-      className="flex-shrink-0 px-4 py-2 bg-teal-600 text-white rounded-lg text-sm font-medium
-                 hover:bg-teal-700 transition-colors"
-    >
+    <button className="flex-shrink-0 px-4 py-2.5 bg-teal-600 text-white text-sm font-medium rounded-lg hover:bg-teal-700 transition-colors">
       Upgrade
     </button>
   </div>
 );
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+
+const EmptyState: React.FC<{ onAdd: () => void }> = ({ onAdd }) => (
+  <div className="text-center py-12 md:py-16">
+    <BriefcaseBusiness className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+      No businesses yet
+    </h3>
+    <p className="text-gray-500 mb-6 text-sm max-w-xs mx-auto">
+      Get started by adding your first business
+    </p>
+    <button
+      onClick={onAdd}
+      className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors"
+    >
+      <Plus className="w-4 h-4" />
+      Add your first business
+    </button>
+  </div>
+);
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const BusinessSection: React.FC<BusinessSectionProps> = ({
   user,
@@ -158,13 +238,10 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
   const [showModal, setShowModal] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [hasNetworkError, setHasNetworkError] = useState(!navigator.onLine);
-
-  const isPro = user?.plan === "pro";
-  const atFreeLimit = !isPro && businesses.length >= 1;
+  const [canAddBusiness, setCanAddBusiness] = useState(false);
+  const [isPlanDetermined, setIsPlanDetermined] = useState(false);
 
   const fetchBusinesses = useCallback(async () => {
-    setLoading(true);
-
     if (!navigator.onLine) {
       setHasNetworkError(true);
       showNotification(
@@ -172,8 +249,11 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
         "error",
       );
       setLoading(false);
+      setIsPlanDetermined(true);
       return;
     }
+
+    setLoading(true);
 
     try {
       const params = new URLSearchParams({
@@ -181,7 +261,6 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
         page: "1",
         per_page: "100",
       });
-
       const response = await fetch(`${API_BASE_URL}/api/businesses?${params}`);
       if (!response.ok) throw new Error(`API returned ${response.status}`);
 
@@ -189,8 +268,12 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
 
       if (data.success) {
         setBusinesses(data.businesses || []);
+        setCanAddBusiness(data.can_add_business ?? true);
+        // Once we have data from the server, we know the plan status
+        setIsPlanDetermined(true);
       } else {
         showNotification("Error fetching businesses", "error");
+        setIsPlanDetermined(true);
       }
 
       setHasNetworkError(false);
@@ -201,10 +284,11 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
       } else {
         showNotification("Server error. Please try again later.", "error");
       }
+      setIsPlanDetermined(true);
     } finally {
       setLoading(false);
     }
-  }, [user.id]);
+  }, [user.id, showNotification]);
 
   useEffect(() => {
     fetchBusinesses();
@@ -223,15 +307,9 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
     };
   }, [fetchBusinesses]);
 
-  const handleRetry = useCallback(() => {
-    setHasNetworkError(false);
-    fetchBusinesses();
-  }, [fetchBusinesses]);
-
   const handleDeleteBusiness = async (businessId: string) => {
     if (!window.confirm("Are you sure you want to delete this business?"))
       return;
-
     if (hasNetworkError) {
       showNotification(
         "No internet connection. Please check your network and try again.",
@@ -239,14 +317,12 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
       );
       return;
     }
-
     try {
       const response = await fetch(
         `${API_BASE_URL}/api/businesses/${businessId}`,
         { method: "DELETE" },
       );
       const data = await response.json();
-
       if (data.success) {
         showNotification("Business deleted successfully", "success");
         fetchBusinesses();
@@ -283,7 +359,8 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
       );
       return;
     }
-    if (atFreeLimit) {
+    // Check if user is on free plan and already has a business
+    if (!canAddBusiness && user.plan !== "pro") {
       showNotification(
         "Free plan supports one business. Upgrade to Pro to add more.",
         "error",
@@ -306,95 +383,80 @@ const BusinessSection: React.FC<BusinessSectionProps> = ({
     fetchBusinesses();
   };
 
+  // Show upgrade banner only when:
+  // 1. We've determined the plan status (not loading)
+  // 2. User cannot add more businesses
+  // 3. User is NOT on pro plan
+  const showUpgradeBanner =
+    isPlanDetermined && !canAddBusiness && user.plan !== "pro";
+
   return (
-    <div className="bg-white rounded-xl border border-gray-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
-        {/* Header */}
-        <div className="mb-6 sm:mb-8">
-          <div className="flex flex-row items-start justify-between">
-            <div className="mb-4 sm:mb-0">
-              <h1 className="text-2xl font-bold text-gray-900">Businesses</h1>
-              <p className="text-gray-600 text-sm sm:text-base">
-                Manage your business information and settings
-              </p>
-            </div>
-            <button
-              onClick={handleAddNewBusiness}
-              disabled={hasNetworkError || atFreeLimit}
-              title={
-                atFreeLimit
-                  ? "Upgrade to Pro to add more businesses"
-                  : undefined
-              }
-              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-md
-                         hover:bg-teal-700 transition-colors font-medium shadow-sm text-sm sm:text-base
-                         min-w-20 sm:w-auto justify-center mt-2 sm:mt-0
-                         disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Add <span className="hidden md:block">&nbsp;Business</span>
-            </button>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="bg-white rounded-xl p-6 md:p-8 border border-gray-300">
+        {showUpgradeBanner && <ProUpgradeBanner />}
+
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h2 className="text-xl md:text-2xl font-semibold text-gray-900">
+              Businesses
+            </h2>
+            <p className="text-gray-500 text-sm mt-1">
+              Manage your business profiles and settings
+            </p>
           </div>
+
+          <button
+            onClick={handleAddNewBusiness}
+            disabled={
+              hasNetworkError ||
+              (!canAddBusiness && user.plan !== "pro" && !loading)
+            }
+            title={
+              !canAddBusiness && user.plan !== "pro"
+                ? "Upgrade to Pro to add more businesses"
+                : undefined
+            }
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-teal-600 text-white text-sm font-medium
+                       rounded-md hover:bg-teal-700 transition-colors
+                       disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Add Business</span>
+            <span className="sm:hidden">Add</span>
+          </button>
         </div>
 
-        {/* Content */}
         {loading ? (
-          <div className="text-center py-12 sm:py-20">
-            <div className="animate-spin rounded-full h-10 w-10 sm:h-12 sm:w-12 border-b-2 border-teal-600 mx-auto" />
-            <p className="text-gray-500 mt-3 sm:mt-4 text-sm sm:text-base">
-              Loading businesses...
-            </p>
-          </div>
+          <BusinessSkeleton />
         ) : hasNetworkError ? (
-          <div className="bg-white rounded-md border border-gray-200 p-6 sm:p-12 text-center">
-            <WifiOff className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
+          <div className="text-center py-12 md:py-16">
+            <WifiOff className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
               No internet connection
             </h3>
-            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
-              Please check your connection and try again
+            <p className="text-gray-600 mb-6 text-sm">
+              Please check your connection and try again.
             </p>
             <button
-              onClick={handleRetry}
-              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-md
-                         hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
+              onClick={fetchBusinesses}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900 text-white text-sm font-medium rounded-full hover:bg-gray-700 transition-colors"
             >
-              <RefreshCw className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <RefreshCw className="w-4 h-4" />
               Retry
             </button>
           </div>
         ) : businesses.length === 0 ? (
-          <div className="bg-white rounded-md border border-gray-200 p-6 sm:p-12 text-center">
-            <BriefcaseBusiness className="h-12 w-12 sm:h-16 sm:w-16 text-gray-300 mx-auto mb-3 sm:mb-4" />
-            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">
-              No businesses yet
-            </h3>
-            <p className="text-gray-600 mb-4 sm:mb-6 text-sm sm:text-base">
-              Get started by adding your first business
-            </p>
-            <button
-              onClick={handleAddNewBusiness}
-              className="inline-flex items-center px-4 py-2.5 sm:px-6 sm:py-3 bg-teal-600 text-white rounded-md
-                         hover:bg-teal-700 transition-colors font-medium text-sm sm:text-base w-full sm:w-auto justify-center"
-            >
-              <Plus className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-              Add Your First Business
-            </button>
-          </div>
+          <EmptyState onAdd={handleAddNewBusiness} />
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {businesses.map((business) => (
-                <BusinessCard
-                  key={business.id}
-                  business={business}
-                  onDelete={handleDeleteBusiness}
-                  onEdit={handleEditBusiness}
-                />
-              ))}
-            </div>
-
-            {atFreeLimit && <ProUpgradeBanner />}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {businesses.map((business) => (
+              <BusinessCard
+                key={business.id}
+                business={business}
+                onDelete={handleDeleteBusiness}
+                onEdit={handleEditBusiness}
+              />
+            ))}
           </div>
         )}
       </div>
