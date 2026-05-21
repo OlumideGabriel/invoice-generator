@@ -2,14 +2,13 @@ import { useState, useEffect } from 'react';
 import { useCurrency as useCurrencyContext, CurrencyOption } from '../context/CurrencyContext';
 import { API_BASE_URL } from '../config/api';
 
-
 // Generate unique ID for items
 const generateId = () => {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
 };
 
 export interface InvoiceItem {
-  id: string; // Required ID for drag and drop functionality
+  id: string;
   name: string;
   description?: string;
   quantity: number;
@@ -37,6 +36,11 @@ const useSafeCurrency = () => {
   }
 };
 
+// Safari detection helper
+const isSafari = () => {
+  return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+};
+
 function useInvoice(options: UseInvoiceOptions = {}) {
   const [currency, setCurrency] = useState<CurrencyOption | string>(defaultCurrency);
   const currencyContext = useSafeCurrency();
@@ -50,6 +54,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
       setCurrency(defaultCurrency);
     }
   }, [currencyContext, options.currency]);
+  
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [invoiceNumber, setInvoiceNumber] = useState('');
@@ -125,8 +130,6 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     return shippingAmount;
   };
 
-
-
   const getTotal = () => {
     const subtotal = getSubtotal();
     const tax = getTaxAmount();
@@ -141,6 +144,36 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     setLogoStatus(url ? 'Logo uploaded successfully!' : 'Logo preview only (upload failed)');
   };
 
+  // Safari-compatible download function
+  const downloadFileSafari = (blob: Blob, filename: string) => {
+    const blobUrl = URL.createObjectURL(blob);
+    
+    if (isSafari()) {
+      // Safari requires special handling
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      
+      // Use setTimeout to ensure Safari processes the click
+      setTimeout(() => {
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(blobUrl);
+        }, 100);
+      }, 0);
+    } else {
+      // Chrome/Firefox/Edge approach
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    }
+  };
 
   const handleSubmit = async (): Promise<void> => {
     setLoading(true);
@@ -160,7 +193,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
         payment_instructions: paymentInstructions,
         terms,
         logo_url: logoUrl,
-        invoice_number: invoiceNumber,
+        invoice_number: invoiceNumber || `INV-${Date.now()}`,
         issued_date: issuedDate,
         due_date: dueDate,
         tax_type: taxType,
@@ -176,7 +209,10 @@ function useInvoice(options: UseInvoiceOptions = {}) {
 
       const res = await fetch(`${API_BASE_URL}/generate-invoice`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf'
+        },
         body: JSON.stringify(payload),
       });
 
@@ -187,12 +223,21 @@ function useInvoice(options: UseInvoiceOptions = {}) {
       }
 
       const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `invoice-${to.toString().replace(/\s+/g, '_')}.pdf`;
-      link.click();
-      window.URL.revokeObjectURL(url);
+      const filename = `invoice-${invoiceNumber || Date.now()}.pdf`;
+      
+      // Get filename from Content-Disposition header if available
+      const contentDisposition = res.headers.get('Content-Disposition');
+      let finalFilename = filename;
+      if (contentDisposition) {
+        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        if (filenameMatch && filenameMatch[1]) {
+          finalFilename = filenameMatch[1].replace(/['"]/g, '');
+        }
+      }
+      
+      // Use Safari-compatible download
+      downloadFileSafari(blob, finalFilename);
+      
     } catch (err) {
       if (err instanceof Error) setError(err.message);
       else setError('Unknown error');
@@ -201,72 +246,91 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     }
   };
 
-
-
   const previewInvoice = async (): Promise<string | null> => {
-  setLoading(true);
-  setError(null);
+    setLoading(true);
+    setError(null);
 
-  try {
-    // ✅ Validate inputs
-    const filteredItems = items.filter(item => item.name.trim());
-    if (!from.trim() || !to.trim()) throw new Error('Please fill in both "From" and "To" fields.');
-    if (filteredItems.length === 0) throw new Error('Please add at least one valid item.');
+    try {
+      const filteredItems = items.filter(item => item.name.trim());
+      if (!from.trim() || !to.trim()) throw new Error('Please fill in both "From" and "To" fields.');
+      if (filteredItems.length === 0) throw new Error('Please add at least one valid item.');
 
-    // ✅ Build payload cleanly
-    const payload = {
-      from,
-      to,
-      items: filteredItems,
-      tax_percent: taxPercent,
-      discount_percent: discountPercent,
-      payment_details: paymentDetails,
-      payment_instructions: paymentInstructions,
-      terms,
-      logo_url: logoUrl,
-      invoice_number: invoiceNumber,
-      issued_date: issuedDate,
-      due_date: dueDate,
-      tax_type: taxType,
-      discount_type: discountType,
-      shipping_amount: shippingAmount,
-      show_tax: showTax,
-      show_discount: showDiscount,
-      show_shipping: showShipping,
-      currency: typeof currency === 'string' ? currency : currency?.code || 'EUR',
-      currency_symbol: typeof currency === 'string' ? currency : currency?.symbol || '€',
-      currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)',
-    };
+      const payload = {
+        from,
+        to,
+        items: filteredItems,
+        tax_percent: taxPercent,
+        discount_percent: discountPercent,
+        payment_details: paymentDetails,
+        payment_instructions: paymentInstructions,
+        terms,
+        logo_url: logoUrl,
+        invoice_number: invoiceNumber || `INV-${Date.now()}`,
+        issued_date: issuedDate,
+        due_date: dueDate,
+        tax_type: taxType,
+        discount_type: discountType,
+        shipping_amount: shippingAmount,
+        show_tax: showTax,
+        show_discount: showDiscount,
+        show_shipping: showShipping,
+        currency: typeof currency === 'string' ? currency : currency?.code || 'EUR',
+        currency_symbol: typeof currency === 'string' ? currency : currency?.symbol || '€',
+        currency_label: typeof currency === 'string' ? currency : currency?.label || 'Euro (€)',
+      };
 
+      const response = await fetch(`${API_BASE_URL}/preview-invoice`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/pdf, image/png'
+        },
+        body: JSON.stringify(payload),
+      });
 
+      if (!response.ok) {
+        throw new Error(`Failed to fetch invoice preview (${response.status})`);
+      }
 
-    // ✅ Fetch preview PDF
-    const response = await fetch(`${API_BASE_URL}/preview-invoice`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+      const blob = await response.blob();
+      
+      // For Safari, if we get an image/png (fallback), handle appropriately
+      const contentType = response.headers.get('Content-Type');
+      if (contentType?.includes('image/png')) {
+        console.log('Received PNG preview (Safari fallback)');
+      }
+      
+      const url = URL.createObjectURL(blob);
+      
+      // For Safari, we need to keep the URL alive longer
+      if (isSafari()) {
+        // Store the URL for later cleanup
+        setTimeout(() => {
+          // Don't revoke immediately for Safari
+          console.log('Safari preview URL created:', url);
+        }, 1000);
+      }
+      
+      return url;
 
-    if (!response.ok) {
-      throw new Error(`Failed to fetch invoice preview (${response.status})`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Unexpected error occurred';
+      setError(message);
+      return null;
+
+    } finally {
+      setLoading(false);
     }
+  };
 
-
-
-    // ✅ Create blob URL for preview
-    const blob = await response.blob();
-    return URL.createObjectURL(blob);
-
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Unexpected error occurred';
-    setError(message);
-    return null;
-
-  } finally {
-    setLoading(false);
-  }
-};
-
+  // Cleanup function for preview URLs (call this when closing preview modal)
+  const cleanupPreviewUrl = (url: string | null) => {
+    if (url && !isSafari()) {
+      // Only revoke immediately for non-Safari browsers
+      URL.revokeObjectURL(url);
+    }
+    // For Safari, let the browser handle cleanup naturally
+  };
 
   return {
     from,
@@ -309,6 +373,7 @@ function useInvoice(options: UseInvoiceOptions = {}) {
     getTotal,
     handleSubmit,
     previewInvoice,
+    cleanupPreviewUrl, // Export this for use in components
     loading,
     setLoading,
     error,

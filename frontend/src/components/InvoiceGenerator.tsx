@@ -170,6 +170,19 @@ const InvoiceGenerator: React.FC = () => {
     setError,
   } = useInvoice();
 
+  // In InvoiceGenerator.tsx, add this effect to clean up preview URLs
+
+  useEffect(() => {
+    // Cleanup function for preview URL when component unmounts or preview changes
+    return () => {
+      if (previewPdfUrl) {
+        // Use the cleanup function from useInvoice
+        // You'll need to add this to your useInvoice exports
+        URL.revokeObjectURL(previewPdfUrl);
+      }
+    };
+  }, [previewPdfUrl]);
+
   // ==================== INVOICE EDITING ====================
 
   useEffect(() => {
@@ -756,13 +769,26 @@ const InvoiceGenerator: React.FC = () => {
   };
 
   const handlePreview = async () => {
-    setPreviewPdfUrl("");
+    // Clean up old preview URL if exists
+    if (previewPdfUrl) {
+      URL.revokeObjectURL(previewPdfUrl);
+      setPreviewPdfUrl(null);
+    }
+
+    setPreviewLoading(true);
     try {
       const url = await previewInvoice();
-      setPreviewPdfUrl(url);
+      if (url) {
+        setPreviewPdfUrl(url);
+      } else {
+        setError("Failed to generate preview");
+      }
     } catch (err) {
       console.error("Preview failed", err);
+      setError("Preview generation failed");
       setPreviewPdfUrl(null);
+    } finally {
+      setPreviewLoading(false);
     }
   };
 
