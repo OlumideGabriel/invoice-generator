@@ -55,7 +55,7 @@ const SettingsPage = () => {
     { id: "business", label: "Businesses", icon: BriefcaseBusiness },
     { id: "billing", label: "Billing", icon: CreditCard }, // Changed from Banknote to CreditCard
     { id: "payments", label: "Payment Collection", icon: Banknote },
-    { id: "integrations", label: "Manage Integrations", icon: Cog },
+    // { id: "integrations", label: "Manage Integrations", icon: Cog },
   ];
 
   const showNotification = (message: string, type: string = "success") => {

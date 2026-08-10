@@ -11,7 +11,6 @@ import {
   Clock,
   AlertCircle,
   Eye,
-  Ellipsis,
   Loader2,
   ChevronDown,
   X,
@@ -373,12 +372,6 @@ const InvoicePage = () => {
   // ── Handlers ────────────────────────────────────────────────────────────────
   const handleEditInvoice = () =>
     invoice && navigate(`/invoice/edit/${invoice.id}`);
-  const handleEditClient = () =>
-    client && navigate(`/clients?edit=${client.id}`);
-  const handleEditBusiness = () =>
-    business
-      ? navigate("/settings?section=business")
-      : navigate("/businesses?create=true");
 
   const handlePreviewPDF = async () => {
     if (!invoice) return;
@@ -570,7 +563,13 @@ const InvoicePage = () => {
       day: "numeric",
     });
 
+  const isPaystackPaid = (invoice: Invoice | null): boolean => {
+    return !!invoice?.data?.paystack_reference;
+  };
+
   const getStatusConfig = (status: string) => {
+    // Determine if paid via Paystack
+    const paystackPaid = isPaystackPaid(invoice);
     switch (status.toLowerCase()) {
       case "draft":
         return {
@@ -590,8 +589,10 @@ const InvoicePage = () => {
         };
       case "paid":
         return {
-          label: "Paid",
-          className: "bg-green-100 text-green-800",
+          label: paystackPaid ? "Paid via Paystack" : "Paid",
+          className: paystackPaid
+            ? "bg-green-100 text-green-800"
+            : "bg-green-100 text-green-800", // same style, but you could differentiate
           icon: CheckCircle2,
           canMarkPaid: false,
           canMarkUnpaid: true,
@@ -660,6 +661,7 @@ const InvoicePage = () => {
   const shippingAmount = calculateShippingAmount();
   const total = calculateTotal();
   const isPaid = invoice.status === "paid";
+  const paidViaPaystack = isPaystackPaid(invoice);
 
   return (
     <>
@@ -998,7 +1000,7 @@ const InvoicePage = () => {
             {/* ── Left Sidebar ─────────────────────────────────────────────── */}
             <div className="lg:col-span-4 lg:order-1 order-2 space-y-4 sm:space-y-6">
               {/* Paid banner */}
-              {isPaid && (
+              {isPaid && paidViaPaystack && (
                 <PaidBanner data={invoice.data} invoiceId={invoice.id} />
               )}
 
@@ -1008,12 +1010,6 @@ const InvoicePage = () => {
                   <h3 className="text-base font-semibold text-gray-900">
                     Client
                   </h3>
-                  <button
-                    onClick={handleEditClient}
-                    className="text-gray-400 hover:text-gray-600"
-                  >
-                    <Ellipsis className="h-4 w-4" />
-                  </button>
                 </div>
                 <div className="flex items-center space-x-3">
                   <div className="w-10 h-10 bg-purple-500 rounded-full flex items-center justify-center flex-shrink-0">
@@ -1105,7 +1101,7 @@ const InvoicePage = () => {
                 </div>
               </div>
 
-              {/* ── Paystack Integration Card (replaces old Fincra card) ───── */}
+              {/* ── Paystack Integration Card ──────────────────────────────── */}
               <PaystackIntegrationCard
                 business={business}
                 navigate={navigate}
@@ -1164,12 +1160,6 @@ const InvoicePage = () => {
                           <span className="text-sm text-gray-500">
                             Business
                           </span>
-                          <button
-                            onClick={handleEditBusiness}
-                            className="text-gray-400 hover:text-gray-600 flex-shrink-0"
-                          >
-                            <Ellipsis className="h-4 w-4" />
-                          </button>
                         </div>
                         <div className="flex items-center space-x-3">
                           {displayBusiness?.logo_url ? (
