@@ -4,6 +4,7 @@ from models import Invoice
 from datetime import datetime
 import uuid
 import logging
+from sqlalchemy import asc, desc, func
 
 
 class InvoiceOperations:
@@ -242,6 +243,89 @@ class InvoiceOperations:
             db.session.rollback()
             logging.error(f"Error bulk deleting invoices: {str(e)}", exc_info=True)
             return jsonify({'success': False, 'error': 'Failed to delete invoices'}), 500
+
+    @staticmethod
+    def get_invoices_paginated():
+        """
+        GET /api/invoices?user_id=<uuid>&page=<int>&per_page=<int>
+                      &sort_by=<field>&sort_order=<asc|desc>&status=<status>
+        """
+        try:
+            # 1. Parse request args
+            user_id = request.args.get('user_id')
+            page = request.args.get('page', 1, type=int)
+            per_page = request.args.get('per_page', 10, type=int)
+            sort_by = request.args.get('sort_by', 'created_at')
+            sort_order = request.args.get('sort_order', 'desc')
+            status_filter = request.args.get('status')
+
+            # 2. Validate user_id (required)
+            if not user_id:
+                return jsonify({'success': False, 'error': 'user_id is required'}), 400
+            if not InvoiceOperations.validate_uuid(user_id):
+                return jsonify({'success': False, 'error': 'Invalid user ID format'}), 400
+
+            # 3. Base query for this user
+            query = Invoice.query.filter_by(user_id=user_id)
+
+            # 4. Optional status filter
+            if status_filter:
+                if not InvoiceOperations.validate_status(status_filter):
+                    return jsonify({'success': False, 'error': 'Invalid status filter'}), 400
+                query = query.filter(Invoice.status == status_filter.lower())
+
+            # 5. Sorting
+            allowed_sort_fields = {'created_at', 'updated_at', 'status', 'invoice_number'}
+            if sort_by not in allowed_sort_fields:
+                sort_by = 'created_at'  # fallback
+
+            if sort_by == 'invoice_number':
+                # Extract invoice_number from JSON data column.
+                # Uses JSON path: data->>'invoice_number' (PostgreSQL) or JSON_EXTRACT (MySQL)
+                # Adjust to your DB dialect if needed. This works for PostgreSQL and SQLite with JSON1.
+                order_column = Invoice.data['invoice_number'].astext
+            else:
+                order_column = getattr(Invoice, sort_by)
+
+            if sort_order.lower() == 'asc':
+                query = query.order_by(asc(order_column))
+            else:
+                query = query.order_by(desc(order_column))
+
+            # 6. Paginate
+            paginated = query.paginate(page=page, per_page=per_page, error_out=False)
+
+            # 7. Build response data
+            invoices_data = []
+            for inv in paginated.items:
+                # Convert invoice to dict (using your existing method if available)
+                # Otherwise manually build:
+                inv_dict = {
+                    'id': str(inv.id),
+                    'user_id': str(inv.user_id),
+                    'status': inv.status,
+                    'created_at': inv.created_at.isoformat() if hasattr(inv, 'created_at') and inv.created_at else None,
+                    'updated_at': inv.updated_at.isoformat() if hasattr(inv, 'updated_at') and inv.updated_at else None,
+                    'data': inv.data,   # includes invoice_number, items, totals, etc.
+                }
+                invoices_data.append(inv_dict)
+
+            return jsonify({
+                'success': True,
+                'data': invoices_data,
+                'pagination': {
+                    'page': paginated.page,
+                    'per_page': paginated.per_page,
+                    'total_items': paginated.total,
+                    'total_pages': paginated.pages,
+                    'has_prev': paginated.has_prev,
+                    'has_next': paginated.has_next,
+                }
+            })
+
+        except Exception as e:
+            logging.error(f"Error fetching paginated invoices: {str(e)}", exc_info=True)
+            return jsonify({'success': False, 'error': 'Failed to fetch invoices'}), 500    
 
     @staticmethod
     def get_invoice_statistics(user_id):

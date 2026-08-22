@@ -696,6 +696,8 @@ def download_image_for_weasyprint(image_url):
         tmp_file.write(response.content)
         return tmp_file.name
 
+
+
 # @app.route('/api/users/profile', methods=['GET'])
 # def get_user_profile():
 #     return Users.get_user_profile()

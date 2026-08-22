@@ -168,13 +168,15 @@ def _send_payment_notification(
         )
 
 
-def _notify_from_invoice(invoice, tx_amount_kobo: int, payer_email: str):
+def _notify_from_invoice(invoice, tx_amount_smallest: int, payer_email: str, currency: str = 'NGN'):
     from models import User, Business
 
     inv_data       = invoice.data or {}
     currency_sym   = inv_data.get('currency_symbol', '₦')
     invoice_number = inv_data.get('invoice_number', str(invoice.id)[:8])
-    amount         = tx_amount_kobo / 100
+    # tx_amount_smallest is in the currency's smallest unit (e.g. kobo, cents)
+    divisor = 1 if (currency or 'NGN').upper() == 'JPY' else 100
+    amount         = tx_amount_smallest / divisor
 
     business_name = inv_data.get('from', '').split('\n')[0] or 'there'
 
@@ -534,8 +536,13 @@ def initialize_payment():
             tax = invoice_data['tax_percent']
 
     shipping    = invoice_data.get('shipping_amount', 0) if invoice_data.get('show_shipping') else 0
-    total_ngn   = max(0, subtotal - discount + tax + shipping)
-    amount_kobo = int(round(total_ngn * 100))
+    total_amount = max(0, subtotal - discount + tax + shipping)
+
+    # Determine currency (prefer invoice.currency column, fallback to invoice.data)
+    currency_code = (invoice.currency or invoice_data.get('currency') or 'NGN').upper()
+    # Paystack expects amount in smallest unit (kobo/cents); JPY has no subunit
+    divisor = 1 if currency_code == 'JPY' else 100
+    amount_smallest = int(round(total_amount * divisor))
 
     invoice_number = invoice_data.get('invoice_number', str(invoice_id)[:8])
     business_name  = invoice_data.get('from', '').split('\n')[0] or 'Business'
@@ -544,8 +551,8 @@ def initialize_payment():
 
     payload = {
         'email':        payer_email,
-        'amount':       amount_kobo,
-        'currency':     'NGN',
+        'amount':       amount_smallest,
+        'currency':     currency_code,
         'reference':    f'envoyce-{invoice_id}-{int(datetime.utcnow().timestamp())}',
         'callback_url': callback_url,
         'metadata': {
@@ -574,7 +581,8 @@ def initialize_payment():
         'authorization_url': result['data']['authorization_url'],
         'reference':         result['data']['reference'],
         'access_code':       result['data']['access_code'],
-        'amount':            total_ngn,
+        'amount':            total_amount,
+        'currency':          currency_code,
         'has_split':         bool(subaccount_code),
     })
 
@@ -602,6 +610,10 @@ def verify_payment(reference):
 
     current_app.logger.info(f"[verify] TX status={tx['status']}, invoice_id={tx.get('metadata', {}).get('invoice_id')}")
 
+    # Determine divisor for smallest unit normalization
+    tx_currency = (tx.get('currency') or 'NGN').upper()
+    divisor = 1 if tx_currency == 'JPY' else 100
+
     if tx['status'] != 'success':
         return jsonify({'success': False, 'error': f"Payment status: {tx['status']}"}), 400
 
@@ -622,7 +634,10 @@ def verify_payment(reference):
         inv_data = dict(invoice.data or {})
         inv_data['paid_at']            = datetime.utcnow().isoformat()
         inv_data['paystack_reference'] = reference
-        inv_data['paystack_amount']    = tx['amount'] / 100
+        # normalize amount according to currency (Paystack reports amount in smallest unit)
+        tx_currency = (tx.get('currency') or 'NGN').upper()
+        divisor = 1 if tx_currency == 'JPY' else 100
+        inv_data['paystack_amount']    = tx['amount'] / divisor
         inv_data['payer_email']        = payer_email
         invoice.data = inv_data
         flag_modified(invoice, 'data')
@@ -631,13 +646,14 @@ def verify_payment(reference):
     else:
         current_app.logger.info(f"[verify] Invoice already paid, skipping write")
 
-    _notify_from_invoice(invoice, tx['amount'], payer_email)
+    _notify_from_invoice(invoice, tx['amount'], payer_email, currency=tx.get('currency', 'NGN'))
 
     return jsonify({
         'success':    True,
         'message':    'Payment verified and invoice marked as paid',
         'invoice_id': invoice_id,
-        'amount':     tx['amount'] / 100,
+        'amount':     tx['amount'] / divisor,
+        'currency':   tx_currency,
         'reference':  reference,
     })
 
@@ -704,7 +720,8 @@ def webhook():
                     id=uuid.uuid4(),
                     user_id=user.id,
                     subscription_id=subscription.id if subscription else None,
-                    amount=float(tx['amount']) / 100,
+                    # normalize subscription amount by currency
+                    amount=float(tx['amount']) / (1 if (tx.get('currency') or 'NGN').upper() == 'JPY' else 100),
                     currency=tx['currency'],
                     status='success',
                     description='Pro Plan - Monthly Subscription',
@@ -719,23 +736,187 @@ def webhook():
             # Regular invoice payment
             invoice_id = metadata.get('invoice_id')
             if invoice_id:
-                invoice = Invoice.query.filter_by(id=invoice_id).first()
-                if invoice and invoice.status != 'paid':
-                    invoice.status = 'paid'
-                    inv_data = invoice.data or {}
-                    inv_data['paid_at'] = datetime.utcnow().isoformat()
-                    inv_data['paystack_reference'] = tx.get('reference')
-                    inv_data['paystack_amount'] = tx.get('amount', 0) / 100
-                    inv_data['payer_email'] = tx.get('customer', {}).get('email', '')
-                    invoice.data = inv_data
-                    flag_modified(invoice, 'data')
-                    db.session.commit()
-                    
-                    _notify_from_invoice(
-                        invoice,
-                        tx.get('amount', 0),
-                        tx.get('customer', {}).get('email', ''),
-                    )
+                try:
+                    invoice = Invoice.query.filter_by(id=invoice_id).first()
+                    if not invoice:
+                        current_app.logger.warning(f"[webhook] charge.success: invoice {invoice_id} not found")
+                    else:
+                        inv_data = dict(invoice.data or {})
+
+                        # Normalize amount according to currency
+                        tx_currency = (tx.get('currency') or 'NGN').upper()
+                        divisor = 1 if tx_currency == 'JPY' else 100
+                        paystack_amount = tx.get('amount', 0)  # amount in smallest unit
+                        normalized_amount = paystack_amount / divisor
+
+                        payer_email = tx.get('customer', {}).get('email', '')
+
+                        if invoice.status != 'paid':
+                            invoice.status = 'paid'
+                            inv_data['paid_at'] = datetime.utcnow().isoformat()
+                            inv_data['paystack_reference'] = tx.get('reference')
+                            inv_data['paystack_amount'] = normalized_amount
+                            inv_data['payer_email'] = payer_email
+                            invoice.data = inv_data
+                            flag_modified(invoice, 'data')
+                            db.session.commit()
+                            current_app.logger.info(f"[webhook] Marked invoice {invoice_id} as paid (webhook)")
+                        else:
+                            current_app.logger.info(f"[webhook] Invoice {invoice_id} already marked paid")
+
+                        # Notify business/owner
+                        _notify_from_invoice(
+                            invoice,
+                            paystack_amount,
+                            payer_email,
+                            currency=tx.get('currency', 'NGN'),
+                        )
+
+                        # If payout already initiated or if transaction used subaccount split, skip payout initiation
+                        if inv_data.get('payout_initiated'):
+                            current_app.logger.info(f"[webhook] Payout already initiated for invoice {invoice_id}")
+                            return
+
+                        if tx.get('subaccount'):
+                            current_app.logger.info(f"[webhook] Transaction for invoice {invoice_id} used subaccount split; skipping payout initiation")
+                            # mark as payout not required
+                            inv_data['payout_initiated'] = True
+                            invoice.data = inv_data
+                            flag_modified(invoice, 'data')
+                            db.session.commit()
+                            return
+
+                        # Resolve recipient account details (prefer business record)
+                        recipient_name = None
+                        account_number = None
+                        bank_code = None
+                        biz = None
+                        if invoice.business_id:
+                            biz = Business.query.filter_by(id=invoice.business_id).first()
+                        if biz:
+                            recipient_name = biz.name or getattr(biz, 'business_name', None) or inv_data.get('from', '').split('\n')[0]
+                            account_number = getattr(biz, 'paystack_account_number', None) or (biz.data or {}).get('paystack_account_number')
+                            bank_code = getattr(biz, 'paystack_bank_code', None) or (biz.data or {}).get('paystack_bank_code')
+
+                        # Fallback to invoice owner user data
+                        owner = None
+                        if not account_number or not bank_code:
+                            owner = User.query.filter_by(id=invoice.user_id).first()
+                            if owner:
+                                owner_data = owner.data or {}
+                                account_number = account_number or owner_data.get('paystack_account_number')
+                                bank_code = bank_code or owner_data.get('paystack_bank_code')
+                                recipient_name = recipient_name or f"{owner.first_name or ''} {owner.last_name or ''}".strip() or recipient_name
+
+                        if not account_number or not bank_code:
+                            current_app.logger.info(f"[webhook] No payout bank details for invoice {invoice_id}; skipping payout")
+                            # mark as payout not available
+                            inv_data['payout_initiated'] = False
+                            invoice.data = inv_data
+                            flag_modified(invoice, 'data')
+                            db.session.commit()
+                            return
+
+                        # Create transfer recipient if missing
+                        recipient_code = None
+                        try:
+                            if biz:
+                                biz_data = biz.data or {}
+                                recipient_code = biz_data.get('paystack_transfer_recipient_code')
+                            else:
+                                owner_data = owner.data or {}
+                                recipient_code = owner_data.get('paystack_transfer_recipient_code')
+
+                            if not recipient_code:
+                                r_payload = {
+                                    'type': 'nuban',
+                                    'name': recipient_name or 'Merchant',
+                                    'account_number': account_number,
+                                    'bank_code': bank_code,
+                                    'currency': tx_currency,
+                                }
+                                r_res = requests.post(
+                                    f'{PAYSTACK_BASE}/transferrecipient',
+                                    headers=paystack_headers(),
+                                    json=r_payload,
+                                    timeout=10,
+                                )
+                                r_json = r_res.json()
+                                if r_res.status_code == 201 and r_json.get('status'):
+                                    recipient_code = r_json['data']['recipient_code']
+                                    # Persist recipient code
+                                    if biz:
+                                        bd = biz.data or {}
+                                        bd['paystack_transfer_recipient_code'] = recipient_code
+                                        biz.data = bd
+                                        flag_modified(biz, 'data')
+                                        biz.updated_at = datetime.utcnow()
+                                        db.session.commit()
+                                    else:
+                                        od = owner.data or {}
+                                        od['paystack_transfer_recipient_code'] = recipient_code
+                                        owner.data = od
+                                        flag_modified(owner, 'data')
+                                        owner.updated_at = datetime.utcnow()
+                                        db.session.commit()
+                                else:
+                                    current_app.logger.warning(f"[paystack] Failed to create transfer recipient: {r_res.status_code} {r_res.text}")
+                        except Exception as exc:
+                            current_app.logger.error(f"[paystack] create recipient error: {exc}")
+
+                        if not recipient_code:
+                            current_app.logger.info(f"[webhook] No transfer recipient code for invoice {invoice_id}; skipping transfer")
+                            inv_data['payout_initiated'] = False
+                            invoice.data = inv_data
+                            flag_modified(invoice, 'data')
+                            db.session.commit()
+                            return
+
+                        # Initiate transfer from platform balance to recipient
+                        try:
+                            t_payload = {
+                                'source': 'balance',
+                                'amount': int(paystack_amount),
+                                'recipient': recipient_code,
+                                'reason': f'Payout for invoice {invoice_id}',
+                                'currency': tx_currency,
+                            }
+                            t_res = requests.post(
+                                f'{PAYSTACK_BASE}/transfer',
+                                headers=paystack_headers(),
+                                json=t_payload,
+                                timeout=10,
+                            )
+                            t_json = t_res.json()
+                            if t_res.status_code in (200, 201) and t_json.get('status'):
+                                tr = t_json['data']
+                                inv_data['payout_initiated'] = True
+                                inv_data['payout'] = {
+                                    'recipient': recipient_code,
+                                    'transfer_code': tr.get('transfer_code'),
+                                    'transfer_id': tr.get('id'),
+                                    'transfer_status': tr.get('status'),
+                                    'initiated_at': datetime.utcnow().isoformat(),
+                                }
+                                invoice.data = inv_data
+                                flag_modified(invoice, 'data')
+                                db.session.commit()
+                                current_app.logger.info(f"[webhook] Transfer initiated for invoice {invoice_id}: {tr.get('transfer_code')}")
+                            else:
+                                current_app.logger.warning(f"[paystack] Transfer failed: {t_res.status_code} {t_res.text}")
+                                inv_data['payout_initiated'] = False
+                                invoice.data = inv_data
+                                flag_modified(invoice, 'data')
+                                db.session.commit()
+                        except Exception as exc:
+                            current_app.logger.error(f"[paystack] transfer error: {exc}")
+                            inv_data['payout_initiated'] = False
+                            invoice.data = inv_data
+                            flag_modified(invoice, 'data')
+                            db.session.commit()
+
+                except Exception as exc:
+                    current_app.logger.error(f"[webhook] Error handling invoice payout for {invoice_id}: {exc}")
 
     elif event_type == 'subaccount.approved':
         subaccount_code = event['data'].get('subaccount_code')
