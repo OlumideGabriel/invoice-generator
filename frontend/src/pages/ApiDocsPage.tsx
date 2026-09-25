@@ -11,6 +11,7 @@ import {
   KeyRound,
   Globe,
   Loader2,
+  ReceiptText,
 } from "lucide-react";
 import MainMenu from "../components/MainMenu";
 import Navbar from "../components/Navbar";
@@ -26,6 +27,7 @@ const BASE_URL =
 
 const SECTIONS = [
   { id: "generate", label: "Generate PDF", icon: FileText },
+  { id: "statement", label: "Transaction Statement", icon: ReceiptText },
   { id: "preview", label: "Preview PNG", icon: Eye },
   { id: "send", label: "Send by Email", icon: Mail },
   { id: "invoices", label: "Invoice CRUD", icon: List },
@@ -361,9 +363,49 @@ const GENERATE_PAYLOAD = {
   currency_symbol: "₦",
 };
 
+const STATEMENT_PAYLOAD = {
+  from: "Getn Live",
+  to: "Rada — Lagos",
+  logo_url: "https://example.com/logo.svg",
+  statement_number: "STMT-2026-0007",
+  statement_date: "2026-09-25",
+  context: {
+    event: "Wordpress in the Age of AI",
+    event_date: "2026-07-29",
+  },
+  currency: "NGN",
+  currency_symbol: "₦",
+  transactions: [
+    {
+      ref: "GTN-RXAIWV",
+      date: "2026-05-11",
+      customer: "Sound Huncho",
+      item: "General",
+      quantity: 1,
+      amount: 1870,
+      fee: 130,
+    },
+    {
+      ref: "GTN-KQP42M",
+      date: "2026-05-12",
+      customer: "Ada Obi",
+      item: "VIP",
+      quantity: 2,
+      amount: 12000,
+      fee: 780,
+    },
+  ],
+  payment_details: "Acct 0123456789 — GTB",
+  notes: "Net total reflects ticket sales after deduction of platform fees.",
+};
+
 const ERROR_RESPONSE = {
   error: "Failed to render invoice",
   details: "…server-side error details…",
+};
+
+const STATEMENT_ERROR_RESPONSE = {
+  error: "Missing required field: transactions",
 };
 
 const SEND_RESPONSE = {
@@ -403,7 +445,8 @@ const ApiDocsPage: React.FC = () => {
                 Envoyce Invoice API
               </h1>
               <p className="mt-1 text-gray-600 text-sm md:text-base">
-                HTTP API for rendering, saving, sending and taking payment for invoices.
+                HTTP API for rendering invoices and transaction statements, saving,
+                sending and taking payment.
               </p>
             </div>
           </div>
@@ -515,6 +558,70 @@ const ApiDocsPage: React.FC = () => {
                       <span className="font-semibold">500</span> — JSON error:
                     </p>
                     <pre className="whitespace-pre-wrap">{JSON.stringify(ERROR_RESPONSE, null, 2)}</pre>
+                  </ResponseCard>
+                </div>
+              </div>
+            </Section>
+
+            {/* ── Transaction Statement ───────────────────────────────── */}
+            <Section id="statement" title="Transaction Statement" icon={ReceiptText}>
+              <div className="grid xl:grid-cols-[minmax(0,1fr)_420px] gap-6 items-start">
+                <div className="min-w-0">
+                  <EndpointBar method="POST" path="/generate-statement" />
+                  <p className="text-gray-600 leading-relaxed mb-4">
+                    Renders a receipt-style statement of transactions that have{" "}
+                    <span className="font-medium">already happened</span> — proof of
+                    completed sales rather than a payment demand. Each transaction is
+                    listed with its gross amount, platform fee and net, and the
+                    totals (gross → fees → net) are computed server-side. Unlike the
+                    invoice, there is no due date; the header shows a statement date
+                    and, optionally, the event the transactions belong to.
+                  </p>
+                  <ParamTable
+                    rows={[
+                      ["to", "string", 'Recipient line — "Rada — Lagos"', true],
+                      ["transactions[]", "object[]", "One entry per transaction — see fields below", true],
+                      ["transactions[].ref", "string", "Transaction / order reference"],
+                      ["transactions[].date", "date", "When the transaction happened"],
+                      ["transactions[].customer", "string", "Customer name"],
+                      ["transactions[].item", "string", "Ticket tier / item description"],
+                      ["transactions[].quantity", "number", "Units sold"],
+                      ["transactions[].amount", "number", "Gross amount collected"],
+                      ["transactions[].fee", "number", "Platform fee — net is computed as amount − fee"],
+                      ["from", "string", 'Issuer line — defaults to "Getn Live"'],
+                      ["title", "string", 'Defaults to "Transaction Statement"'],
+                      ["statement_number", "string", 'Defaults to "STMT-<timestamp>"'],
+                      ["statement_date", "date", "Defaults to today"],
+                      ["context.event / context.event_date", "object", "Event the transactions belong to"],
+                      ["logo_url", "url", "Fetched server-side and embedded in the PDF"],
+                      ["payment_details / notes", "string", "Optional footer blocks"],
+                      ["currency / currency_symbol", "string", 'e.g. "NGN" / "₦"'],
+                    ]}
+                  />
+                </div>
+                <div className="space-y-4 min-w-0">
+                  <CodeSamples endpoint="/generate-statement" body={STATEMENT_PAYLOAD} />
+                  <ResponseCard
+                    statuses={
+                      <>
+                        <StatusPill code={200} />
+                        <StatusPill code={400} ok={false} />
+                        <StatusPill code={500} ok={false} />
+                      </>
+                    }
+                  >
+                    <p className="text-[#8eda91] mb-2">
+                      <span className="font-semibold">200</span> — the PDF bytes
+                      (<span className="font-mono">application/pdf</span>), named{" "}
+                      <span className="font-mono">statement_&lt;number&gt;.pdf</span>.
+                    </p>
+                    <p className="text-[#8eda91] mb-2">
+                      <span className="font-semibold">400</span> — validation error:
+                    </p>
+                    <pre className="whitespace-pre-wrap mb-2">{JSON.stringify(STATEMENT_ERROR_RESPONSE, null, 2)}</pre>
+                    <p className="text-[#8eda91]">
+                      <span className="font-semibold">500</span> — render failure (JSON).
+                    </p>
                   </ResponseCard>
                 </div>
               </div>
