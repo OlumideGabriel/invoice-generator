@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title }} {{ statement_number }}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: #f5f5f5;
+      padding: 20px;
+      color: #121722;
+      line-height: 1.5;
+    }
+
+    .statement-container {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      background: white;
+      padding: 30px 40px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      position: relative;
+    }
+
+    /* Header Section */
+    .header-section {
+      padding: 20px;
+      background: #F2F5F9;
+      border-radius: 8px;
+      margin-bottom: 30px;
+    }
+
+    .statement-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+    }
+
+    .statement-title {
+      font-size: 40px;
+      font-weight: 500;
+      color: #2D3748;
+    }
+
+    .statement-number {
+      font-size: 20px;
+      font-weight: 400;
+      color: #718096;
+      margin-top: -10px;
+    }
+
+    .statement-meta-label {
+      color: #718096;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .date-value {
+      color: #2D3748;
+      font-weight: 500;
+    }
+
+    .top-section {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .billing-section {
+      width: 45%;
+    }
+
+    .billing-label {
+      color: #718096;
+      font-size: 12px;
+    }
+
+    .client-name {
+      font-size: 18px;
+      font-weight: 600;
+      color: #2D3748;
+    }
+
+    .client-address {
+      color: #4A5568;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .company-logo {
+      text-align: right;
+    }
+
+    .company-logo img {
+      max-height: 75px;
+      width: auto;
+      border-radius: 3px;
+    }
+
+    /* Context strip (event subject of the statement) */
+    .context-strip {
+      margin-bottom: 25px;
+      padding: 12px 20px;
+      background: #F2F5F9;
+      border-radius: 6px;
+      font-size: 14px;
+      color: #4A5568;
+    }
+
+    .context-strip strong {
+      color: #2D3748;
+      font-weight: 600;
+    }
+
+    /* Transactions Section */
+    .transactions-section {
+      margin: 30px 0;
+    }
+
+    .transactions-title {
+      font-size: 20px;
+      font-weight: 600;
+      color: black;
+      margin-bottom: 15px;
+      padding-bottom: 7px;
+      border-radius: 6px;
+    }
+
+    .transactions-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .transactions-table thead th {
+      border: none;
+      padding-right: 10px;
+      padding-left: 10px;
+      padding-bottom: 20px;
+      padding-top: 5px;
+      text-align: left;
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    .transactions-table thead th:nth-child(1) {
+      border-radius: 4px 0 0 4px;
+      font-weight: 700;
+      color: #121722;
+      font-size: 15px;
+    }
+
+    .transactions-table thead th:last-child {
+      border-radius: 0 4px 4px 0;
+    }
+
+    .transactions-table thead th:nth-child(n+5) {
+      text-align: right;
+      color: #60737D;
+    }
+
+    .transactions-table tbody td {
+      border: none;
+      padding: 4px 10px;
+      vertical-align: top;
+    }
+
+    .transactions-table tbody td:nth-child(n+5) {
+      text-align: right;
+    }
+
+    .tx-ref {
+      font-weight: 500;
+      color: #2D3748;
+      font-size: 14px;
+    }
+
+    .tx-meta {
+      color: #60737D;
+      font-size: 13px;
+      margin-top: 2px;
+    }
+
+    .tx-customer {
+      color: #4A5568;
+      font-size: 14px;
+    }
+
+    .tx-amount {
+      font-size: 14px;
+      font-weight: 500;
+      color: #2D3748;
+    }
+
+    .tx-fee {
+      color: #60737D;
+      font-size: 14px;
+    }
+
+    .tx-net {
+      font-size: 14px;
+      font-weight: 600;
+      color: #121722;
+    }
+
+    /* Totals Section */
+    .totals-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 40px;
+    }
+
+    .totals-container {
+      width: 320px;
+    }
+
+    .subtotal-row {
+      display: flex;
+      justify-content: right;
+      gap: 40px;
+      align-items: center;
+      padding-right: 20px;
+      font-size: 14px;
+    }
+
+    .total-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+    }
+
+    .total-label {
+      color: #4A5568;
+    }
+
+    .total-amount {
+      color: #2D3748;
+      font-weight: 500;
+    }
+
+    .subtotal-amount {
+      color: #2D3748;
+      font-weight: 500;
+      min-width: 80px;
+      max-width: 100px;
+      text-align: right;
+    }
+
+    .grand-total {
+      margin-top: 10px;
+      padding-top: 10px;
+      padding-bottom: 10px;
+      padding-left: 50px;
+      padding-right: 20px;
+      font-weight: 500;
+      font-size: 15px;
+      background: #E8FBEA;
+      border-radius: 10px;
+    }
+
+    .grand-total .total-amount {
+      font-weight: 600;
+      color: #121722;
+      font-size: 20px;
+    }
+
+    /* Footer Section */
+    .footer-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      padding-top: 30px;
+    }
+
+    .footer-column h3 {
+      font-size: 16px;
+      font-weight: 600;
+      color: #2D3748;
+      margin-bottom: 5px;
+    }
+
+    .footer-column p {
+      font-size: 14px;
+      color: #4A5568;
+      line-height: 1.5;
+      margin-bottom: 8px;
+    }
+
+    .payment-info {
+      background: #F2F5F9;
+      padding: 15px;
+      border-radius: 6px;
+      line-height: 1.1;
+    }
+
+    .proof-note {
+      margin-top: 30px;
+      padding-top: 15px;
+      border-top: 1px solid #E2E8F0;
+      font-size: 12px;
+      color: #718096;
+    }
+
+    /* Print Styles */
+    @media print {
+      body {
+        background: white;
+        padding: 0;
+      }
+
+      .statement-container {
+        box-shadow: none;
+        margin: 0;
+        width: 100%;
+        min-height: auto;
+        padding: 10mm;
+      }
+    }
+
+    @page {
+      size: letter;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="statement-container">
+    <div class="company-logo statement-header">
+      {% if logo_url %}
+        <img src="{{ logo_url }}" alt="Company Logo">
+      {% else %}
+        <div style="font-size: 30px; color: #718096; font-weight: 800; margin-left: 10px;
+         align-items: center; display: flex; height: 75px; justify-content: center;">
+            {{ from }}
+        </div>
+      {% endif %}
+
+      <div>
+          <h1 class="statement-title">{{ title }}</h1>
+          <div class="statement-number">#{{ statement_number }}</div>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="header-section">
+      <div class="top-section">
+        <!-- Parties -->
+        <div class="billing-section">
+          <div class="billing-label">From:</div>
+          <div class="client-name" style="margin-bottom: 10px;">
+            {% if from %}
+              {{ from.split('\n')[0] if '\n' in from else from }}
+            {% else %}
+              Getn Live
+            {% endif %}
+          </div>
+          <div class="client-address">
+            {% if from and '\n' in from %}
+              {{ from.split('\n')[1:] | join('<br>') | safe }}
+            {% endif %}
+          </div>
+
+          {% if to %}
+          <div>
+            <div class="billing-label">Issued To:</div>
+            <div class="client-name">
+              {{ to.split('\n')[0] if '\n' in to else to }}
+            </div>
+            <div class="client-address">
+              {% if '\n' in to %}
+                {{ to.split('\n')[1:] | join('<br>') | safe }}
+              {% endif %}
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <!-- Dates -->
+        <div>
+          <div class="statement-meta-label">Statement Date</div>
+          <div class="date-value">{{ statement_date }}</div>
+
+          {% if event_date %}
+          <div class="statement-meta-label" style="margin-top: 15px;">Event Date</div>
+          <div class="date-value">{{ event_date }}</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Context -->
+    {% if event %}
+    <div class="context-strip">
+      Statement of transactions collected on <strong>{{ event }}</strong> via the Getn ticketing platform.
+    </div>
+    {% endif %}
+
+    <!-- Transactions Table -->
+    <div class="transactions-section">
+      <table class="transactions-table">
+        <thead class="transactions-title">
+          <tr>
+            <th style="width: 22%">Transaction</th>
+            <th style="width: 24%">Customer</th>
+            <th style="width: 14%; text-align: right">Qty</th>
+            <th style="width: 16%; text-align: right">Amount</th>
+            <th style="width: 11%; text-align: right">Fee</th>
+            <th style="width: 13%; text-align: right">Net</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tx in transactions %}
+          <tr>
+            <td>
+              <div class="tx-ref">{{ tx.ref }}</div>
+              {% if tx.date %}
+              <div class="tx-meta">{{ tx.date }}</div>
+              {% endif %}
+              {% if tx.item %}
+              <div class="tx-meta">{{ tx.item }}</div>
+              {% endif %}
+            </td>
+            <td class="tx-customer">{{ tx.customer }}</td>
+            <td class="tx-meta" style="text-align: right;">{{ tx.quantity }}</td>
+            <td class="tx-amount">{{ currency_symbol }}{{ "{:,.2f}".format(tx.amount) }}</td>
+            <td class="tx-fee">{{ currency_symbol }}{{ "{:,.2f}".format(tx.fee) }}</td>
+            <td class="tx-net">{{ currency_symbol }}{{ "{:,.2f}".format(tx.net) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Totals Section -->
+    <div class="totals-section">
+      <div class="totals-container">
+        <div class="subtotal-row">
+          <div class="total-label">Gross Revenue:</div>
+          <div class="subtotal-amount">{{ currency_symbol }} {{ "{:,.2f}".format(gross) }}</div>
+        </div>
+
+        <div class="subtotal-row" style="margin-top: 8px;">
+          <div class="total-label">Platform Fees:</div>
+          <div class="subtotal-amount">-{{ currency_symbol }} {{ "{:,.2f}".format(fees) }}</div>
+        </div>
+
+        <div class="total-row grand-total">
+          <div class="total-label">Net Total ({{ currency }}):</div>
+          <div class="total-amount">{{ currency_symbol }} {{ "{:,.2f}".format(net_total) }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer Section -->
+    <div class="footer-section">
+      {% if payment_details %}
+      <div class="footer-column">
+        <h3>Payment Information</h3>
+        <div class="payment-info">
+          {{ payment_details | replace('\n', '<br>') | safe }}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if notes %}
+      <div class="footer-column">
+        <h3>Notes</h3>
+        <p>{{ notes | replace('\n', '<br>') | safe }}</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="proof-note">
+      This statement confirms that the {{ count }} transaction{{ 's' if count != 1 else '' }} listed above were
+      processed through the Getn ticketing platform and reflects all ticket sales collected to date.
+      Generated on {{ statement_date }}.
+    </div>
+  </div>
+</body>
+</html>

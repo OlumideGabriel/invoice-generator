@@ -36,6 +36,7 @@ from sib_api_v3_sdk.rest import ApiException
 from routes.dashboard import dashboard_bp
 from routes.paystack import paystack_bp
 from routes.billing import billing_bp
+from routes.statement import statement_bp
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -105,6 +106,7 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.register_blueprint(dashboard_bp)
 app.register_blueprint(paystack_bp)
 app.register_blueprint(billing_bp)
+app.register_blueprint(statement_bp)
 
 @app.after_request
 def after_request(response):
