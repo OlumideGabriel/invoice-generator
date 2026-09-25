@@ -15,6 +15,7 @@ import {
   UsersIcon as UsersOutline,
   Cog6ToothIcon as CogOutline,
   SquaresPlusIcon as SquaresPlusOutline,
+  CodeBracketIcon as CodeBracketOutline,
   ChatBubbleLeftIcon,
   ChevronLeftIcon,
   ChevronRightIcon
@@ -28,6 +29,7 @@ import {
   Cog6ToothIcon as CogSolid,
   PlusIcon,
   SquaresPlusIcon as SquaresPlusSolid,
+  CodeBracketIcon as CodeBracketSolid,
 } from "@heroicons/react/24/solid";
 
 interface MenuItem {
@@ -44,6 +46,7 @@ const menuItems: MenuItem[] = [
   { path: "/clients", label: "Clients", outline: UsersOutline, solid: UsersSolid },
   { path: "/settings", label: "Settings", outline: CogOutline, solid: CogSolid },
   { path: "/new", label: "Create", outline: PlusIcon, solid: PlusIcon },
+  { path: "/api-docs", label: "API Docs", outline: CodeBracketOutline, solid: CodeBracketSolid },
 ];
 
 const SideMenu: React.FC = () => {
@@ -72,6 +75,9 @@ const SideMenu: React.FC = () => {
     setAuthModalMode(mode);
   };
 
+  // Public routes an unauthenticated visitor may open from the menu.
+  const PUBLIC_PATHS = ["/new", "/api-docs"];
+
   const handleNavigation = (
     e: React.MouseEvent,
     path: string,
@@ -79,8 +85,8 @@ const SideMenu: React.FC = () => {
   ) => {
     e.preventDefault();
 
-    // Unauthenticated users: block all except /new
-    if (!user && path !== "/new") {
+    // Unauthenticated users: block all except public paths
+    if (!user && !PUBLIC_PATHS.includes(path)) {
       openAuthModal("login");
       return;
     }
@@ -193,7 +199,7 @@ const SideMenu: React.FC = () => {
                         isActive
                           ? "text-black bg-gray-100 hover:text-neutral-900"
                           : "text-gray-700 hover:text-black/80 hover:bg-gray-100"
-                      } ${!user ? "cursor-pointer" : ""}`}
+                      } ${!user && !PUBLIC_PATHS.includes(path) ? "cursor-pointer" : ""}`}
                     >
                       <Icon className="h-6 w-6" />
                       {!collapsed && label}

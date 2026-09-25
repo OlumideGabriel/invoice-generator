@@ -1,5 +1,13 @@
 [[redirects]]
   from = "/api/*"
-  to = "https://invoice-generator-iisl.onrender.com/api/:splat"
+  to = "https://invoice-generator-69nc.onrender.com/api/:splat"
   status = 200
   force = true
+
+# SPA fallback — client-side routes (/api-docs, /invoices, /pay/:id, …) must
+# resolve to the app bundle on hard navigation/refresh. Must come after the
+# /api/* rule above; without force it only applies when no real file matches.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
